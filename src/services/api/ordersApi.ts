@@ -7,7 +7,11 @@ export const ordersApi = createApi({
   tagTypes: ['Orders'],
   endpoints: (builder) => ({
     getOrders: builder.query({
-      query: (params = {}) => ({ url: '/api/v1/orders', method: 'GET', params }),
+      query: (params: Record<string, any> = {}) => {
+        const { isAdmin, ...rest } = params;
+        const url = isAdmin ? '/api/v1/admin/orders' : '/api/v1/orders';
+        return { url, method: 'GET', params: rest };
+      },
       providesTags: ['Orders'],
     }),
     getOrderById: builder.query({
@@ -20,13 +24,32 @@ export const ordersApi = createApi({
     }),
     cancelOrder: builder.mutation({
       query: (id) => ({ url: `/api/v1/orders/${id}/cancel`, method: 'POST' }),
-      invalidatesTags: (result, error, id) => [{ type: 'Orders', id }],
+      invalidatesTags: (result, error, id) => [{ type: 'Orders', id }, 'Orders'],
     }),
     updateOrderStatus: builder.mutation({
-      query: ({ id, status }) => ({ url: `/api/v1/orders/${id}/status`, method: 'PATCH', data: { status } }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Orders', id }],
+      query: ({ id, status, isAdmin }: { id: number; status: string; isAdmin?: boolean }) => ({
+        url: isAdmin ? `/api/v1/orders/admin/${id}/status` : `/api/v1/orders/${id}/status`,
+        method: 'PATCH',
+        data: { status },
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'Orders', id }, 'Orders'],
+    }),
+    updatePaymentStatus: builder.mutation({
+      query: ({ id, paymentStatus, isAdmin }: { id: number; paymentStatus: string; isAdmin?: boolean }) => ({
+        url: isAdmin ? `/api/v1/orders/admin/${id}/payment-status` : `/api/v1/orders/${id}/payment-status`,
+        method: 'PATCH',
+        data: { paymentStatus },
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'Orders', id }, 'Orders'],
     }),
   }),
 });
 
-export const { useGetOrdersQuery, useGetOrderByIdQuery, useCreateOrderMutation, useCancelOrderMutation, useUpdateOrderStatusMutation } = ordersApi;
+export const {
+  useGetOrdersQuery,
+  useGetOrderByIdQuery,
+  useCreateOrderMutation,
+  useCancelOrderMutation,
+  useUpdateOrderStatusMutation,
+  useUpdatePaymentStatusMutation,
+} = ordersApi;

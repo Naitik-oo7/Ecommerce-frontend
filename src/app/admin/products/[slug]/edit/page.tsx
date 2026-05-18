@@ -1,22 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, X, Loader2, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useCreateProductMutation } from '@/services/api/productsApi';
+import { useGetProductBySlugQuery, useUpdateProductMutation } from '@/services/api/productsApi';
 import { useGetCategoriesQuery } from '@/services/api/categoriesApi';
 
-export default function NewProductPage() {
+export default function EditProductPage() {
+  const params = useParams();
+  const slug = params.slug as string;
   const router = useRouter();
-  const [createProduct, { isLoading }] = useCreateProductMutation();
+
+  const { data: productResponse, isLoading: loadingProduct } = useGetProductBySlugQuery(slug);
   const { data: categoriesResponse } = useGetCategoriesQuery({});
+  const [updateProduct, { isLoading }] = useUpdateProductMutation();
+
+  const product = (productResponse as any)?.data || (productResponse as any);
   const categories = (categoriesResponse as any)?.data || [];
 
   const [formData, setFormData] = useState({
@@ -30,6 +36,22 @@ export default function NewProductPage() {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [newImageUrl, setNewImageUrl] = useState('');
   const [error, setError] = useState('');
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    if (product && !initialized) {
+      setFormData({
+        name: product.name || '',
+        description: product.description || '',
+        price: String(product.price || ''),
+        stock: String(product.stock ?? ''),
+        categoryId: String(product.categoryId || product.category?.id || ''),
+        isActive: product.isActive ?? true,
+      });
+      setImageUrls(product.images || []);
+      setInitialized(true);
+    }
+  }, [product, initialized]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,18 +63,21 @@ export default function NewProductPage() {
     }
 
     try {
-      await createProduct({
-        name: formData.name,
-        description: formData.description,
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
-        categoryId: parseInt(formData.categoryId),
-        images: imageUrls,
-        isActive: formData.isActive,
+      await updateProduct({
+        id: product.id,
+        data: {
+          name: formData.name,
+          description: formData.description,
+          price: parseFloat(formData.price),
+          stock: parseInt(formData.stock),
+          categoryId: parseInt(formData.categoryId),
+          images: imageUrls,
+          isActive: formData.isActive,
+        },
       }).unwrap();
       router.push('/admin/products');
     } catch (err: any) {
-      setError(err?.data?.message || 'Failed to create product');
+      setError(err?.data?.message || 'Failed to update product');
     }
   };
 
@@ -63,13 +88,30 @@ export default function NewProductPage() {
     }
   };
 
+  if (loadingProduct) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="text-center py-16">
+        <p className="text-muted-foreground">Product not found.</p>
+        <Link href="/admin/products"><Button className="mt-4">Back to Products</Button></Link>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-center gap-4">
         <Link href="/admin/products">
           <Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button>
         </Link>
-        <h1 className="text-3xl font-bold">Add New Product</h1>
+        <h1 className="text-3xl font-bold">Edit Product</h1>
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -114,9 +156,7 @@ export default function NewProductPage() {
                     value={formData.isActive ? 'active' : 'inactive'}
                     onValueChange={(v) => setFormData({ ...formData, isActive: v === 'active' })}
                   >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="active">Active</SelectItem>
                       <SelectItem value="inactive">Inactive</SelectItem>
@@ -172,9 +212,7 @@ export default function NewProductPage() {
                   onChange={(e) => setNewImageUrl(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addImageUrl(); } }}
                 />
-                <Button type="button" variant="outline" onClick={addImageUrl}>
-                  Add
-                </Button>
+                <Button type="button" variant="outline" onClick={addImageUrl}>Add</Button>
               </div>
 
               {imageUrls.length > 0 ? (
@@ -209,7 +247,7 @@ export default function NewProductPage() {
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading} className="flex-1">
-              {isLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Creating...</> : 'Create Product'}
+              {isLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</> : 'Save Changes'}
             </Button>
           </div>
         </div>

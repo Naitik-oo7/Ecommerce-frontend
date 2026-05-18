@@ -11,26 +11,53 @@ export const cartApi = createApi({
       providesTags: ['Cart'],
     }),
     addToCart: builder.mutation({
-      query: (data) => ({ url: '/api/v1/cart', method: 'POST', data }),
+      query: (data: { productId: number; quantity?: number }) => ({
+        url: '/api/v1/cart/items',
+        method: 'POST',
+        data,
+      }),
       invalidatesTags: ['Cart'],
     }),
     updateCartItem: builder.mutation({
-      query: ({ cartItemId, quantity }) => ({ 
-        url: `/api/v1/cart/${cartItemId}`, 
-        method: 'PATCH', 
-        data: { quantity } 
+      query: ({ productId, quantity }: { productId: number; quantity: number }) => ({
+        url: `/api/v1/cart/items/${productId}`,
+        method: 'PATCH',
+        data: { quantity },
       }),
       invalidatesTags: ['Cart'],
     }),
     removeFromCart: builder.mutation({
-      query: (cartItemId) => ({ url: `/api/v1/cart/${cartItemId}`, method: 'DELETE' }),
+      query: (productId: number) => ({
+        url: `/api/v1/cart/items/${productId}`,
+        method: 'DELETE',
+      }),
       invalidatesTags: ['Cart'],
     }),
     clearCart: builder.mutation({
       query: () => ({ url: '/api/v1/cart', method: 'DELETE' }),
       invalidatesTags: ['Cart'],
     }),
+    applyCoupon: builder.mutation({
+      query: (code: string) => ({
+        url: '/api/v1/cart/apply-coupon',
+        method: 'POST',
+        data: { code },
+      }),
+      invalidatesTags: ['Cart'],
+    }),
+    removeCoupon: builder.mutation({
+      query: () => ({ url: '/api/v1/cart/remove-coupon', method: 'DELETE' }),
+      invalidatesTags: ['Cart'],
+    }),
   }),
 });
 
-export const { useGetCartQuery, useAddToCartMutation, useUpdateCartItemMutation, useRemoveFromCartMutation, useClearCartMutation } = cartApi;
+export const {
+  useGetCartQuery,
+  useAddToCartMutation,
+  useUpdateCartItemMutation,
+  useRemoveFromCartMutation,
+  useClearCartMutation,
+  useApplyCouponMutation,
+  useRemoveCouponMutation,
+} = cartApi;

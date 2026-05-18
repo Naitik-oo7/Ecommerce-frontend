@@ -4,3 +4,8 @@ export * from './cartApi';
 export * from './ordersApi';
 export * from './usersApi';
 export * from './adminApi';
+export * from './wishlistApi';
+export * from './reviewsApi';
+export * from './addressesApi';
+export * from './categoriesApi';
+export * from './couponsApi';

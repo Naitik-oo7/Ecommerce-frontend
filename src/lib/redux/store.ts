@@ -8,17 +8,27 @@ import { cartApi } from '../../services/api/cartApi';
 import { ordersApi } from '../../services/api/ordersApi';
 import { usersApi } from '../../services/api/usersApi';
 import { adminApi } from '../../services/api/adminApi';
+import { wishlistApi } from '../../services/api/wishlistApi';
+import { reviewsApi } from '../../services/api/reviewsApi';
+import { addressesApi } from '../../services/api/addressesApi';
+import { categoriesApi } from '../../services/api/categoriesApi';
+import { couponsApi } from '../../services/api/couponsApi';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     cart: cartReducer,
-    [authApi.reducerPath]: authApi.reducer,
-    [productsApi.reducerPath]: productsApi.reducer,
-    [cartApi.reducerPath]: cartApi.reducer,
-    [ordersApi.reducerPath]: ordersApi.reducer,
-    [usersApi.reducerPath]: usersApi.reducer,
-    [adminApi.reducerPath]: adminApi.reducer,
+    [authApi.reducerPath]:       authApi.reducer,
+    [productsApi.reducerPath]:   productsApi.reducer,
+    [cartApi.reducerPath]:       cartApi.reducer,
+    [ordersApi.reducerPath]:     ordersApi.reducer,
+    [usersApi.reducerPath]:      usersApi.reducer,
+    [adminApi.reducerPath]:      adminApi.reducer,
+    [wishlistApi.reducerPath]:   wishlistApi.reducer,
+    [reviewsApi.reducerPath]:    reviewsApi.reducer,
+    [addressesApi.reducerPath]:  addressesApi.reducer,
+    [categoriesApi.reducerPath]: categoriesApi.reducer,
+    [couponsApi.reducerPath]:    couponsApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -27,7 +37,12 @@ export const store = configureStore({
       cartApi.middleware,
       ordersApi.middleware,
       usersApi.middleware,
-      adminApi.middleware
+      adminApi.middleware,
+      wishlistApi.middleware,
+      reviewsApi.middleware,
+      addressesApi.middleware,
+      categoriesApi.middleware,
+      couponsApi.middleware,
     ),
 });
 
