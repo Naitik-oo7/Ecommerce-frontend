@@ -17,6 +17,10 @@ export const usersApi = createApi({
     changePassword: builder.mutation({
       query: (data) => ({ url: '/api/v1/auth/change-password', method: 'PATCH', data }),
     }),
+    getUserById: builder.query({
+      query: (id: number) => ({ url: `/api/v1/users/${id}`, method: 'GET' }),
+      providesTags: (result, error, id) => [{ type: 'Users', id }],
+    }),
     getAllUsers: builder.query({
       query: (params = {}) => ({ url: '/api/v1/users', method: 'GET', params }),
       providesTags: ['Users'],
@@ -32,4 +36,4 @@ export const usersApi = createApi({
   }),
 });
 
-export const { useGetProfileQuery, useUpdateProfileMutation, useChangePasswordMutation, useGetAllUsersQuery, useUpdateUserRoleMutation, useDeleteUserMutation } = usersApi;
+export const { useGetProfileQuery, useUpdateProfileMutation, useChangePasswordMutation, useGetUserByIdQuery, useGetAllUsersQuery, useUpdateUserRoleMutation, useDeleteUserMutation } = usersApi;

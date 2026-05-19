@@ -37,7 +37,7 @@ export default function OrdersPage() {
   }
 
   const orders = (ordersResponse as any)?.data || [];
-  const pagination = (ordersResponse as any)?.metadata?.pagination;
+  const pagination = (ordersResponse as any)?.pagination;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
@@ -74,7 +74,6 @@ export default function OrdersPage() {
             const statusInfo = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
             const StatusIcon = statusInfo.icon;
             const items = order.items || order.orderItems || [];
-            const firstImage = items[0]?.product?.images?.[0];
             return (
               <Card key={order.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-5">

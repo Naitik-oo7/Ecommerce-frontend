@@ -1,6 +1,6 @@
 'use client';
 
-import { useGetAllReviewsQuery, useDeleteReviewMutation } from '@/services/api/reviewsApi';
+import { useGetUserReviewsQuery, useDeleteReviewMutation } from '@/services/api/reviewsApi';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,8 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 export default function ReviewsPage() {
-  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
-  const { data: reviewsResponse, isLoading } = useGetAllReviewsQuery(
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { data: reviewsResponse, isLoading } = useGetUserReviewsQuery(
     { limit: 100 },
     { skip: !isAuthenticated }
   );
@@ -39,8 +39,7 @@ export default function ReviewsPage() {
     );
   }
 
-  const allReviews = (reviewsResponse as any)?.data || [];
-  const reviews = allReviews.filter((r: any) => r.userId === user?.id || r.user?.id === user?.id);
+  const reviews = (reviewsResponse as any)?.data || [];
 
   const handleDelete = async (id: number) => {
     if (!confirm('Delete this review?')) return;

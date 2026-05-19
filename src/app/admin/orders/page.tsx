@@ -31,7 +31,7 @@ export default function AdminOrdersPage() {
   const [updateStatus] = useUpdateOrderStatusMutation();
 
   const orders = (ordersResponse as any)?.data || [];
-  const pagination = (ordersResponse as any)?.metadata?.pagination;
+  const pagination = (ordersResponse as any)?.pagination;
 
   const handleStatusChange = async (orderId: number, status: string) => {
     setUpdatingIds((prev) => new Set(prev).add(orderId));

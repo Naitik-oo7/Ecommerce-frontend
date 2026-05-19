@@ -34,7 +34,7 @@ export default function ProfilePage() {
     );
   }
 
-  const profile = (profileResponse as any)?.data || user;
+  const profile = (profileResponse as any) || user;
 
   const handleEdit = () => {
     setFormData({ name: profile?.name || '', email: profile?.email || '' });

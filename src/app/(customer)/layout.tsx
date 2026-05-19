@@ -1,28 +1,172 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAppSelector, useAppDispatch } from '@/lib/redux/hooks';
 import { clearUser } from '@/lib/redux/authSlice';
-import { ShoppingCart, User, Search, Menu, X, Heart, Package, Home, LogOut, Settings } from 'lucide-react';
+import { ShoppingCart, User, Menu, X, Heart, Package, Home, LogOut, Settings, Bell, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useGetCartQuery } from '@/services/api/cartApi';
 import { useLogoutMutation } from '@/services/api/authApi';
-import { useState } from 'react';
+import { useGetNotificationsQuery, useGetUnreadCountQuery, useMarkAsReadByIdMutation, useMarkAsReadMutation } from '@/services/api/notificationsApi';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { fadeInDown, fadeInUp, staggerContainer, staggerItem, dropdownMenu } from '@/lib/animations';
+
+gsap.registerPlugin(ScrollTrigger);
+
+// ============================================
+// MONO Brand Layout Component
+// Premium Fashion E-commerce Experience
+// ============================================
+
+// Magnetic button effect for premium hover interaction
+function MagneticButton({ children, className, ...props }: { children: React.ReactNode; className?: string } & React.ComponentProps<typeof Button>) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  
+  const springConfig = { damping: 15, stiffness: 150 };
+  const springX = useSpring(x, springConfig);
+  const springY = useSpring(y, springConfig);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    x.set((e.clientX - centerX) * 0.15);
+    y.set((e.clientY - centerY) * 0.15);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.div style={{ x: springX, y: springY }}>
+      <Button
+        ref={ref}
+        className={className}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        {...props}
+      >
+        {children}
+      </Button>
+    </motion.div>
+  );
+}
 
 export default function CustomerLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const navIndicatorRef = useRef<HTMLDivElement>(null);
 
   const { data: cart } = useGetCartQuery(undefined, { skip: !isAuthenticated });
+  const { data: notificationsData } = useGetNotificationsQuery({ limit: 10 }, { skip: !isAuthenticated });
+  const { data: unreadCountData } = useGetUnreadCountQuery(undefined, { skip: !isAuthenticated });
+  const [markAsRead] = useMarkAsReadByIdMutation();
+  const [markAllAsRead] = useMarkAsReadMutation();
   const [logoutMutation] = useLogoutMutation();
 
   const cartRaw = (cart as any)?.data || cart;
   const cartItems = cartRaw?.cart?.items ?? cartRaw?.items ?? [];
   const cartCount = cartItems.length;
+  
+  const notifications = (notificationsData as any)?.data || [];
+  const unreadCount = (unreadCountData as any)?.unreadCount || 0;
+
+  // GSAP ScrollTrigger for premium header animation
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+
+    // Initial state
+    gsap.set(header, { 
+      backgroundColor: 'rgba(255, 255, 255, 0)',
+      backdropFilter: 'blur(0px)',
+      boxShadow: '0 0 0 rgba(0,0,0,0)',
+      borderBottomWidth: '0px'
+    });
+
+    // Scroll-triggered animation
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        start: 'top -50',
+        end: 'top -100',
+        onUpdate: (self) => {
+          const progress = self.progress;
+          gsap.to(header, {
+            backgroundColor: `rgba(255, 255, 255, ${progress * 0.95})`,
+            backdropFilter: `blur(${progress * 12}px)`,
+            boxShadow: `0 1px 3px rgba(0,0,0,${progress * 0.05})`,
+            borderBottomWidth: `${progress * 1}px`,
+            borderBottomColor: 'rgba(0,0,0,0.05)',
+            duration: 0.1,
+            overwrite: true
+          });
+          setScrolled(progress > 0.5);
+        }
+      });
+    });
+
+    return () => ctx.revert();
+  }, []);
+
+  // Animate nav indicator to active link
+  useEffect(() => {
+    const indicator = navIndicatorRef.current;
+    if (!indicator) return;
+
+    const activeLink = document.querySelector(`[data-nav-link][data-active="true"]`);
+    if (activeLink) {
+      const rect = activeLink.getBoundingClientRect();
+      const parentRect = activeLink.parentElement?.getBoundingClientRect();
+      if (parentRect) {
+        gsap.to(indicator, {
+          x: rect.left - parentRect.left,
+          width: rect.width,
+          opacity: 1,
+          duration: 0.4,
+          ease: 'power2.out'
+        });
+      }
+    } else {
+      gsap.to(indicator, { opacity: 0, duration: 0.2 });
+    }
+  }, [pathname]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setNotificationsOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   const handleLogout = async () => {
     try {
@@ -36,226 +180,417 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
     setMobileOpen(false);
   };
 
+  const handleNotificationClick = async (notification: any) => {
+    if (!notification.isRead) {
+      await markAsRead(notification.id);
+    }
+    if (notification.data?.link) {
+      router.push(notification.data.link);
+      setNotificationsOpen(false);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    await markAllAsRead({});
+  };
+
   const navLinks = [
     { href: '/', label: 'Home', icon: Home },
-    { href: '/cart', label: 'Cart', icon: ShoppingCart },
+    { href: '/products', label: 'Shop', icon: ShoppingCart },
     { href: '/orders', label: 'Orders', icon: Package },
     { href: '/wishlist', label: 'Wishlist', icon: Heart },
   ];
 
+  const premiumNavLinks = [
+    { href: '/products', label: 'Shop' },
+    { href: '/products?filter=new', label: 'New Arrivals' },
+    { href: '/journal', label: 'Journal' },
+    { href: '/about', label: 'About' },
+  ];
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center space-x-2 flex-shrink-0">
-            <span className="text-2xl font-bold text-primary">ShopNow</span>
-          </Link>
-
-          <nav className="hidden md:flex items-center space-x-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors"
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* ============================================
+          MONO Header - Premium Fashion Navigation
+          ============================================ */}
+      <motion.header
+        ref={headerRef}
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="fixed top-0 left-0 right-0 z-50 border-b border-transparent will-change-transform"
+      >
+        <div className="container-mono">
+          <div className="flex items-center justify-between h-16 md:h-20">
+            {/* Logo - MONO Brand */}
+            <Link href="/" className="flex items-center flex-shrink-0 group">
+              <motion.span 
+                className="text-xl md:text-2xl font-bold tracking-tight text-mono-charcoal"
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
               >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-2">
-            <Link href="/cart" className="relative">
-              <Button variant="ghost" size="icon" aria-label="Cart">
-                <ShoppingCart className="h-5 w-5" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
-                    {cartCount > 99 ? '99+' : cartCount}
-                  </span>
-                )}
-              </Button>
+                <span className="tracking-[-0.08em]">M</span>
+                <span className="tracking-[-0.02em]">ONO</span>
+              </motion.span>
+              <span className="ml-2 text-[10px] font-medium text-mono-stone tracking-widest uppercase hidden sm:inline-block">
+                Curated
+              </span>
             </Link>
 
-            {isAuthenticated ? (
-              <div className="relative">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  aria-label="User menu"
-                >
-                  {user?.avatar ? (
-                    <img src={user.avatar} alt={user.name} className="h-7 w-7 rounded-full object-cover" />
-                  ) : (
-                    <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
-                      {user?.name?.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                </Button>
-                {userMenuOpen && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setUserMenuOpen(false)}
-                    />
-                    <div className="absolute right-0 top-10 z-50 w-52 bg-background border rounded-lg shadow-lg py-1">
-                      <div className="px-4 py-2 border-b">
-                        <p className="font-medium text-sm">{user?.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-                      </div>
-                      <Link
-                        href="/profile"
-                        className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted"
-                        onClick={() => setUserMenuOpen(false)}
-                      >
-                        <User className="h-4 w-4" /> Profile
-                      </Link>
-                      <Link
-                        href="/orders"
-                        className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted"
-                        onClick={() => setUserMenuOpen(false)}
-                      >
-                        <Package className="h-4 w-4" /> Orders
-                      </Link>
-                      <Link
-                        href="/wishlist"
-                        className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted"
-                        onClick={() => setUserMenuOpen(false)}
-                      >
-                        <Heart className="h-4 w-4" /> Wishlist
-                      </Link>
-                      <Link
-                        href="/profile/settings"
-                        className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted"
-                        onClick={() => setUserMenuOpen(false)}
-                      >
-                        <Settings className="h-4 w-4" /> Settings
-                      </Link>
-                      {user?.role === 'admin' && (
-                        <Link
-                          href="/admin/dashboard"
-                          className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted border-t"
-                          onClick={() => setUserMenuOpen(false)}
-                        >
-                          Admin Panel
-                        </Link>
-                      )}
-                      <div className="border-t">
-                        <button
-                          onClick={handleLogout}
-                          className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted w-full text-left text-red-600"
-                        >
-                          <LogOut className="h-4 w-4" /> Logout
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="hidden md:flex gap-2">
-                <Link href="/login">
-                  <Button variant="ghost" size="sm">Login</Button>
-                </Link>
-                <Link href="/register">
-                  <Button size="sm">Sign Up</Button>
-                </Link>
-              </div>
-            )}
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label="Toggle menu"
-            >
-              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
-          </div>
-        </div>
-
-        {mobileOpen && (
-          <div className="md:hidden border-t bg-background">
-            <nav className="container mx-auto px-4 py-4 flex flex-col gap-1">
-              {navLinks.map((link) => {
-                const Icon = link.icon;
+            {/* Desktop Navigation - Premium with Animated Indicator */}
+            <nav className="hidden md:flex items-center space-x-10 relative">
+              {/* Animated underline indicator */}
+              <div
+                ref={navIndicatorRef}
+                className="absolute -bottom-1 h-0.5 bg-mono-terracotta rounded-full opacity-0 pointer-events-none"
+                style={{ width: 0 }}
+              />
+              {premiumNavLinks.map((link) => {
+                const isActive = pathname === link.href || pathname.startsWith(link.href.split('?')[0]);
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium"
-                    onClick={() => setMobileOpen(false)}
+                    data-nav-link
+                    data-active={isActive}
+                    className="relative text-sm font-medium text-foreground/70 hover:text-foreground transition-colors duration-300 tracking-wide py-2"
                   >
-                    <Icon className="h-4 w-4" />
-                    {link.label}
-                    {link.href === '/cart' && cartCount > 0 && (
-                      <span className="ml-auto bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                        {cartCount}
-                      </span>
-                    )}
+                    <motion.span
+                      className="relative z-10"
+                      whileHover={{ y: -1 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {link.label}
+                    </motion.span>
+                    {/* Hover glow effect */}
+                    <motion.span
+                      className="absolute inset-0 -z-10 bg-mono-terracotta/5 rounded-lg"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      whileHover={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.2 }}
+                    />
                   </Link>
                 );
               })}
-              {!isAuthenticated && (
-                <div className="flex gap-2 pt-2 border-t mt-2">
-                  <Link href="/login" className="flex-1" onClick={() => setMobileOpen(false)}>
-                    <Button variant="outline" className="w-full" size="sm">Login</Button>
-                  </Link>
-                  <Link href="/register" className="flex-1" onClick={() => setMobileOpen(false)}>
-                    <Button className="w-full" size="sm">Sign Up</Button>
-                  </Link>
+            </nav>
+
+            {/* Right Actions */}
+            <div className="flex items-center gap-1 md:gap-2">
+              {/* Search */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hidden md:flex text-foreground/70 hover:text-foreground hover:bg-muted/50"
+                aria-label="Search"
+              >
+                <Search className="h-5 w-5" />
+              </Button>
+
+              {/* Notifications */}
+              {isAuthenticated && (
+                <div className="relative" ref={notificationsRef}>
+                  <motion.div whileTap={{ scale: 0.95 }}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setNotificationsOpen(!notificationsOpen)}
+                      className="relative text-foreground/70 hover:text-foreground hover:bg-muted/50"
+                      aria-label="Notifications"
+                    >
+                      <Bell className="h-5 w-5" />
+                      {unreadCount > 0 && (
+                        <motion.span 
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute -top-0.5 -right-0.5 bg-mono-terracotta text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center"
+                        >
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </motion.span>
+                      )}
+                    </Button>
+                  </motion.div>
+
+                  <AnimatePresence>
+                    {notificationsOpen && (
+                      <>
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="fixed inset-0 z-40"
+                          onClick={() => setNotificationsOpen(false)}
+                        />
+                        <motion.div
+                          variants={dropdownMenu}
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit"
+                          className="absolute right-0 top-10 z-50 w-80 bg-card border border-border/50 rounded-xl shadow-2xl overflow-hidden"
+                        >
+                          <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between bg-muted/30">
+                            <p className="font-semibold text-sm">Notifications</p>
+                            {unreadCount > 0 && (
+                              <button onClick={handleMarkAllAsRead} className="text-xs text-mono-terracotta hover:underline font-medium">
+                                Mark all read
+                              </button>
+                            )}
+                          </div>
+                          <div className="max-h-80 overflow-y-auto">
+                            {notifications.length === 0 ? (
+                              <div className="px-4 py-8 text-center">
+                                <Bell className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+                                <p className="text-sm text-muted-foreground">No notifications</p>
+                              </div>
+                            ) : (
+                              notifications.map((notification: any, index: number) => (
+                                <motion.button
+                                  key={notification.id}
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  exit={{ opacity: 0, x: 10 }}
+                                  transition={{ delay: index * 0.05 }}
+                                  onClick={() => handleNotificationClick(notification)}
+                                  className={`w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors border-b last:border-b-0 ${
+                                    !notification.isRead ? 'bg-mono-terracotta/5' : ''
+                                  }`}
+                                >
+                                  <div className="flex items-start gap-3">
+                                    <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
+                                      notification.type === 'success' ? 'bg-green-500' :
+                                      notification.type === 'warning' ? 'bg-yellow-500' :
+                                      notification.type === 'error' ? 'bg-mono-rose' :
+                                      'bg-blue-500'
+                                    }`} />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium truncate">{notification.title}</p>
+                                      <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{notification.message}</p>
+                                      <p className="text-[10px] text-muted-foreground mt-1">
+                                        {new Date(notification.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                      </p>
+                                    </div>
+                                    {!notification.isRead && (
+                                      <div className="w-1.5 h-1.5 bg-mono-terracotta rounded-full flex-shrink-0 mt-1" />
+                                    )}
+                                  </div>
+                                </motion.button>
+                              ))
+                            )}
+                          </div>
+                          <div className="border-t border-border/50 px-4 py-2 bg-muted/30">
+                            <Link href="/notifications" className="text-sm text-mono-terracotta hover:underline block text-center font-medium" onClick={() => setNotificationsOpen(false)}>
+                              View all
+                            </Link>
+                          </div>
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
                 </div>
               )}
-              {isAuthenticated && (
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium text-red-600 border-t mt-2 pt-4"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Logout
-                </button>
+
+              {/* Cart */}
+              <Link href="/cart" className="relative">
+                <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.05 }}>
+                  <Button variant="ghost" size="icon" className="relative text-foreground/70 hover:text-foreground hover:bg-muted/50" aria-label="Cart">
+                    <ShoppingCart className="h-5 w-5" />
+                    {cartCount > 0 && (
+                      <motion.span 
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        key={cartCount}
+                        transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+                        className="absolute -top-0.5 -right-0.5 bg-mono-charcoal text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center"
+                      >
+                        {cartCount > 9 ? '9+' : cartCount}
+                      </motion.span>
+                    )}
+                  </Button>
+                </motion.div>
+              </Link>
+
+              {/* User Menu */}
+              {isAuthenticated ? (
+                <div className="relative" ref={userMenuRef}>
+                  <motion.div whileTap={{ scale: 0.95 }}>
+                    <Button variant="ghost" size="icon" onClick={() => setUserMenuOpen(!userMenuOpen)} className="text-foreground/70 hover:text-foreground hover:bg-muted/50" aria-label="User menu">
+                      {user?.avatar ? (
+                        <img src={user.avatar} alt={user.name} className="h-8 w-8 rounded-full object-cover ring-2 ring-border" />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-mono-charcoal text-white flex items-center justify-center text-sm font-semibold">
+                          {user?.name?.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </Button>
+                  </motion.div>
+
+                  <AnimatePresence>
+                    {userMenuOpen && (
+                      <>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
+                        <motion.div variants={dropdownMenu} initial="hidden" animate="visible" exit="exit" className="absolute right-0 top-12 z-50 w-56 bg-card border border-border/50 rounded-xl shadow-2xl overflow-hidden">
+                          <div className="px-4 py-3 border-b border-border/50 bg-muted/30">
+                            <p className="font-semibold text-sm">{user?.name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                          </div>
+                          <div className="py-1">
+                            <Link href="/profile" className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-muted/50 transition-colors" onClick={() => setUserMenuOpen(false)}>
+                              <User className="h-4 w-4 text-muted-foreground" /> Profile
+                            </Link>
+                            <Link href="/orders" className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-muted/50 transition-colors" onClick={() => setUserMenuOpen(false)}>
+                              <Package className="h-4 w-4 text-muted-foreground" /> Orders
+                            </Link>
+                            <Link href="/wishlist" className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-muted/50 transition-colors" onClick={() => setUserMenuOpen(false)}>
+                              <Heart className="h-4 w-4 text-muted-foreground" /> Wishlist
+                            </Link>
+                            <Link href="/profile/settings" className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-muted/50 transition-colors" onClick={() => setUserMenuOpen(false)}>
+                              <Settings className="h-4 w-4 text-muted-foreground" /> Settings
+                            </Link>
+                            {user?.role === 'admin' && (
+                              <>
+                                <div className="my-1 border-t border-border/50" />
+                                <Link href="/admin/dashboard" className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-muted/50 transition-colors text-mono-terracotta" onClick={() => setUserMenuOpen(false)}>
+                                  Admin Panel
+                                </Link>
+                              </>
+                            )}
+                            <div className="my-1 border-t border-border/50" />
+                            <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-muted/50 transition-colors w-full text-left text-mono-rose">
+                              <LogOut className="h-4 w-4" /> Logout
+                            </button>
+                          </div>
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div className="hidden md:flex gap-2">
+                  <Link href="/login"><Button variant="ghost" size="sm" className="font-medium">Login</Button></Link>
+                  <Link href="/register"><Button size="sm" className="bg-mono-charcoal hover:bg-mono-charcoal/90 text-white font-medium">Sign Up</Button></Link>
+                </div>
               )}
-            </nav>
-          </div>
-        )}
-      </header>
 
-      <main className="flex-1">{children}</main>
-
-      <footer className="border-t py-10 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="font-bold text-lg mb-3 text-primary">ShopNow</h3>
-              <p className="text-sm text-muted-foreground">Your one-stop shop for everything you need.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-3">Shop</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/" className="hover:text-foreground transition-colors">All Products</Link></li>
-                <li><Link href="/cart" className="hover:text-foreground transition-colors">Cart</Link></li>
-                <li><Link href="/orders" className="hover:text-foreground transition-colors">My Orders</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-3">Account</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/profile" className="hover:text-foreground transition-colors">Profile</Link></li>
-                <li><Link href="/profile/addresses" className="hover:text-foreground transition-colors">Addresses</Link></li>
-                <li><Link href="/wishlist" className="hover:text-foreground transition-colors">Wishlist</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-3">Help</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><span className="cursor-default">FAQ</span></li>
-                <li><span className="cursor-default">Contact Us</span></li>
-                <li><span className="cursor-default">Shipping Policy</span></li>
-              </ul>
+              {/* Mobile Menu Toggle */}
+              <Button variant="ghost" size="icon" className="md:hidden text-foreground/70" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle menu">
+                <AnimatePresence mode="wait">
+                  {mobileOpen ? (
+                    <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                      <X className="h-5 w-5" />
+                    </motion.div>
+                  ) : (
+                    <motion.div key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                      <Menu className="h-5 w-5" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Button>
             </div>
           </div>
-          <div className="mt-8 pt-6 border-t text-center text-sm text-muted-foreground">
-            © {new Date().getFullYear()} ShopNow. All rights reserved.
+        </div>
+
+        {/* Mobile Navigation Menu */}
+        <AnimatePresence>
+          {mobileOpen && (
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }} className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-md overflow-hidden">
+              <motion.nav variants={staggerContainer} initial="hidden" animate="visible" className="container-mono py-4 flex flex-col gap-1">
+                {navLinks.map((link) => {
+                  const Icon = link.icon;
+                  const isActive = pathname === link.href;
+                  return (
+                    <motion.div key={link.href} variants={staggerItem}>
+                      <Link href={link.href} className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                        isActive ? 'bg-mono-terracotta/10 text-mono-charcoal' : 'hover:bg-muted/50 text-foreground/80'
+                      }`}>
+                        <Icon className={`h-4 w-4 ${isActive ? 'text-mono-terracotta' : 'text-muted-foreground'}`} />
+                        {link.label}
+                        {link.href === '/cart' && cartCount > 0 && (
+                          <span className="ml-auto bg-mono-charcoal text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{cartCount}</span>
+                        )}
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+                {!isAuthenticated && (
+                  <motion.div variants={staggerItem} className="flex gap-2 pt-2 border-t border-border/50 mt-2">
+                    <Link href="/login" className="flex-1"><Button variant="outline" className="w-full" size="sm">Login</Button></Link>
+                    <Link href="/register" className="flex-1"><Button className="w-full bg-mono-charcoal" size="sm">Sign Up</Button></Link>
+                  </motion.div>
+                )}
+                {isAuthenticated && (
+                  <motion.div variants={staggerItem}>
+                    <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-mono-rose hover:bg-mono-rose/5 transition-colors w-full">
+                      <LogOut className="h-4 w-4" /> Logout
+                    </button>
+                  </motion.div>
+                )}
+              </motion.nav>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.header>
+
+      {/* Spacer for fixed header */}
+      <div className="h-16 md:h-20" />
+
+      {/* Main Content Area */}
+      <motion.main initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }} className="flex-1">
+        {children}
+      </motion.main>
+
+      {/* MONO Footer */}
+      <footer className="bg-mono-charcoal text-mono-cream mt-auto">
+        <div className="container-mono py-16 md:py-20">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+            <div className="col-span-2 md:col-span-1">
+              <Link href="/" className="inline-block mb-4">
+                <span className="text-2xl font-bold tracking-tight">
+                  <span className="tracking-[-0.08em]">M</span><span className="tracking-[-0.02em]">ONO</span>
+                </span>
+              </Link>
+              <p className="text-sm text-mono-stone leading-relaxed mb-6 max-w-xs">Curated essentials for the modern wardrobe. Timeless pieces, sustainable quality.</p>
+              <div className="flex gap-4">
+                {['instagram', 'twitter', 'facebook'].map((social) => (
+                  <a key={social} href="#" className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-mono-terracotta transition-colors duration-300" aria-label={social}>
+                    <span className="text-xs font-semibold uppercase">{social[0]}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h4 className="label-caps text-mono-stone mb-4">Shop</h4>
+              <ul className="space-y-3 text-sm">
+                <li><Link href="/" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">All Products</Link></li>
+                <li><Link href="/cart" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">Shopping Cart</Link></li>
+                <li><Link href="/orders" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">Order History</Link></li>
+                <li><Link href="/wishlist" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">Wishlist</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="label-caps text-mono-stone mb-4">Account</h4>
+              <ul className="space-y-3 text-sm">
+                <li><Link href="/profile" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">My Profile</Link></li>
+                <li><Link href="/profile/addresses" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">Addresses</Link></li>
+                <li><Link href="/notifications" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">Notifications</Link></li>
+                <li><Link href="/profile/settings" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">Settings</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="label-caps text-mono-stone mb-4">Help</h4>
+              <ul className="space-y-3 text-sm">
+                <li><span className="text-mono-cream/80 cursor-default">FAQ</span></li>
+                <li><span className="text-mono-cream/80 cursor-default">Shipping Info</span></li>
+                <li><span className="text-mono-cream/80 cursor-default">Returns</span></li>
+                <li><span className="text-mono-cream/80 cursor-default">Contact Us</span></li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-mono-stone"> {new Date().getFullYear()} MONO. All rights reserved.</p>
+            <div className="flex gap-6 text-sm text-mono-stone">
+              <span className="hover:text-mono-cream cursor-default transition-colors">Privacy</span>
+              <span className="hover:text-mono-cream cursor-default transition-colors">Terms</span>
+              <span className="hover:text-mono-cream cursor-default transition-colors">Cookies</span>
+            </div>
           </div>
         </div>
       </footer>

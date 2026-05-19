@@ -52,7 +52,7 @@ export default function AddressesPage() {
     );
   }
 
-  const addresses = (addressesResponse as any)?.data || [];
+  const addresses = (addressesResponse as any) || [];
 
   const updateForm = (field: keyof AddressForm, value: any) => setForm((prev) => ({ ...prev, [field]: value }));
 

@@ -12,7 +12,7 @@ const axiosInstance = axios.create({
 
 // Request interceptor
 axiosInstance.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config) => {
     // Attach access token to Authorization header
     const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
     if (token && config.headers) {
@@ -44,11 +44,12 @@ axiosInstance.interceptors.response.use(
 
         // Call refresh endpoint with refreshToken in request body
         const response = await axiosInstance.post('/api/v1/auth/refresh', { refreshToken });
-        
-        // Update tokens in localStorage
-        if (typeof window !== 'undefined' && response.data?.data?.accessToken) {
-          localStorage.setItem('accessToken', response.data.data.accessToken);
-          localStorage.setItem('refreshToken', response.data.data.refreshToken);
+
+        // Update tokens in localStorage (backend returns { status, message, data })
+        const responseData = response.data?.data ?? response.data;
+        if (typeof window !== 'undefined' && responseData?.accessToken) {
+          localStorage.setItem('accessToken', responseData.accessToken);
+          localStorage.setItem('refreshToken', responseData.refreshToken);
         }
 
         // Retry the original request
@@ -86,7 +87,17 @@ export const axiosBaseQuery =
         params,
         headers,
       });
-      return { data: result.data };
+      // Backend returns { status, message, data, metadata? }
+      // Return data directly for simple responses, or with metadata for paginated lists
+      const responseData = result.data?.data ?? result.data;
+      const metadata = result.data?.metadata;
+
+      // If metadata exists (for paginated responses), merge it into the returned data
+      if (metadata && Array.isArray(responseData)) {
+        return { data: { data: responseData, ...metadata } };
+      }
+
+      return { data: responseData };
     } catch (axiosError) {
       const err = axiosError as AxiosError;
       return {

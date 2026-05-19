@@ -9,3 +9,5 @@ export * from './reviewsApi';
 export * from './addressesApi';
 export * from './categoriesApi';
 export * from './couponsApi';
+export * from './paymentsApi';
+export * from './notificationsApi';

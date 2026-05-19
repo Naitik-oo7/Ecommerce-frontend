@@ -10,6 +10,10 @@ export const couponsApi = createApi({
       query: (params = {}) => ({ url: '/api/v1/coupons', method: 'GET', params }),
       providesTags: ['Coupons'],
     }),
+    getCouponById: builder.query({
+      query: (id: number) => ({ url: `/api/v1/coupons/${id}`, method: 'GET' }),
+      providesTags: (result, error, id) => [{ type: 'Coupons', id }],
+    }),
     createCoupon: builder.mutation({
       query: (data) => ({ url: '/api/v1/coupons', method: 'POST', data }),
       invalidatesTags: ['Coupons'],
@@ -38,6 +42,7 @@ export const couponsApi = createApi({
 
 export const {
   useGetCouponsQuery,
+  useGetCouponByIdQuery,
   useCreateCouponMutation,
   useUpdateCouponMutation,
   useDeleteCouponMutation,

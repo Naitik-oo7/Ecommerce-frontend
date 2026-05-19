@@ -23,7 +23,7 @@ export default function AdminUsersPage() {
   const [deleteUser] = useDeleteUserMutation();
 
   const users = (usersResponse as any)?.data || [];
-  const pagination = (usersResponse as any)?.metadata?.pagination;
+  const pagination = (usersResponse as any)?.pagination;
 
   const filteredUsers = search
     ? users.filter((u: any) =>

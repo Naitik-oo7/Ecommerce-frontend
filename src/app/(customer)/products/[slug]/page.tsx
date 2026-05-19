@@ -8,9 +8,22 @@ import { useGetProductReviewsQuery } from '@/services/api/reviewsApi';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ShoppingCart, Heart, Star, Minus, Plus, ArrowLeft, Package, Shield, Truck } from 'lucide-react';
+import { ShoppingCart, Heart, Star, Minus, Plus, ArrowLeft, Package, Shield, Truck, Check, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  fadeInUp, 
+  fadeInScale, 
+  staggerContainer, 
+  staggerItem,
+  hoverImageZoom,
+  pageTransition 
+} from '@/lib/animations';
+
+// ============================================
+// MONO Product Detail Page - Premium Fashion Experience
+// ============================================
 
 export default function ProductDetailPage() {
   const { slug } = useParams();
@@ -24,6 +37,7 @@ export default function ProductDetailPage() {
   const [cartLoading, setCartLoading] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [isImageHovered, setIsImageHovered] = useState(false);
 
   const product = (productResponse as any)?.data || productResponse;
 
@@ -36,9 +50,8 @@ export default function ProductDetailPage() {
   const [addToWishlist] = useAddToWishlistMutation();
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
 
-  const reviewsData = (reviewsResponse as any)?.data;
-  const reviews = reviewsData?.reviews || [];
-  const reviewStats = reviewsData?.stats;
+  const reviews = (reviewsResponse as any)?.reviews || [];
+  const reviewStats = (reviewsResponse as any)?.stats;
 
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
@@ -49,7 +62,7 @@ export default function ProductDetailPage() {
     try {
       await addToCart({ productId: product.id, quantity }).unwrap();
       setAddedToCart(true);
-      setTimeout(() => setAddedToCart(false), 2000);
+      setTimeout(() => setAddedToCart(false), 2500);
     } catch {}
     setCartLoading(false);
   };
@@ -74,254 +87,359 @@ export default function ProductDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid md:grid-cols-2 gap-8">
+      <div className="container-mono py-8">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="grid lg:grid-cols-2 gap-10"
+        >
           <div className="space-y-4">
-            <div className="aspect-square bg-muted animate-pulse rounded-xl" />
-            <div className="flex gap-2">
+            <div className="aspect-square bg-muted rounded-2xl skeleton-shimmer" />
+            <div className="flex gap-3">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="w-20 h-20 bg-muted animate-pulse rounded-lg" />
+                <div key={i} className="w-24 h-24 bg-muted rounded-xl skeleton-shimmer" />
               ))}
             </div>
           </div>
-          <div className="space-y-4">
-            <div className="h-8 bg-muted rounded animate-pulse" />
-            <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
-            <div className="h-10 bg-muted rounded animate-pulse w-1/3" />
-            <div className="h-4 bg-muted rounded animate-pulse" />
-            <div className="h-4 bg-muted rounded animate-pulse w-4/5" />
+          <div className="space-y-6">
+            <div className="h-8 bg-muted rounded-lg w-2/3 skeleton-shimmer" />
+            <div className="h-6 bg-muted rounded-lg w-1/3 skeleton-shimmer" />
+            <div className="h-4 bg-muted rounded w-full skeleton-shimmer" />
+            <div className="h-4 bg-muted rounded w-4/5 skeleton-shimmer" />
+            <div className="h-4 bg-muted rounded w-3/4 skeleton-shimmer" />
+            <div className="h-12 bg-muted rounded-lg w-1/2 skeleton-shimmer mt-4" />
           </div>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
-  if (error || !product) {
+  if (error || !product || !product.isActive) {
     return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-        <h2 className="text-2xl font-bold mb-2">Product not found</h2>
-        <p className="text-muted-foreground mb-6">This product may have been removed or doesn't exist.</p>
-        <Link href="/"><Button>Browse Products</Button></Link>
+      <div className="container-mono py-16 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Package className="h-20 w-20 mx-auto mb-6 text-muted-foreground" />
+          <h2 className="text-editorial text-3xl text-mono-charcoal mb-3">Product not found</h2>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+            This product may have been removed or is temporarily unavailable.
+          </p>
+          <Link href="/">
+            <Button size="lg" className="bg-mono-charcoal">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Collection
+            </Button>
+          </Link>
+        </motion.div>
       </div>
     );
   }
+
+  const avgRating = parseFloat(reviewStats?.avgRating || product.avgRating || '0');
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 text-sm">
-        <ArrowLeft className="h-4 w-4" /> Back to Products
-      </Link>
+    <motion.div
+      variants={pageTransition}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      className="min-h-screen"
+    >
+      {/* Breadcrumb & Back */}
+      <div className="container-mono py-6">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <Link 
+            href="/" 
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm group"
+          >
+            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+            <span className="link-underline">Back to Collection</span>
+          </Link>
+        </motion.div>
+      </div>
 
-      <div className="grid md:grid-cols-2 gap-10">
-        <div className="space-y-4">
-          <div className="aspect-square bg-muted rounded-xl overflow-hidden">
-            {product.images?.[selectedImage] ? (
-              <img
-                src={product.images[selectedImage]}
-                alt={product.name}
-                className="object-cover w-full h-full"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                <Package className="h-24 w-24" />
-              </div>
-            )}
-          </div>
-          {product.images && product.images.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {product.images.map((img: string, index: number) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImage(index)}
-                  className={`w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-colors ${
-                    selectedImage === index ? 'border-primary' : 'border-transparent hover:border-muted-foreground'
-                  }`}
-                >
-                  <img src={img} alt={`View ${index + 1}`} className="object-cover w-full h-full" />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-6">
-          <div>
-            <p className="text-sm text-muted-foreground mb-1">{product.category?.name}</p>
-            <h1 className="text-3xl font-bold mb-3">{product.name}</h1>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`h-5 w-5 ${
-                      i < Math.floor(parseFloat(reviewStats?.avgRating || product.avgRating || '0'))
-                        ? 'fill-yellow-500 text-yellow-500'
-                        : 'text-gray-300'
-                    }`}
+      {/* Main Product Section */}
+      <section className="container-mono pb-16">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
+          {/* Image Gallery */}
+          <motion.div
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            className="space-y-4"
+          >
+            {/* Main Image */}
+            <motion.div
+              onMouseEnter={() => setIsImageHovered(true)}
+              onMouseLeave={() => setIsImageHovered(false)}
+              className="relative aspect-square bg-muted rounded-2xl overflow-hidden"
+            >
+              <AnimatePresence mode="wait">
+                {product.images?.[selectedImage] ? (
+                  <motion.img
+                    key={selectedImage}
+                    src={product.images[selectedImage]}
+                    alt={product.name}
+                    initial={{ opacity: 0, scale: 1.1 }}
+                    animate={{ 
+                      opacity: 1, 
+                      scale: isImageHovered ? 1.05 : 1,
+                    }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className="object-cover w-full h-full"
                   />
-                ))}
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Package className="h-32 w-32 text-muted-foreground/30" />
+                  </div>
+                )}
+              </AnimatePresence>
+
+              {/* Badges */}
+              <div className="absolute top-4 left-4 flex flex-col gap-2">
+                {product.stock === 0 && (
+                  <span className="px-3 py-1.5 bg-mono-charcoal text-white text-xs font-semibold tracking-wide uppercase rounded-lg">
+                    Sold Out
+                  </span>
+                )}
+                {product.stock > 0 && product.stock < 10 && (
+                  <span className="px-3 py-1.5 bg-mono-rose/90 text-white text-xs font-semibold tracking-wide uppercase rounded-lg">
+                    Only {product.stock} Left
+                  </span>
+                )}
+                {product.comparePrice && parseFloat(product.comparePrice) > parseFloat(product.price) && (
+                  <span className="px-3 py-1.5 bg-mono-terracotta text-white text-xs font-semibold tracking-wide uppercase rounded-lg">
+                    Sale
+                  </span>
+                )}
               </div>
-              <span className="text-sm text-muted-foreground">
-                {reviewStats?.avgRating || product.avgRating
-                  ? `${parseFloat(reviewStats?.avgRating || product.avgRating).toFixed(1)} (${reviewStats?.totalReviews || 0} reviews)`
-                  : 'No reviews yet'}
-              </span>
-            </div>
-            <p className="text-4xl font-bold text-primary">${parseFloat(product.price).toFixed(2)}</p>
-          </div>
 
-          <p className="text-muted-foreground leading-relaxed">{product.description}</p>
-
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <span className="font-medium min-w-[80px]">Quantity:</span>
-              <div className="flex items-center border rounded-lg overflow-hidden">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-none h-10"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  disabled={quantity <= 1}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="w-12 text-center font-medium">{quantity}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-none h-10"
-                  onClick={() => setQuantity(quantity + 1)}
-                  disabled={quantity >= (product.stock || 0)}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              <span className={`text-sm ${product.stock === 0 ? 'text-destructive' : product.isLowStock ? 'text-orange-500' : 'text-green-600'}`}>
-                {product.stock === 0 ? 'Out of stock' : product.isLowStock ? `Only ${product.stock} left!` : `${product.stock} in stock`}
-              </span>
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                className="flex-1 h-12"
-                size="lg"
-                onClick={handleAddToCart}
-                disabled={product.stock === 0 || cartLoading}
-              >
-                <ShoppingCart className="h-5 w-5 mr-2" />
-                {cartLoading ? 'Adding...' : addedToCart ? 'Added!' : 'Add to Cart'}
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="h-12 px-4"
+              {/* Wishlist Button */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={handleToggleWishlist}
                 disabled={wishlistLoading}
-                aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+                className={`absolute top-4 right-4 w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                  inWishlist
+                    ? 'bg-mono-rose text-white'
+                    : 'bg-white/90 hover:bg-white text-mono-charcoal shadow-lg'
+                }`}
               >
-                <Heart className={`h-5 w-5 ${inWishlist ? 'fill-red-500 text-red-500' : ''}`} />
-              </Button>
-            </div>
-          </div>
+                <Heart className={`h-5 w-5 ${inWishlist ? 'fill-current' : ''}`} />
+              </motion.button>
+            </motion.div>
 
-          <div className="grid grid-cols-3 gap-3 pt-2">
-            <div className="flex flex-col items-center gap-1 p-3 bg-muted/50 rounded-lg text-center">
-              <Truck className="h-5 w-5 text-primary" />
-              <span className="text-xs text-muted-foreground">Free Shipping</span>
-            </div>
-            <div className="flex flex-col items-center gap-1 p-3 bg-muted/50 rounded-lg text-center">
-              <Shield className="h-5 w-5 text-primary" />
-              <span className="text-xs text-muted-foreground">Secure Payment</span>
-            </div>
-            <div className="flex flex-col items-center gap-1 p-3 bg-muted/50 rounded-lg text-center">
-              <Package className="h-5 w-5 text-primary" />
-              <span className="text-xs text-muted-foreground">Easy Returns</span>
-            </div>
-          </div>
-        </div>
-      </div>
+            {/* Thumbnail Images */}
+            {product.images?.length > 1 && (
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {product.images.map((image: string, index: number) => (
+                  <motion.button
+                    key={index}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setSelectedImage(index)}
+                    className={`flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden border-2 transition-colors ${
+                      selectedImage === index
+                        ? 'border-mono-charcoal'
+                        : 'border-transparent hover:border-mono-charcoal/30'
+                    }`}
+                  >
+                    <img
+                      src={image}
+                      alt={`${product.name} - ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </motion.button>
+                ))}
+              </div>
+            )}
+          </motion.div>
 
-      <div className="mt-16">
-        <h2 className="text-2xl font-bold mb-6">Customer Reviews</h2>
-
-        {reviewStats && (
-          <Card className="mb-6">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-6">
-                <div className="text-center">
-                  <p className="text-5xl font-bold">{parseFloat(reviewStats.avgRating || '0').toFixed(1)}</p>
-                  <div className="flex justify-center mt-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`h-4 w-4 ${i < Math.round(parseFloat(reviewStats.avgRating || '0')) ? 'fill-yellow-500 text-yellow-500' : 'text-gray-300'}`}
-                      />
-                    ))}
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">{reviewStats.totalReviews} reviews</p>
+          {/* Product Info */}
+          <motion.div
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            className="space-y-6"
+          >
+            {/* Title & Rating */}
+            <div>
+              <h1 className="text-editorial text-3xl md:text-4xl text-mono-charcoal mb-3">
+                {product.name}
+              </h1>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-4 w-4 ${
+                        i < Math.round(avgRating)
+                          ? 'text-mono-terracotta fill-mono-terracotta'
+                          : 'text-muted-foreground'
+                      }`}
+                    />
+                  ))}
+                  <span className="text-sm text-muted-foreground ml-2">
+                    {avgRating > 0 ? avgRating.toFixed(1) : 'No reviews'}
+                  </span>
                 </div>
-                <div className="flex-1 space-y-1">
-                  {[5, 4, 3, 2, 1].map((star) => {
-                    const count = reviewStats.distribution?.[star] || 0;
-                    const percent = reviewStats.totalReviews > 0 ? (count / reviewStats.totalReviews) * 100 : 0;
-                    return (
-                      <div key={star} className="flex items-center gap-2">
-                        <span className="text-xs w-3">{star}</span>
-                        <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
-                        <div className="flex-1 bg-muted rounded-full h-2">
-                          <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${percent}%` }} />
-                        </div>
-                        <span className="text-xs text-muted-foreground w-6">{count}</span>
-                      </div>
-                    );
-                  })}
+                <span className="text-sm text-muted-foreground">
+                  {reviews.length} review{reviews.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+            </div>
+
+            {/* Price */}
+            <div className="flex items-baseline gap-3">
+              <span className="text-3xl font-bold text-mono-charcoal">
+                ${parseFloat(product.price).toFixed(2)}
+              </span>
+              {product.comparePrice && parseFloat(product.comparePrice) > parseFloat(product.price) && (
+                <span className="text-xl text-muted-foreground line-through">
+                  ${parseFloat(product.comparePrice).toFixed(2)}
+                </span>
+              )}
+            </div>
+
+            {/* Description */}
+            <p className="text-mono-stone leading-relaxed">
+              {product.description}
+            </p>
+
+            {/* Features */}
+            <div className="grid grid-cols-3 gap-4 py-6 border-y border-border">
+              <div className="text-center">
+                <Truck className="h-5 w-5 mx-auto mb-2 text-mono-terracotta" />
+                <p className="text-xs text-muted-foreground">Free Shipping</p>
+              </div>
+              <div className="text-center">
+                <Shield className="h-5 w-5 mx-auto mb-2 text-mono-terracotta" />
+                <p className="text-xs text-muted-foreground">Quality Guarantee</p>
+              </div>
+              <div className="text-center">
+                <Check className="h-5 w-5 mx-auto mb-2 text-mono-terracotta" />
+                <p className="text-xs text-muted-foreground">In Stock</p>
+              </div>
+            </div>
+
+            {/* Quantity & Add to Cart */}
+            <div className="space-y-4">
+              {/* Quantity Selector */}
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium">Quantity:</span>
+                <div className="flex items-center border border-input rounded-lg">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="px-3 py-2 hover:bg-muted transition-colors"
+                    disabled={quantity <= 1}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </button>
+                  <span className="px-4 py-2 font-medium min-w-[3rem] text-center">
+                    {quantity}
+                  </span>
+                  <button
+                    onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                    className="px-3 py-2 hover:bg-muted transition-colors"
+                    disabled={quantity >= product.stock}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
 
-        {reviews.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Star className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
-              <p className="text-muted-foreground">No reviews yet. Purchase this product to leave a review.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {reviews.map((review: any) => (
-              <Card key={review.id}>
-                <CardContent className="p-5">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <p className="font-semibold">{review.user?.name || 'Anonymous'}</p>
-                      <div className="flex items-center gap-1 mt-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`h-4 w-4 ${i < review.rating ? 'fill-yellow-500 text-yellow-500' : 'text-gray-300'}`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <span className="text-sm text-muted-foreground">
-                      {new Date(review.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  {review.comment && <p className="text-sm text-muted-foreground mt-2">{review.comment}</p>}
-                  {review.isVerified && (
-                    <span className="inline-block mt-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
-                      Verified Purchase
-                    </span>
+              {/* Add to Cart Button */}
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleAddToCart}
+                  disabled={product.stock === 0 || cartLoading}
+                  className="flex-1 bg-mono-charcoal hover:bg-mono-charcoal/90 text-white h-14 text-lg"
+                >
+                  {cartLoading ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                    />
+                  ) : addedToCart ? (
+                    <>
+                      <Check className="mr-2 h-5 w-5" />
+                      Added to Cart
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="mr-2 h-5 w-5" />
+                      {product.stock === 0 ? 'Sold Out' : 'Add to Cart'}
+                    </>
                   )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+                </Button>
+              </div>
+            </div>
+
+            {/* Category */}
+            <div className="pt-4 border-t border-border">
+              <p className="text-sm text-muted-foreground">
+                Category:{' '}
+                <Link
+                  href={`/?category=${product.category?.id}`}
+                  className="text-mono-terracotta hover:underline"
+                >
+                  {product.category?.name || 'Uncategorized'}
+                </Link>
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Reviews Section */}
+      {reviews.length > 0 && (
+        <section className="container-mono py-16 border-t border-border">
+          <motion.div
+            variants={fadeInUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            <h2 className="text-editorial text-2xl text-mono-charcoal mb-8">
+              Customer Reviews
+            </h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {reviews.slice(0, 6).map((review: any) => (
+                <Card key={review.id} className="bg-mono-cream/30">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${
+                            i < review.rating
+                              ? 'text-mono-terracotta fill-mono-terracotta'
+                              : 'text-muted-foreground'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-mono-stone mb-4">{review.comment}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {review.user?.name || 'Anonymous'} -{' '}
+                      {new Date(review.createdAt).toLocaleDateString()}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </motion.div>
+        </section>
+      )}
+    </motion.div>
   );
 }

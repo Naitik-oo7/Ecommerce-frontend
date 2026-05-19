@@ -10,6 +10,10 @@ export const categoriesApi = createApi({
       query: (params = {}) => ({ url: '/api/v1/categories', method: 'GET', params }),
       providesTags: ['Categories'],
     }),
+    getCategoryBySlug: builder.query({
+      query: (slug: string) => ({ url: `/api/v1/categories/${slug}`, method: 'GET' }),
+      providesTags: (result, error, slug) => [{ type: 'Categories', id: slug }],
+    }),
     createCategory: builder.mutation({
       query: (data) => ({ url: '/api/v1/categories', method: 'POST', data }),
       invalidatesTags: ['Categories'],
@@ -31,6 +35,7 @@ export const categoriesApi = createApi({
 
 export const {
   useGetCategoriesQuery,
+  useGetCategoryBySlugQuery,
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,

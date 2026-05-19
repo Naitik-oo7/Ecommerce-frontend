@@ -23,7 +23,7 @@ export default function AdminReviewsPage() {
   const [verifyReview] = useVerifyReviewMutation();
 
   const reviews = (reviewsResponse as any)?.data || [];
-  const pagination = (reviewsResponse as any)?.metadata?.pagination;
+  const pagination = (reviewsResponse as any)?.pagination;
 
   const filteredReviews = search
     ? reviews.filter((r: any) =>

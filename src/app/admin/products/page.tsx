@@ -29,7 +29,7 @@ export default function AdminProductsPage() {
 
   const products = (productsResponse as any)?.data || [];
   const categories = (categoriesResponse as any)?.data || [];
-  const pagination = (productsResponse as any)?.metadata?.pagination;
+  const pagination = (productsResponse as any)?.pagination;
 
   const handleDelete = async (id: number) => {
     if (!confirm('Delete this product?')) return;

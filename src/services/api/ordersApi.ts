@@ -9,7 +9,7 @@ export const ordersApi = createApi({
     getOrders: builder.query({
       query: (params: Record<string, any> = {}) => {
         const { isAdmin, ...rest } = params;
-        const url = isAdmin ? '/api/v1/admin/orders' : '/api/v1/orders';
+        const url = isAdmin ? '/api/v1/orders/admin' : '/api/v1/orders';
         return { url, method: 'GET', params: rest };
       },
       providesTags: ['Orders'],
@@ -18,12 +18,16 @@ export const ordersApi = createApi({
       query: (id) => ({ url: `/api/v1/orders/${id}`, method: 'GET' }),
       providesTags: (result, error, id) => [{ type: 'Orders', id }],
     }),
+    getOrderByIdAdmin: builder.query({
+      query: (id: number) => ({ url: `/api/v1/orders/admin/${id}`, method: 'GET' }),
+      providesTags: (result, error, id) => [{ type: 'Orders', id }],
+    }),
     createOrder: builder.mutation({
       query: (data) => ({ url: '/api/v1/orders', method: 'POST', data }),
       invalidatesTags: ['Orders'],
     }),
     cancelOrder: builder.mutation({
-      query: (id) => ({ url: `/api/v1/orders/${id}/cancel`, method: 'POST' }),
+      query: (id) => ({ url: `/api/v1/orders/${id}/cancel`, method: 'PATCH' }),
       invalidatesTags: (result, error, id) => [{ type: 'Orders', id }, 'Orders'],
     }),
     updateOrderStatus: builder.mutation({
@@ -48,6 +52,7 @@ export const ordersApi = createApi({
 export const {
   useGetOrdersQuery,
   useGetOrderByIdQuery,
+  useGetOrderByIdAdminQuery,
   useCreateOrderMutation,
   useCancelOrderMutation,
   useUpdateOrderStatusMutation,

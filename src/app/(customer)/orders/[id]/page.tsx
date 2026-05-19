@@ -70,7 +70,7 @@ export default function OrderDetailPage() {
   const StatusIcon = statusInfo.icon;
   const paymentInfo = PAYMENT_STATUS_CONFIG[order.paymentStatus] || PAYMENT_STATUS_CONFIG.pending;
   const currentStep = ORDER_STEPS.indexOf(order.status);
-  const canCancel = ['pending', 'processing'].includes(order.status);
+  const canCancel = order.status === 'pending';
 
   const shippingAddr = order.address || order.shippingAddress || {};
   const items = order.items || order.orderItems || [];
