@@ -26,6 +26,22 @@ export const adminApi = createApi({
       query: () => ({ url: '/api/v1/admin/analytics/users', method: 'GET' }),
       providesTags: ['Admin'],
     }),
+    getOrderAnalytics: builder.query({
+      query: () => ({ url: '/api/v1/admin/analytics/orders', method: 'GET' }),
+      providesTags: ['Admin'],
+    }),
+    getCouponAnalytics: builder.query({
+      query: () => ({ url: '/api/v1/admin/analytics/coupons', method: 'GET' }),
+      providesTags: ['Admin'],
+    }),
+    getReviewAnalytics: builder.query({
+      query: () => ({ url: '/api/v1/admin/analytics/reviews', method: 'GET' }),
+      providesTags: ['Admin'],
+    }),
+    getInventoryAnalytics: builder.query({
+      query: () => ({ url: '/api/v1/admin/analytics/inventory', method: 'GET' }),
+      providesTags: ['Admin'],
+    }),
   }),
 });
 
@@ -34,4 +50,8 @@ export const {
   useGetSalesAnalyticsQuery,
   useGetProductAnalyticsQuery,
   useGetUserAnalyticsQuery,
+  useGetOrderAnalyticsQuery,
+  useGetCouponAnalyticsQuery,
+  useGetReviewAnalyticsQuery,
+  useGetInventoryAnalyticsQuery,
 } = adminApi;

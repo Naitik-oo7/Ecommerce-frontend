@@ -1,17 +1,26 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { Truck, RefreshCw, Gem, Leaf } from 'lucide-react';
+import { Truck, RefreshCw, Gem, Leaf, type LucideIcon } from 'lucide-react';
+import { useGetSettingQuery } from '@/services/api/settingsApi';
 
-const trustItems = [
-  { icon: Truck, text: 'Free Shipping Worldwide' },
-  { icon: RefreshCw, text: '30-Day Returns' },
-  { icon: Gem, text: 'Premium Materials' },
-  { icon: Leaf, text: 'Carbon Neutral Delivery' },
+const iconMap: Record<string, LucideIcon> = {
+  Truck,
+  RefreshCw,
+  Gem,
+  Leaf,
+};
+
+const defaultItems = [
+  { icon: 'Truck', text: 'Free Shipping Worldwide' },
+  { icon: 'RefreshCw', text: '30-Day Returns' },
+  { icon: 'Gem', text: 'Premium Materials' },
+  { icon: 'Leaf', text: 'Carbon Neutral Delivery' },
 ];
 
 export const TrustMarquee = () => {
-  // Double the items for seamless loop
+  const { data: trustData } = useGetSettingQuery('trust_items');
+  const trustItems: { icon: string; text: string }[] = (trustData as { icon: string; text: string }[] | undefined) || defaultItems;
+
   const items = [...trustItems, ...trustItems, ...trustItems, ...trustItems];
 
   return (
@@ -22,7 +31,7 @@ export const TrustMarquee = () => {
 
       <div className="flex animate-marquee hover:pause">
         {items.map((item, index) => {
-          const Icon = item.icon;
+          const Icon = iconMap[item.icon] || Truck;
           return (
             <div
               key={index}

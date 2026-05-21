@@ -4,11 +4,12 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAppSelector, useAppDispatch } from '@/lib/redux/hooks';
 import { clearUser } from '@/lib/redux/authSlice';
-import { ShoppingCart, User, Menu, X, Heart, Package, Home, LogOut, Settings, Bell, Search } from 'lucide-react';
+import { ShoppingCart, User, Menu, X, Heart, Package, Home, LogOut, Settings, Bell, Search, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useGetCartQuery } from '@/services/api/cartApi';
 import { useLogoutMutation } from '@/services/api/authApi';
 import { useGetNotificationsQuery, useGetUnreadCountQuery, useMarkAsReadByIdMutation, useMarkAsReadMutation } from '@/services/api/notificationsApi';
+import { useGetProductsQuery } from '@/services/api/productsApi';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { gsap } from 'gsap';
@@ -70,6 +71,8 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const notificationsRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
@@ -81,6 +84,24 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   const [markAsRead] = useMarkAsReadByIdMutation();
   const [markAllAsRead] = useMarkAsReadMutation();
   const [logoutMutation] = useLogoutMutation();
+
+  // Search functionality
+  const { data: productsData } = useGetProductsQuery({
+    search: searchQuery,
+    limit: 8,
+    isActive: 'true',
+  }, { skip: !searchOpen || searchQuery.length < 2 });
+
+  const searchResults = (productsData as any)?.data || [];
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/products?search=${encodeURIComponent(searchQuery)}`);
+      setSearchOpen(false);
+      setSearchQuery('');
+    }
+  };
 
   const cartRaw = (cart as any)?.data || cart;
   const cartItems = cartRaw?.cart?.items ?? cartRaw?.items ?? [];
@@ -280,7 +301,8 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
               <Button
                 variant="ghost"
                 size="icon"
-                className="hidden md:flex text-foreground/70 hover:text-foreground hover:bg-muted/50"
+                onClick={() => setSearchOpen(true)}
+                className="hidden md:flex text-foreground/70 hover:text-foreground hover:bg-muted/50 cursor-pointer"
                 aria-label="Search"
               >
                 <Search className="h-5 w-5" />
@@ -532,6 +554,116 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
       {/* Spacer for fixed header */}
       <div className="h-16 md:h-20" />
 
+      {/* Search Modal */}
+      <AnimatePresence>
+        {searchOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+              onClick={() => setSearchOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: -20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+              className="fixed top-20 left-1/2 -translate-x-1/2 w-full max-w-2xl z-50 px-4"
+            >
+              <div className="bg-card rounded-xl shadow-2xl border overflow-hidden">
+                <form onSubmit={handleSearchSubmit} className="flex items-center border-b">
+                  <Search className="h-5 w-5 text-muted-foreground ml-4" />
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="flex-1 px-4 py-4 bg-transparent outline-none text-lg"
+                    autoFocus
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="p-2 hover:bg-muted rounded-full mr-2"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="px-4 py-4 text-primary font-medium hover:bg-muted transition-colors border-l"
+                  >
+                    Search
+                  </button>
+                </form>
+
+                {/* Search Results */}
+                {searchQuery.length >= 2 && (
+                  <div className="max-h-[60vh] overflow-y-auto">
+                    {searchResults.length > 0 ? (
+                      <div className="divide-y">
+                        {searchResults.slice(0, 6).map((product: any) => (
+                          <Link
+                            key={product.id}
+                            href={`/products/${product.slug}`}
+                            onClick={() => {
+                              setSearchOpen(false);
+                              setSearchQuery('');
+                            }}
+                            className="flex items-center gap-4 p-3 hover:bg-muted transition-colors"
+                          >
+                            <div className="h-14 w-14 bg-muted rounded-md overflow-hidden flex-shrink-0">
+                              {product.variants?.[0]?.images?.[0] ? (
+                                <img
+                                  src={product.variants[0].images[0]}
+                                  alt={product.name}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div className="h-full w-full flex items-center justify-center">
+                                  <ShoppingCart className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{product.name}</p>
+                              <p className="text-sm text-muted-foreground">${product.price}</p>
+                            </div>
+                            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                          </Link>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center text-muted-foreground">
+                        No products found
+                      </div>
+                    )}
+                    {searchResults.length > 0 && (
+                      <div className="p-3 border-t bg-muted/30">
+                        <button
+                          onClick={handleSearchSubmit}
+                          className="w-full text-center text-primary hover:underline text-sm"
+                        >
+                          View all {searchResults.length} results
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {searchQuery.length < 2 && (
+                  <div className="p-4 text-sm text-muted-foreground text-center">
+                    Type at least 2 characters to search
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Main Content Area */}
       <motion.main initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }} className="flex-1">
         {children}
@@ -580,7 +712,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
                 <li><span className="text-mono-cream/80 cursor-default">FAQ</span></li>
                 <li><span className="text-mono-cream/80 cursor-default">Shipping Info</span></li>
                 <li><span className="text-mono-cream/80 cursor-default">Returns</span></li>
-                <li><span className="text-mono-cream/80 cursor-default">Contact Us</span></li>
+                <li><Link href="/contact" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">Contact Us</Link></li>
               </ul>
             </div>
           </div>

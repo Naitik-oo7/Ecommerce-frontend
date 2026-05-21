@@ -1,19 +1,33 @@
-import { AxiosError, AxiosRequestConfig } from 'axios';
+import { AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import { BaseQueryFn } from '@reduxjs/toolkit/query/react';
 import axios from 'axios';
 
 const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5555',
-  withCredentials: true, // Important for httpOnly cookies
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
+// Token refresh state management to prevent race conditions
+let isRefreshing = false;
+let refreshSubscribers: Array<(token: string) => void> = [];
+
+// Subscribe to token refresh
+function subscribeTokenRefresh(callback: (token: string) => void) {
+  refreshSubscribers.push(callback);
+}
+
+// Notify all subscribers with new token
+function onTokenRefreshed(newToken: string) {
+  refreshSubscribers.forEach((callback) => callback(newToken));
+  refreshSubscribers = [];
+}
+
 // Request interceptor
 axiosInstance.interceptors.request.use(
-  (config) => {
-    // Attach access token to Authorization header
+  (config: InternalAxiosRequestConfig) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -25,47 +39,79 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Response interceptor for token refresh
+// Response interceptor for token refresh with queue mechanism
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        // Get refreshToken from localStorage
-        const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
-        
-        if (!refreshToken || refreshToken === 'null' || refreshToken === 'undefined') {
-          throw new Error('No valid refresh token available');
-        }
-
-        // Call refresh endpoint with refreshToken in request body
-        const response = await axiosInstance.post('/api/v1/auth/refresh', { refreshToken });
-
-        // Update tokens in localStorage (backend returns { status, message, data })
-        const responseData = response.data?.data ?? response.data;
-        if (typeof window !== 'undefined' && responseData?.accessToken) {
-          localStorage.setItem('accessToken', responseData.accessToken);
-          localStorage.setItem('refreshToken', responseData.refreshToken);
-        }
-
-        // Retry the original request
-        return axiosInstance(originalRequest);
-      } catch (refreshError) {
-        // Refresh failed, clear tokens and redirect to login
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          window.location.href = '/login';
-        }
-        return Promise.reject(refreshError);
-      }
+    // If error is not 401 or request already retried, reject immediately
+    if (error.response?.status !== 401 || !originalRequest) {
+      return Promise.reject(error);
     }
 
-    return Promise.reject(error);
+    // If already refreshing, queue this request
+    if (isRefreshing) {
+      return new Promise((resolve) => {
+        subscribeTokenRefresh((newToken: string) => {
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          }
+          resolve(axiosInstance(originalRequest));
+        });
+      });
+    }
+
+    // Mark as retrying to prevent loops
+    originalRequest._retry = true;
+    isRefreshing = true;
+
+    try {
+      const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+
+      if (!refreshToken || refreshToken === 'null' || refreshToken === 'undefined') {
+        throw new Error('No valid refresh token available');
+      }
+
+      // Call refresh endpoint - use a fresh axios instance to avoid interceptor loops
+      const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5555';
+      const response = await axios.post(`${baseURL}/api/v1/auth/refresh`, { refreshToken });
+
+      const responseData = response.data?.data ?? response.data;
+      const newAccessToken = responseData?.accessToken;
+      const newRefreshToken = responseData?.refreshToken;
+
+      if (!newAccessToken) {
+        throw new Error('No access token received from refresh endpoint');
+      }
+
+      // Store new tokens
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('accessToken', newAccessToken);
+        if (newRefreshToken) {
+          localStorage.setItem('refreshToken', newRefreshToken);
+        }
+      }
+
+      // Notify all queued requests
+      onTokenRefreshed(newAccessToken);
+
+      // Retry original request with new token
+      if (originalRequest.headers) {
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+      }
+      return axiosInstance(originalRequest);
+    } catch (refreshError) {
+      // Refresh failed - clear tokens and redirect
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        window.location.href = '/login';
+      }
+      return Promise.reject(refreshError);
+    } finally {
+      isRefreshing = false;
+    }
   }
 );
 

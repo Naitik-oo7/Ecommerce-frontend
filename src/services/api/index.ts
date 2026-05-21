@@ -11,3 +11,7 @@ export * from './categoriesApi';
 export * from './couponsApi';
 export * from './paymentsApi';
 export * from './notificationsApi';
+export * from './settingsApi';
+export * from './blogApi';
+export * from './newsletterApi';
+export * from './contactApi';

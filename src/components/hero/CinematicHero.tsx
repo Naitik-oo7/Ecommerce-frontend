@@ -6,10 +6,25 @@ import { ArrowRight, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMouseParallax } from '@/hooks/useMouseParallax';
 import Link from 'next/link';
+import { useGetSettingQuery } from '@/services/api/settingsApi';
+import { useGetProductsQuery } from '@/services/api/productsApi';
 
 export const CinematicHero = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mousePosition = useMouseParallax({ intensity: 15, smoothing: 0.08 });
+
+  const { data: heroSettings } = useGetSettingQuery('hero');
+  const { data: newestProductData } = useGetProductsQuery({ sortBy: 'createdAt', sortOrder: 'desc', limit: 1 });
+
+  const hero = heroSettings as any;
+  const newestProduct = (newestProductData as any)?.data?.[0] || null;
+
+  const defaultStats = [
+    { value: '50K+', label: 'Happy Customers' },
+    { value: '98%', label: 'Satisfaction Rate' },
+    { value: '24h', label: 'Fast Shipping' },
+  ];
+  const stats: { value: string; label: string }[] = hero?.stats || defaultStats;
   
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -100,7 +115,7 @@ export const CinematicHero = () => {
             {/* Eyebrow label */}
             <motion.div variants={fadeInVariants} className="mb-6">
               <span className="text-xs font-semibold tracking-[0.2em] uppercase text-[#C7A27C]">
-                New Collection 2026
+                {hero?.eyebrow || 'New Collection 2026'}
               </span>
             </motion.div>
 
@@ -109,8 +124,8 @@ export const CinematicHero = () => {
               variants={textVariants}
               className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold text-[#111111] leading-[0.95] tracking-tight mb-8"
             >
-              <span className="block">Crafted For</span>
-              <span className="block text-[#6B6B6B]">Modern Living</span>
+              <span className="block">{hero?.headline?.[0] || 'Crafted For'}</span>
+              <span className="block text-[#6B6B6B]">{hero?.headline?.[1] || 'Modern Living'}</span>
             </motion.h1>
 
             {/* Subtext */}
@@ -118,7 +133,7 @@ export const CinematicHero = () => {
               variants={fadeInVariants}
               className="text-lg text-[#6B6B6B] leading-relaxed max-w-md mb-10"
             >
-              Timeless essentials designed with precision, comfort, and sustainable craftsmanship for the contemporary wardrobe.
+              {hero?.subtext || 'Timeless essentials designed with precision, comfort, and sustainable craftsmanship for the contemporary wardrobe.'}
             </motion.p>
 
             {/* CTAs */}
@@ -126,7 +141,7 @@ export const CinematicHero = () => {
               variants={fadeInVariants}
               className="flex flex-wrap gap-4"
             >
-              <Link href="/#products">
+              <Link href={hero?.ctaPrimary?.href || '/products'}>
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -135,7 +150,7 @@ export const CinematicHero = () => {
                     size="lg" 
                     className="bg-[#111111] hover:bg-[#1a1a1a] text-white font-medium px-8 h-14 text-base rounded-full"
                   >
-                    Explore Collection
+                    {hero?.ctaPrimary?.label || 'Explore Collection'}
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </motion.div>
@@ -149,31 +164,27 @@ export const CinematicHero = () => {
                 <span className="w-12 h-12 rounded-full border border-[#111111]/20 flex items-center justify-center hover:border-[#111111]/40 transition-colors">
                   <Play className="h-4 w-4 ml-0.5" fill="currentColor" />
                 </span>
-                Watch Lookbook
+                {hero?.ctaSecondary?.label || 'Watch Lookbook'}
               </motion.button>
             </motion.div>
           </motion.div>
 
           {/* Floating stats */}
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }}
-            className="hidden lg:flex gap-12 mt-16 pt-8 border-t border-[#111111]/10"
-          >
-            <div>
-              <p className="text-3xl font-bold text-[#111111]">50K+</p>
-              <p className="text-sm text-[#6B6B6B] mt-1">Happy Customers</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-[#111111]">98%</p>
-              <p className="text-sm text-[#6B6B6B] mt-1">Satisfaction Rate</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-[#111111]">24h</p>
-              <p className="text-sm text-[#6B6B6B] mt-1">Fast Shipping</p>
-            </div>
-          </motion.div>
+          {stats.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }}
+              className="hidden lg:flex gap-12 mt-16 pt-8 border-t border-[#111111]/10"
+            >
+              {stats.map((stat) => (
+                <div key={stat.label}>
+                  <p className="text-3xl font-bold text-[#111111]">{stat.value}</p>
+                  <p className="text-sm text-[#6B6B6B] mt-1">{stat.label}</p>
+                </div>
+              ))}
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Right panel - Image */}
@@ -193,7 +204,7 @@ export const CinematicHero = () => {
               }}
             >
               <img
-                src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80"
+                src={hero?.backgroundImage || 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80'}
                 alt="Editorial lifestyle photography"
                 className="w-full h-full object-cover"
               />
@@ -212,16 +223,20 @@ export const CinematicHero = () => {
             <div className="bg-white/90 backdrop-blur-md rounded-2xl p-4 shadow-2xl max-w-[200px]">
               <div className="flex items-center gap-3 mb-3">
                 <img
-                  src="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=200&q=80"
-                  alt="Featured product"
+                  src={newestProduct?.images?.[0] || 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=200&q=80'}
+                  alt={newestProduct?.name || 'Featured product'}
                   className="w-12 h-12 rounded-lg object-cover"
                 />
                 <div>
-                  <p className="text-sm font-semibold text-[#111111]">Linen Blazer</p>
-                  <p className="text-xs text-[#6B6B6B]">$189.00</p>
+                  <p className="text-sm font-semibold text-[#111111] line-clamp-1">{newestProduct?.name || 'New Arrival'}</p>
+                  <p className="text-xs text-[#6B6B6B]">
+                    {newestProduct?.price
+                      ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(newestProduct.price))
+                      : '—'}
+                  </p>
                 </div>
               </div>
-              <Link href="/products">
+              <Link href={newestProduct?.slug ? `/products/${newestProduct.slug}` : '/products'}>
                 <span className="text-xs font-medium text-[#C7A27C] hover:text-[#111111] transition-colors cursor-pointer">
                   Shop Now →
                 </span>

@@ -16,6 +16,8 @@ interface PremiumProductCardProps {
     stock: number;
     images?: string[];
     category?: { name: string };
+    avgRating?: number;
+    reviewCount?: number;
   };
   index?: number;
   isInWishlist?: boolean;
@@ -35,9 +37,12 @@ export const PremiumProductCard = ({
   onQuickView,
 }: PremiumProductCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
 
   const hasSecondaryImage = product.images && product.images.length > 1;
+
+  const salePercent = product.comparePrice && parseFloat(product.comparePrice) > parseFloat(product.price)
+    ? Math.round((1 - parseFloat(product.price) / parseFloat(product.comparePrice)) * 100)
+    : null;
 
   return (
     <motion.div
@@ -60,7 +65,7 @@ export const PremiumProductCard = ({
           className="relative bg-white rounded-2xl overflow-hidden border border-[#E5E2DD] shadow-sm hover:shadow-xl transition-shadow duration-500"
         >
           {/* Image Container */}
-          <div className="relative aspect-[4/5] overflow-hidden bg-[#F6F3EE]">
+          <div className="relative aspect-[3/4] overflow-hidden bg-[#F6F3EE]">
             {/* Primary Image */}
             {product.images?.[0] ? (
               <>
@@ -71,7 +76,6 @@ export const PremiumProductCard = ({
                   initial={{ scale: 1 }}
                   animate={{ scale: isHovered ? 1.08 : 1 }}
                   transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const }}
-                  onLoad={() => setImageLoaded(true)}
                 />
                 
                 {/* Secondary Image Crossfade */}
@@ -96,20 +100,20 @@ export const PremiumProductCard = ({
             )}
 
             {/* Badges */}
-            <div className="absolute top-4 left-4 flex flex-col gap-2">
+            <div className="absolute top-3 left-3 flex flex-col gap-1.5">
               {product.stock === 0 && (
-                <span className="px-3 py-1.5 bg-[#111111] text-white text-[10px] font-semibold tracking-wider uppercase rounded-full">
+                <span className="px-2.5 py-1 bg-[#111111]/80 backdrop-blur-sm text-white text-[9px] font-semibold tracking-wider uppercase rounded-full">
                   Sold Out
                 </span>
               )}
               {product.stock > 0 && product.stock < 10 && (
-                <span className="px-3 py-1.5 bg-[#B54A4A] text-white text-[10px] font-semibold tracking-wider uppercase rounded-full">
+                <span className="px-2.5 py-1 bg-[#B54A4A]/90 backdrop-blur-sm text-white text-[9px] font-semibold tracking-wider uppercase rounded-full">
                   Low Stock
                 </span>
               )}
-              {product.comparePrice && parseFloat(product.comparePrice) > parseFloat(product.price) && (
-                <span className="px-3 py-1.5 bg-[#C7A27C] text-white text-[10px] font-semibold tracking-wider uppercase rounded-full">
-                  Sale
+              {salePercent && (
+                <span className="px-2.5 py-1 bg-[#C7A27C]/90 backdrop-blur-sm text-white text-[9px] font-semibold tracking-wider rounded-full">
+                  -{salePercent}%
                 </span>
               )}
             </div>
@@ -184,27 +188,43 @@ export const PremiumProductCard = ({
           </div>
 
           {/* Product Info */}
-          <div className="p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-[#6B6B6B] mb-1.5">
-                  {product.category?.name || 'Uncategorized'}
-                </p>
-                <h3 className="font-medium text-[15px] text-[#111111] truncate group-hover:text-[#C7A27C] transition-colors leading-tight">
-                  {product.name}
-                </h3>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="font-semibold text-[15px] text-[#111111]">
-                  ${parseFloat(product.price).toFixed(2)}
-                </p>
-                {product.comparePrice && parseFloat(product.comparePrice) > parseFloat(product.price) && (
-                  <p className="text-xs text-[#6B6B6B] line-through">
-                    ${parseFloat(product.comparePrice).toFixed(2)}
-                  </p>
+          <div className="px-4 py-3.5">
+            {/* Category */}
+            <p className="text-[9px] font-semibold tracking-[0.18em] uppercase text-[#9B9B9B] mb-1">
+              {product.category?.name || 'Uncategorized'}
+            </p>
+            {/* Name */}
+            <h3 className="font-semibold text-[14px] text-[#111111] truncate group-hover:text-[#C7A27C] transition-colors leading-snug mb-2">
+              {product.name}
+            </h3>
+            {/* Price row */}
+            <div className="flex items-baseline gap-2">
+              <span className="font-bold text-[15px] text-[#111111]">
+                ₹{parseFloat(product.price).toLocaleString('en-IN')}
+              </span>
+              {product.comparePrice && parseFloat(product.comparePrice) > parseFloat(product.price) && (
+                <span className="text-xs text-[#9B9B9B] line-through">
+                  ₹{parseFloat(product.comparePrice).toLocaleString('en-IN')}
+                </span>
+              )}
+            </div>
+            {/* Rating */}
+            {product.avgRating !== undefined && product.avgRating > 0 && (
+              <div className="flex items-center gap-1 mt-1.5">
+                <div className="flex">
+                  {[1,2,3,4,5].map((s) => (
+                    <svg key={s} className={`w-2.5 h-2.5 ${
+                      s <= Math.round(product.avgRating!) ? 'text-[#C7A27C]' : 'text-[#E5E2DD]'
+                    }`} fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                </div>
+                {product.reviewCount !== undefined && (
+                  <span className="text-[9px] text-[#9B9B9B]">({product.reviewCount})</span>
                 )}
               </div>
-            </div>
+            )}
           </div>
         </motion.div>
       </Link>

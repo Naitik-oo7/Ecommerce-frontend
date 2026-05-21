@@ -17,6 +17,10 @@ import { paymentsApi } from '../../services/api/paymentsApi';
 import { notificationsApi } from '../../services/api/notificationsApi';
 import { tagsApi } from '../../services/api/tagsApi';
 import { uploadApi } from '../../services/api/uploadApi';
+import { settingsApi } from '../../services/api/settingsApi';
+import { blogApi } from '../../services/api/blogApi';
+import { newsletterApi } from '../../services/api/newsletterApi';
+import { contactApi } from '../../services/api/contactApi';
 
 export const store = configureStore({
   reducer: {
@@ -37,6 +41,10 @@ export const store = configureStore({
     [notificationsApi.reducerPath]: notificationsApi.reducer,
     [tagsApi.reducerPath]:       tagsApi.reducer,
     [uploadApi.reducerPath]:     uploadApi.reducer,
+    [settingsApi.reducerPath]:   settingsApi.reducer,
+    [blogApi.reducerPath]:       blogApi.reducer,
+    [newsletterApi.reducerPath]: newsletterApi.reducer,
+    [contactApi.reducerPath]:    contactApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -55,6 +63,10 @@ export const store = configureStore({
       notificationsApi.middleware,
       tagsApi.middleware,
       uploadApi.middleware,
+      settingsApi.middleware,
+      blogApi.middleware,
+      newsletterApi.middleware,
+      contactApi.middleware,
     ),
 });
 

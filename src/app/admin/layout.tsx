@@ -9,6 +9,7 @@ import { useLogoutMutation } from '@/services/api/authApi';
 import {
   LayoutDashboard, Package, ShoppingCart, Users, Tag,
   MessageSquare, Settings, LogOut, Menu, X, FolderTree, BarChart3,
+  FileText, Globe, Mail,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -20,6 +21,9 @@ const menuItems = [
   { href: '/admin/coupons',     icon: Tag,             label: 'Coupons' },
   { href: '/admin/users',       icon: Users,           label: 'Users' },
   { href: '/admin/reviews',     icon: MessageSquare,   label: 'Reviews' },
+  { href: '/admin/blog',        icon: FileText,        label: 'Journal/Blog' },
+  { href: '/admin/contacts',    icon: Mail,            label: 'Contact Inbox' },
+  { href: '/admin/settings',    icon: Settings,        label: 'CMS Settings' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

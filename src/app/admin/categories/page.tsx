@@ -299,7 +299,7 @@ export default function AdminCategoriesPage() {
             {stats.total} categories · {stats.featured} featured on homepage
           </p>
         </div>
-        <Button onClick={openCreate} className="gap-2 shadow-sm">
+        <Button onClick={openCreate} className="gap-2 shadow-sm cursor-pointer">
           <Plus className="h-4 w-4" /> Add Category
         </Button>
       </div>
@@ -316,7 +316,7 @@ export default function AdminCategoriesPage() {
             key={key}
             onClick={() => { setStatusFilter(key); setPage(1); }}
             className={cn(
-              "rounded-xl border p-4 text-left transition-all hover:shadow-sm",
+              "rounded-xl border p-4 text-left transition-all hover:shadow-sm cursor-pointer",
               bg,
               active ? 'ring-2 ring-primary/30 border-primary/40' : 'border-border'
             )}
@@ -357,14 +357,14 @@ export default function AdminCategoriesPage() {
               />
             </div>
 
-            <Button variant="outline" size="sm" className="h-9 gap-2" onClick={() => setShowFilters(!showFilters)}>
+            <Button variant="outline" size="sm" className="h-9 gap-2 cursor-pointer" onClick={() => setShowFilters(!showFilters)}>
               <Filter className="h-3.5 w-3.5" />
               Filters
               {hasActiveFilters && <span className="h-1.5 w-1.5 rounded-full bg-accent inline-block" />}
             </Button>
 
             {hasActiveFilters && (
-              <Button variant="ghost" size="sm" className="h-9 text-muted-foreground" onClick={clearFilters}>
+              <Button variant="ghost" size="sm" className="h-9 text-muted-foreground cursor-pointer" onClick={clearFilters}>
                 <X className="h-3.5 w-3.5 mr-1" /> Clear
               </Button>
             )}
@@ -373,7 +373,7 @@ export default function AdminCategoriesPage() {
               <button
                 onClick={() => setView('table')}
                 className={cn(
-                  "p-1.5 rounded-md transition-colors",
+                  "p-1.5 rounded-md transition-colors cursor-pointer",
                   view === 'table' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
@@ -382,7 +382,7 @@ export default function AdminCategoriesPage() {
               <button
                 onClick={() => setView('grid')}
                 className={cn(
-                  "p-1.5 rounded-md transition-colors",
+                  "p-1.5 rounded-md transition-colors cursor-pointer",
                   view === 'grid' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
@@ -435,7 +435,7 @@ export default function AdminCategoriesPage() {
                 </p>
               </div>
               {!hasActiveFilters && (
-                <Button onClick={openCreate} size="sm" className="gap-2"><Plus className="h-3.5 w-3.5" />Add Category</Button>
+                <Button onClick={openCreate} size="sm" className="gap-2 cursor-pointer"><Plus className="h-3.5 w-3.5" />Add Category</Button>
               )}
             </div>
           ) : view === 'table' ? (
@@ -488,7 +488,7 @@ export default function AdminCategoriesPage() {
                           onClick={() => handleToggleFeatured(category)}
                           disabled={togglingIds.has(category.id) || !category.isActive}
                           className={cn(
-                            "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors",
+                            "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer",
                             category.isFeatured
                               ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
                               : "bg-muted text-muted-foreground hover:bg-muted-foreground/20",
@@ -522,13 +522,13 @@ export default function AdminCategoriesPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => openEdit(category)}>
+                          <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs cursor-pointer" onClick={() => openEdit(category)}>
                             <Edit className="h-3 w-3" /> Edit
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
                             onClick={() => handleDelete(category.id, category.name)}
                             disabled={deletingIds.has(category.id)}
                           >
@@ -562,13 +562,13 @@ export default function AdminCategoriesPage() {
                       )}
                     </div>
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-xs" onClick={() => openEdit(category)}>
+                      <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-xs cursor-pointer" onClick={() => openEdit(category)}>
                         <Edit className="h-3 w-3" /> Edit
                       </Button>
                       <Button
                         size="sm"
                         variant="destructive"
-                        className="h-8 w-8 p-0"
+                        className="h-8 w-8 p-0 cursor-pointer"
                         onClick={() => handleDelete(category.id, category.name)}
                         disabled={deletingIds.has(category.id)}
                       >
@@ -584,7 +584,7 @@ export default function AdminCategoriesPage() {
                         onClick={() => handleToggleFeatured(category)}
                         disabled={togglingIds.has(category.id) || !category.isActive}
                         className={cn(
-                          "flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-colors",
+                          "flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-colors cursor-pointer",
                           category.isFeatured
                             ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
                             : "bg-muted text-muted-foreground hover:bg-muted-foreground/20",
@@ -618,7 +618,7 @@ export default function AdminCategoriesPage() {
                 <span className="ml-2 text-xs">({pagination.total} total)</span>
               </p>
               <div className="flex items-center gap-1">
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+                <Button variant="outline" size="icon" className="h-8 w-8 cursor-pointer" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
@@ -628,14 +628,14 @@ export default function AdminCategoriesPage() {
                       key={pageNum}
                       variant={pageNum === page ? 'default' : 'outline'}
                       size="icon"
-                      className="h-8 w-8 text-xs"
+                      className="h-8 w-8 text-xs cursor-pointer"
                       onClick={() => setPage(pageNum)}
                     >
                       {pageNum}
                     </Button>
                   ) : null;
                 })}
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setPage(p => p + 1)} disabled={page >= pagination.totalPages}>
+                <Button variant="outline" size="icon" className="h-8 w-8 cursor-pointer" onClick={() => setPage(p => p + 1)} disabled={page >= pagination.totalPages}>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -666,7 +666,7 @@ export default function AdminCategoriesPage() {
                   </p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => setShowForm(false)} className="rounded-full h-8 w-8">
+              <Button variant="ghost" size="icon" onClick={() => setShowForm(false)} className="rounded-full h-8 w-8 cursor-pointer">
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -709,7 +709,7 @@ export default function AdminCategoriesPage() {
                         size="sm"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploading}
-                        className="flex-1 h-8 text-xs"
+                        className="flex-1 h-8 text-xs cursor-pointer"
                       >
                         {isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
                       </Button>
@@ -718,7 +718,7 @@ export default function AdminCategoriesPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => { setForm({ ...form, imageUrl: '' }); setImagePreviewError(false); }}
-                          className="h-8 px-2 text-destructive hover:text-destructive"
+                          className="h-8 px-2 text-destructive hover:text-destructive cursor-pointer"
                         >
                           <X className="h-3 w-3" />
                         </Button>

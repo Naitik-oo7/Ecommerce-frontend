@@ -2,57 +2,50 @@
 
 import { motion } from 'framer-motion';
 import { JournalCard } from './JournalCard';
+import { useGetBlogPostsQuery } from '@/services/api/blogApi';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
-const articles = [
-  {
-    title: 'The Future of Minimal Fashion',
-    category: 'Trends',
-    excerpt:
-      'Exploring how sustainable practices and timeless design are reshaping the fashion industry for the better.',
-    image: 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=800&q=80',
-    date: 'Jan 15, 2026',
-    readTime: '5 min read',
-    href: '/journal/future-of-minimal-fashion',
-    featured: true,
-  },
-  {
-    title: 'Building a Timeless Wardrobe',
-    category: 'Style Guide',
-    excerpt: 'Essential pieces every modern wardrobe needs for effortless sophistication.',
-    image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&q=80',
-    date: 'Jan 10, 2026',
-    readTime: '4 min read',
-    href: '/journal/timeless-wardrobe',
-    featured: false,
-  },
-  {
-    title: 'Behind The Fabric',
-    category: 'Sustainability',
-    excerpt: 'Our journey to source the finest sustainable materials from around the world.',
-    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80',
-    date: 'Jan 5, 2026',
-    readTime: '6 min read',
-    href: '/journal/behind-the-fabric',
-    featured: false,
-  },
-  {
-    title: 'Seasonal Palette: Warm Neutrals',
-    category: 'Style Guide',
-    excerpt: 'How to style our new collection of earth tones and timeless hues.',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80',
-    date: 'Dec 28, 2025',
-    readTime: '3 min read',
-    href: '/journal/seasonal-palette',
-    featured: false,
-  },
-];
-
-const featuredArticle = articles.find((a) => a.featured)!;
-const secondaryArticles = articles.filter((a) => !a.featured);
+const formatDate = (dateStr: string) =>
+  new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
 export const JournalSection = () => {
+  const { data: postsData, isLoading } = useGetBlogPostsQuery({ limit: 4 });
+  const posts = postsData?.data || [];
+
+  const featuredPost = posts.find((p) => p.isFeatured) || posts[0];
+  const secondaryPosts = posts.filter((p) => p !== featuredPost);
+
+  if (isLoading) {
+    return (
+      <section className="py-20 md:py-32 bg-mono-cream">
+        <div className="container-mono">
+          <div className="grid md:grid-cols-[1fr_420px] lg:grid-cols-[1fr_460px] gap-10 md:gap-14 lg:gap-20">
+            <div className="animate-pulse bg-gray-200 rounded-2xl h-96" />
+            <div className="space-y-6">
+              {[1, 2, 3].map((i) => <div key={i} className="animate-pulse bg-gray-200 rounded-xl h-24" />)}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!featuredPost) return null;
+
+  const toCardProps = (p: (typeof posts)[0]) => ({
+    title: p.title,
+    category: p.category,
+    excerpt: p.excerpt,
+    image: p.image,
+    date: formatDate(p.publishedAt),
+    readTime: p.readTime,
+    href: `/journal/${p.slug}`,
+  });
+
+  const featuredArticle = toCardProps(featuredPost);
+  const secondaryArticles = secondaryPosts.map(toCardProps);
+
   return (
     <section className="py-20 md:py-32 bg-mono-cream">
       <div className="container-mono">

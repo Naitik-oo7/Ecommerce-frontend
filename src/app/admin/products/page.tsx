@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useGetProductsQuery, useDeleteProductMutation, useUpdateProductMutation } from '@/services/api/productsApi';
+import { useGetProductsQuery, useDeleteProductMutation, useUpdateProductMutation, useUpdateStockMutation } from '@/services/api/productsApi';
 import { useGetCategoriesQuery } from '@/services/api/categoriesApi';
 import { useGetTagsQuery } from '@/services/api/tagsApi';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import {
   Plus, Search, Edit, Trash2, Loader2, Package, LayoutGrid,
   List, ChevronLeft, ChevronRight, AlertTriangle, TrendingDown,
-  CheckCircle2, XCircle, Filter, X, Star,
+  CheckCircle2, XCircle, Filter, X, Star, Archive,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -81,6 +81,7 @@ export default function AdminProductsPage() {
   const [page, setPage] = useState(1);
   const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
   const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
+  const [updatingStockIds, setUpdatingStockIds] = useState<Set<number>>(new Set());
   const [toggleError, setToggleError] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
 
@@ -115,6 +116,7 @@ export default function AdminProductsPage() {
   const { data: categoriesResponse } = useGetCategoriesQuery({});
   const { data: tagsResponse } = useGetTagsQuery({});
   const [deleteProduct] = useDeleteProductMutation();
+  const [updateStock] = useUpdateStockMutation();
   const [updateProduct] = useUpdateProductMutation();
 
   const allProducts: any[] = (productsResponse as any)?.data || [];
@@ -162,6 +164,25 @@ export default function AdminProductsPage() {
       setTogglingIds((prev) => { const n = new Set(prev); n.delete(product.id); return n; });
     }
   }, [updateProduct]);
+
+  const handleMarkOutOfStock = useCallback(async (product: any) => {
+    setToggleError('');
+    setUpdatingStockIds((prev) => new Set(prev).add(product.id));
+    try {
+      // Update all variants to have 0 stock
+      const variants = product.variants || [];
+      for (const variant of variants) {
+        if (variant.stock > 0) {
+          await updateStock({ id: product.id, variantId: variant.id, stock: 0 }).unwrap();
+        }
+      }
+    } catch (err: unknown) {
+      const e = err as { data?: { message?: string } };
+      setToggleError(e?.data?.message || `Failed to mark "${product.name}" as out of stock`);
+    } finally {
+      setUpdatingStockIds((prev) => { const n = new Set(prev); n.delete(product.id); return n; });
+    }
+  }, [updateStock]);
 
   const clearFilters = () => {
     setSearch(''); setSearchTerm(''); setCategoryId(''); setGenderFilter('');
@@ -504,15 +525,27 @@ export default function AdminProductsPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Link href={`/admin/products/${product.slug}/edit`}>
-                              <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs">
+                            {getTotalStock(product.variants) > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 gap-1.5 text-xs text-orange-600 hover:text-orange-700 hover:bg-orange-50 cursor-pointer"
+                                onClick={() => handleMarkOutOfStock(product)}
+                                disabled={updatingStockIds.has(product.id)}
+                              >
+                                {updatingStockIds.has(product.id) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Archive className="h-3 w-3" />}
+                                Out of Stock
+                              </Button>
+                            )}
+                            <Link href={`/admin/products/${product.slug}/edit`} className="cursor-pointer">
+                              <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs cursor-pointer">
                                 <Edit className="h-3 w-3" /> Edit
                               </Button>
                             </Link>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
                               onClick={() => handleDelete(product.id, product.name)}
                               disabled={deletingIds.has(product.id)}
                             >
@@ -550,16 +583,34 @@ export default function AdminProductsPage() {
                         )}
                       </div>
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                        <Link href={`/admin/products/${product.slug}/edit`}>
-                          <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-xs">
+                        {stock > 0 && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-8 gap-1.5 text-xs bg-orange-100 text-orange-700 hover:bg-orange-200 border-0 cursor-pointer"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleMarkOutOfStock(product);
+                            }}
+                            disabled={updatingStockIds.has(product.id)}
+                          >
+                            {updatingStockIds.has(product.id) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Archive className="h-3 w-3" />}
+                            Out of Stock
+                          </Button>
+                        )}
+                        <Link href={`/admin/products/${product.slug}/edit`} className="cursor-pointer">
+                          <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-xs cursor-pointer">
                             <Edit className="h-3 w-3" /> Edit
                           </Button>
                         </Link>
                         <Button
                           size="sm"
                           variant="destructive"
-                          className="h-8 w-8 p-0"
-                          onClick={() => handleDelete(product.id, product.name)}
+                          className="h-8 w-8 p-0 cursor-pointer"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleDelete(product.id, product.name);
+                          }}
                           disabled={deletingIds.has(product.id)}
                         >
                           {deletingIds.has(product.id) ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}

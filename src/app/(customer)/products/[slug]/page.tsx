@@ -8,7 +8,7 @@ import { useGetProductReviewsQuery } from '@/services/api/reviewsApi';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ShoppingCart, Heart, Star, Minus, Plus, ArrowLeft, Package, Shield, Truck, Check, Sparkles } from 'lucide-react';
+import { ShoppingCart, Heart, Star, Minus, Plus, ArrowLeft, Package, Shield, Truck, Check, Sparkles, Zap } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -48,6 +48,7 @@ export default function ProductDetailPage() {
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [inWishlist, setInWishlist] = useState(false);
   const [cartLoading, setCartLoading] = useState(false);
+  const [buyNowLoading, setBuyNowLoading] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const [isImageHovered, setIsImageHovered] = useState(false);
@@ -88,6 +89,25 @@ export default function ProductDetailPage() {
       setTimeout(() => setAddedToCart(false), 2500);
     } catch {}
     setCartLoading(false);
+  };
+
+  const handleBuyNow = async () => {
+    if (!isAuthenticated) {
+      router.push('/login');
+      return;
+    }
+    if (!selectedVariant) return;
+    setBuyNowLoading(true);
+    try {
+      await addToCart({
+        variantId: selectedVariant.id,
+        size: selectedVariant.size,
+        quantity,
+      }).unwrap();
+      router.push('/checkout');
+    } catch {
+      setBuyNowLoading(false);
+    }
   };
 
   const handleToggleWishlist = async () => {
@@ -412,18 +432,40 @@ export default function ProductDetailPage() {
                 </div>
               </div>
 
-              {/* Add to Cart Button */}
-              <div className="flex gap-3">
+              {/* Buy Now + Add to Cart Buttons */}
+              <div className="flex flex-col gap-3">
+                {/* Buy Now — primary CTA */}
+                <Button
+                  onClick={handleBuyNow}
+                  disabled={!selectedVariant || selectedVariant.stock === 0 || buyNowLoading || cartLoading}
+                  className="w-full bg-mono-terracotta hover:bg-mono-terracotta/90 text-white h-14 text-base font-semibold"
+                >
+                  {buyNowLoading ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                    />
+                  ) : (
+                    <>
+                      <Zap className="mr-2 h-5 w-5" />
+                      {selectedVariant?.stock === 0 ? 'Sold Out' : 'Buy Now'}
+                    </>
+                  )}
+                </Button>
+
+                {/* Add to Cart — secondary */}
                 <Button
                   onClick={handleAddToCart}
-                  disabled={!selectedVariant || selectedVariant.stock === 0 || cartLoading}
-                  className="flex-1 bg-mono-charcoal hover:bg-mono-charcoal/90 text-white h-14 text-lg"
+                  disabled={!selectedVariant || selectedVariant.stock === 0 || cartLoading || buyNowLoading}
+                  variant="outline"
+                  className="w-full border-mono-charcoal text-mono-charcoal hover:bg-mono-charcoal hover:text-white h-12 text-base"
                 >
                   {cartLoading ? (
                     <motion.div
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                      className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                      className="w-5 h-5 border-2 border-mono-charcoal/30 border-t-mono-charcoal rounded-full"
                     />
                   ) : addedToCart ? (
                     <>
@@ -433,7 +475,7 @@ export default function ProductDetailPage() {
                   ) : (
                     <>
                       <ShoppingCart className="mr-2 h-5 w-5" />
-                      {product.stock === 0 ? 'Sold Out' : 'Add to Cart'}
+                      Add to Cart
                     </>
                   )}
                 </Button>

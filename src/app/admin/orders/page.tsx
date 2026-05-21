@@ -147,8 +147,8 @@ export default function AdminOrdersPage() {
                           </span>
                         </td>
                         <td className="p-3">
-                          <Link href={`/orders/${order.id}`}>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Link href={`/admin/orders/${order.id}`} className="cursor-pointer">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
@@ -165,8 +165,8 @@ export default function AdminOrdersPage() {
             <div className="flex items-center justify-between mt-4 pt-4 border-t">
               <p className="text-sm text-muted-foreground">Page {page} of {pagination.totalPages}</p>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1}>Previous</Button>
-                <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page >= pagination.totalPages}>Next</Button>
+                <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1} className="cursor-pointer">Previous</Button>
+                <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page >= pagination.totalPages} className="cursor-pointer">Next</Button>
               </div>
             </div>
           )}

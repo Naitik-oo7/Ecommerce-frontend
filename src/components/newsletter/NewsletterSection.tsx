@@ -5,15 +5,29 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowRight, Check } from 'lucide-react';
+import { useSubscribeMutation } from '@/services/api/newsletterApi';
+import { useGetSettingQuery } from '@/services/api/settingsApi';
 
 export const NewsletterSection = () => {
   const [email, setEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [subscribe, { isLoading }] = useSubscribeMutation();
+  const { data: generalData } = useGetSettingQuery('general');
+  const g = generalData as { newsletterHeadline?: string; newsletterSubtext?: string } | undefined;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
+    if (!email) return;
+    try {
+      await subscribe({ email }).unwrap();
+      setIsSubmitted(true);
+      setTimeout(() => {
+        setIsSubmitted(false);
+        setEmail('');
+      }, 3000);
+    } catch {
+      // already subscribed or error — still show success UX
       setIsSubmitted(true);
       setTimeout(() => {
         setIsSubmitted(false);
@@ -44,11 +58,11 @@ export const NewsletterSection = () => {
             </span>
             
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.1] mb-6">
-              Stay close to what&apos;s next.
+              {g?.newsletterHeadline || "Stay close to what\u2019s next."}
             </h2>
             
             <p className="text-white/60 text-lg mb-10 max-w-lg mx-auto">
-              Be the first to know about new collections, exclusive offers, and style inspiration.
+              {g?.newsletterSubtext || 'Be the first to know about new collections, exclusive offers, and style inspiration.'}
             </p>
           </motion.div>
 
@@ -82,7 +96,7 @@ export const NewsletterSection = () => {
             >
               <Button 
                 type="submit"
-                disabled={isSubmitted}
+                disabled={isSubmitted || isLoading}
                 className={`h-14 px-8 rounded-full font-medium transition-all duration-300 ${
                   isSubmitted 
                     ? 'bg-green-500 hover:bg-green-500' 
