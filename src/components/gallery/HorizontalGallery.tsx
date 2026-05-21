@@ -6,6 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
+import { useGetProductsQuery } from '@/services/api/productsApi';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -18,56 +19,13 @@ interface GalleryItem {
   link: string;
 }
 
-const galleryItems: GalleryItem[] = [
-  {
-    id: 1,
-    image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=800&q=80',
-    category: 'Outerwear',
-    title: 'Wool Overcoat',
-    price: '$349',
-    link: '/products',
-  },
-  {
-    id: 2,
-    image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&q=80',
-    category: 'Knitwear',
-    title: 'Merino Turtleneck',
-    price: '$189',
-    link: '/products',
-  },
-  {
-    id: 3,
-    image: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=800&q=80',
-    category: 'Trousers',
-    title: 'Pleated Wool Trousers',
-    price: '$229',
-    link: '/products',
-  },
-  {
-    id: 4,
-    image: 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=800&q=80',
-    category: 'Shirts',
-    title: 'Oxford Cotton Shirt',
-    price: '$149',
-    link: '/products',
-  },
-  {
-    id: 5,
-    image: 'https://images.unsplash.com/photo-1578587018452-892bacefd3f2?w=800&q=80',
-    category: 'Accessories',
-    title: 'Leather Tote Bag',
-    price: '$279',
-    link: '/products',
-  },
-  {
-    id: 6,
-    image: 'https://images.unsplash.com/photo-1544022613-e87ca75a784a?w=800&q=80',
-    category: 'Footwear',
-    title: 'Minimal Sneakers',
-    price: '$199',
-    link: '/products',
-  },
-];
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=800&q=80';
+
+function formatPrice(price: any): string {
+  const num = parseFloat(price);
+  if (isNaN(num)) return '—';
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(num);
+}
 
 export const HorizontalGallery = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -75,7 +33,21 @@ export const HorizontalGallery = () => {
   const progressRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
 
+  const { data: productsData, isLoading } = useGetProductsQuery({ limit: 6 });
+  const rawProducts: any[] = (productsData as any)?.data || [];
+
+  const galleryItems: GalleryItem[] = rawProducts.map((p: any) => ({
+    id: p.id,
+    image: p.images?.[0] || FALLBACK_IMAGE,
+    category: p.category?.name || p.categoryName || 'Collection',
+    title: p.name,
+    price: formatPrice(p.price),
+    link: `/products/${p.slug}`,
+  }));
+
   useEffect(() => {
+    if (isLoading || galleryItems.length === 0) return;
+
     const container = containerRef.current;
     const scrollContainer = scrollContainerRef.current;
     const progress = progressRef.current;
@@ -136,7 +108,7 @@ export const HorizontalGallery = () => {
     }, section);
 
     return () => ctx.revert();
-  }, []);
+  }, [isLoading, galleryItems.length]);
 
   return (
     <section ref={sectionRef} className="bg-mono-charcoal text-white overflow-hidden">
@@ -176,7 +148,21 @@ export const HorizontalGallery = () => {
           {/* Spacer for initial offset */}
           <div className="w-[10vw] md:w-[20vw] flex-shrink-0" />
 
-          {galleryItems.map((item, index) => (
+          {isLoading
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex-shrink-0 w-[70vw] md:w-[35vw] lg:w-[25vw] animate-pulse"
+                >
+                  <div className="aspect-[3/4] rounded-lg bg-white/10 mb-6" />
+                  <div className="space-y-3">
+                    <div className="h-3 w-20 rounded bg-white/10" />
+                    <div className="h-5 w-3/4 rounded bg-white/10" />
+                    <div className="h-4 w-16 rounded bg-white/10" />
+                  </div>
+                </div>
+              ))
+            : galleryItems.map((item, index) => (
             <Link key={item.id} href={item.link}>
               <motion.article
                 className="gallery-item relative flex-shrink-0 w-[70vw] md:w-[35vw] lg:w-[25vw] group cursor-pointer"
@@ -245,7 +231,7 @@ export const HorizontalGallery = () => {
               />
             </div>
             <span className="text-xs font-medium tracking-wider text-white/40">
-              0{galleryItems.length}
+              {String(galleryItems.length || 6).padStart(2, '0')}
             </span>
           </div>
         </div>

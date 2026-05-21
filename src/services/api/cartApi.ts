@@ -10,25 +10,28 @@ export const cartApi = createApi({
       query: () => ({ url: '/api/v1/cart', method: 'GET' }),
       providesTags: ['Cart'],
     }),
+    // Updated: Now requires variantId and size instead of productId
     addToCart: builder.mutation({
-      query: (data: { productId: number; quantity?: number }) => ({
+      query: (data: { variantId: number; size: string; quantity?: number }) => ({
         url: '/api/v1/cart/items',
         method: 'POST',
         data,
       }),
       invalidatesTags: ['Cart'],
     }),
+    // Updated: Now uses cart item ID instead of productId
     updateCartItem: builder.mutation({
-      query: ({ productId, quantity }: { productId: number; quantity: number }) => ({
-        url: `/api/v1/cart/items/${productId}`,
+      query: ({ itemId, quantity }: { itemId: number; quantity: number }) => ({
+        url: `/api/v1/cart/items/${itemId}`,
         method: 'PATCH',
         data: { quantity },
       }),
       invalidatesTags: ['Cart'],
     }),
+    // Updated: Now uses cart item ID instead of productId
     removeFromCart: builder.mutation({
-      query: (productId: number) => ({
-        url: `/api/v1/cart/items/${productId}`,
+      query: (itemId: number) => ({
+        url: `/api/v1/cart/items/${itemId}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Cart'],

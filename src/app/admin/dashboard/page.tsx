@@ -198,10 +198,12 @@ export default function AdminDashboardPage() {
             ) : (
               <div className="space-y-3 max-h-[280px] overflow-y-auto">
                 {lowStockProducts.map((p: any) => (
-                  <div key={p.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                  <div key={`${p.id}-${p.variantId}`} className="flex items-center justify-between py-2 border-b last:border-0">
                     <div>
                       <p className="text-sm font-medium">{p.name}</p>
-                      <p className="text-xs text-muted-foreground">ID: {p.id}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {p.sku} · Size: {p.size}
+                      </p>
                     </div>
                     <span className={`text-sm font-bold px-2 py-1 rounded ${p.stock === 0 ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'}`}>
                       {p.stock} left

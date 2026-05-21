@@ -4,7 +4,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useGetOrderByIdQuery, useCancelOrderMutation } from '@/services/api/ordersApi';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Package, CheckCircle, Clock, Truck, XCircle, MapPin, CreditCard, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Package, CheckCircle, Clock, Truck, XCircle, MapPin, CreditCard, AlertCircle, ImageOff } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -30,6 +30,7 @@ export default function OrderDetailPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const isSuccess = searchParams.get('success') === 'true';
+  const paymentParam = searchParams.get('payment');
   const [cancelling, setCancelling] = useState(false);
 
   const { data: orderResponse, isLoading, error } = useGetOrderByIdQuery(id as string);
@@ -92,6 +93,26 @@ export default function OrderDetailPage() {
         </div>
       )}
 
+      {paymentParam === 'pending' && !isSuccess && (
+        <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-center gap-3">
+          <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0" />
+          <div>
+            <p className="font-semibold text-yellow-800 dark:text-yellow-300">Payment Pending</p>
+            <p className="text-sm text-yellow-700 dark:text-yellow-400">You closed the payment window. You can retry payment from your orders page.</p>
+          </div>
+        </div>
+      )}
+
+      {paymentParam === 'failed' && (
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-3">
+          <XCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+          <div>
+            <p className="font-semibold text-red-800 dark:text-red-300">Payment Verification Failed</p>
+            <p className="text-sm text-red-700 dark:text-red-400">If your payment was deducted, it will be auto-refunded within 5–7 business days. Contact support if needed.</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold">Order #{order.id}</h1>
@@ -103,9 +124,14 @@ export default function OrderDetailPage() {
             {statusInfo.label}
           </span>
           {canCancel && (
-            <Button variant="outline" size="sm" onClick={handleCancel} disabled={cancelling} className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground">
+            <button
+              onClick={handleCancel}
+              disabled={cancelling}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-red-300 text-red-600 bg-transparent transition-colors hover:bg-red-600 hover:text-white hover:border-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <XCircle className="h-3.5 w-3.5" />
               {cancelling ? 'Cancelling...' : 'Cancel Order'}
-            </Button>
+            </button>
           )}
         </div>
       </div>
@@ -166,7 +192,7 @@ export default function OrderDetailPage() {
           <CardContent className="text-sm space-y-2">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Method</span>
-              <span className="capitalize">{order.paymentMethod || 'Cash on Delivery'}</span>
+              <span>{order.paymentMethod === 'online' ? 'Online Payment (Razorpay)' : 'Cash on Delivery'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Status</span>
@@ -185,16 +211,26 @@ export default function OrderDetailPage() {
         <CardContent className="divide-y">
           {items.map((item: any) => (
             <div key={item.id} className="py-4 flex items-center gap-4">
-              <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0">
-                {item.product?.images?.[0] && (
-                  <img src={item.product.images[0]} alt={item.product.name || item.productName} className="object-cover w-full h-full" />
+              <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center">
+                {item.productImage ? (
+                  <img
+                    src={item.productImage}
+                    alt={item.productName}
+                    className="object-cover w-full h-full"
+                  />
+                ) : (
+                  <ImageOff className="h-6 w-6 text-muted-foreground/40" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <Link href={`/products/${item.product?.slug}`}>
-                  <p className="font-medium hover:text-primary text-sm truncate">{item.product?.name || item.productName}</p>
+                <Link href={`/products/${item.variant?.product?.slug || '#'}`}>
+                  <p className="font-medium hover:text-primary text-sm truncate">
+                    {item.productName || item.variant?.product?.name}
+                  </p>
                 </Link>
-                <p className="text-xs text-muted-foreground mt-0.5">Qty: {item.quantity}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Qty: {item.quantity}{item.size ? ` · Size: ${item.size}` : ''}
+                </p>
               </div>
               <div className="text-right">
                 <p className="font-semibold">${(parseFloat(item.price) * item.quantity).toFixed(2)}</p>

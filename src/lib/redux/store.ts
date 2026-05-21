@@ -15,6 +15,8 @@ import { categoriesApi } from '../../services/api/categoriesApi';
 import { couponsApi } from '../../services/api/couponsApi';
 import { paymentsApi } from '../../services/api/paymentsApi';
 import { notificationsApi } from '../../services/api/notificationsApi';
+import { tagsApi } from '../../services/api/tagsApi';
+import { uploadApi } from '../../services/api/uploadApi';
 
 export const store = configureStore({
   reducer: {
@@ -33,6 +35,8 @@ export const store = configureStore({
     [couponsApi.reducerPath]:    couponsApi.reducer,
     [paymentsApi.reducerPath]:   paymentsApi.reducer,
     [notificationsApi.reducerPath]: notificationsApi.reducer,
+    [tagsApi.reducerPath]:       tagsApi.reducer,
+    [uploadApi.reducerPath]:     uploadApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -49,6 +53,8 @@ export const store = configureStore({
       couponsApi.middleware,
       paymentsApi.middleware,
       notificationsApi.middleware,
+      tagsApi.middleware,
+      uploadApi.middleware,
     ),
 });
 

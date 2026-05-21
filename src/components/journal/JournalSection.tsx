@@ -54,7 +54,7 @@ const secondaryArticles = articles.filter((a) => !a.featured);
 
 export const JournalSection = () => {
   return (
-    <section className="py-20 md:py-32 bg-[#F6F3EE]">
+    <section className="py-20 md:py-32 bg-mono-cream">
       <div className="container-mono">
         {/* Section Header */}
         <motion.div
@@ -65,17 +65,17 @@ export const JournalSection = () => {
           className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12 md:mb-16"
         >
           <div>
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-[#C7A27C] mb-4 block">
+            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-mono-terracotta mb-4 block">
               The Journal
             </span>
-            <h2 className="text-4xl md:text-5xl font-bold text-[#111111] leading-[1.1]">
+            <h2 className="text-4xl md:text-5xl font-bold text-mono-charcoal leading-[1.1]">
               Stories & Insights
             </h2>
           </div>
 
           <Link href="/journal">
             <motion.span
-              className="inline-flex items-center gap-2 text-[#111111] font-medium hover:text-[#C7A27C] transition-colors cursor-pointer group"
+              className="inline-flex items-center gap-2 text-mono-charcoal font-medium hover:text-mono-terracotta transition-colors cursor-pointer group"
               whileHover={{ x: 5 }}
             >
               View All Articles
@@ -84,12 +84,12 @@ export const JournalSection = () => {
           </Link>
         </motion.div>
 
-        {/* Editorial Grid: featured left, secondary stack right */}
-        <div className="grid md:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-start">
+        {/* Editorial Grid: featured left, compact list right */}
+        <div className="grid md:grid-cols-[1fr_420px] lg:grid-cols-[1fr_460px] gap-10 md:gap-14 lg:gap-20 items-start">
           {/* Featured — left column */}
           <JournalCard {...featuredArticle} index={0} />
 
-          {/* Secondary articles — right column, stacked list */}
+          {/* Secondary articles — right column */}
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -97,13 +97,20 @@ export const JournalSection = () => {
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.12 }}
             className="flex flex-col"
           >
-            {secondaryArticles.map((article, index) => (
-              <JournalCard
-                key={article.title}
-                {...article}
-                index={index}
-              />
-            ))}
+            <p className="text-xs font-semibold tracking-[0.18em] uppercase text-mono-terracotta mb-6">
+              Latest
+            </p>
+            <div className="flex flex-col divide-y divide-[#E2D9CE]">
+              {secondaryArticles.map((article, index) => (
+                <div key={article.title} className="py-6 first:pt-0 last:pb-0">
+                  <JournalCard
+                    {...article}
+                    index={index}
+                    compact
+                  />
+                </div>
+              ))}
+            </div>
           </motion.div>
         </div>
       </div>

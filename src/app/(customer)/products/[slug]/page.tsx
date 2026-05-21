@@ -9,7 +9,7 @@ import { useAppSelector } from '@/lib/redux/hooks';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ShoppingCart, Heart, Star, Minus, Plus, ArrowLeft, Package, Shield, Truck, Check, Sparkles } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -31,15 +31,31 @@ export default function ProductDetailPage() {
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   const { data: productResponse, isLoading, error } = useGetProductBySlugQuery(slug as string);
+  const product = (productResponse as any)?.data || productResponse;
+
+  const primaryImageIndex = useMemo(() => {
+    if (!product?.media?.length) return 0;
+    const idx = (product.media as { isPrimary?: boolean }[]).findIndex((m) => m.isPrimary);
+    return idx >= 0 ? idx : 0;
+  // product.id is the stable key — recompute only when the product itself changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?.id]);
+
   const [quantity, setQuantity] = useState(1);
-  const [selectedImage, setSelectedImage] = useState(0);
+  const [userSelectedImage, setUserSelectedImage] = useState<number | null>(null);
+  const selectedImage = userSelectedImage ?? primaryImageIndex;
+  const setSelectedImage = (idx: number) => setUserSelectedImage(idx);
+  const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [inWishlist, setInWishlist] = useState(false);
   const [cartLoading, setCartLoading] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const [isImageHovered, setIsImageHovered] = useState(false);
 
-  const product = (productResponse as any)?.data || productResponse;
+  // Set default variant when product loads
+  if (product?.variants?.length > 0 && !selectedVariant) {
+    setSelectedVariant(product.variants[0]);
+  }
 
   const { data: reviewsResponse } = useGetProductReviewsQuery(
     { productId: product?.id },
@@ -58,9 +74,16 @@ export default function ProductDetailPage() {
       router.push('/login');
       return;
     }
+    if (!selectedVariant) {
+      return; // Should show error toast
+    }
     setCartLoading(true);
     try {
-      await addToCart({ productId: product.id, quantity }).unwrap();
+      await addToCart({ 
+        variantId: selectedVariant.id, 
+        size: selectedVariant.size,
+        quantity 
+      }).unwrap();
       setAddedToCart(true);
       setTimeout(() => setAddedToCart(false), 2500);
     } catch {}
@@ -181,10 +204,10 @@ export default function ProductDetailPage() {
               className="relative aspect-square bg-muted rounded-2xl overflow-hidden"
             >
               <AnimatePresence mode="wait">
-                {product.images?.[selectedImage] ? (
+                {product.media?.[selectedImage] ? (
                   <motion.img
                     key={selectedImage}
-                    src={product.images[selectedImage]}
+                    src={product.media[selectedImage].url}
                     alt={product.name}
                     initial={{ opacity: 0, scale: 1.1 }}
                     animate={{ 
@@ -204,16 +227,19 @@ export default function ProductDetailPage() {
 
               {/* Badges */}
               <div className="absolute top-4 left-4 flex flex-col gap-2">
-                {product.stock === 0 && (
-                  <span className="px-3 py-1.5 bg-mono-charcoal text-white text-xs font-semibold tracking-wide uppercase rounded-lg">
-                    Sold Out
-                  </span>
-                )}
-                {product.stock > 0 && product.stock < 10 && (
-                  <span className="px-3 py-1.5 bg-mono-rose/90 text-white text-xs font-semibold tracking-wide uppercase rounded-lg">
-                    Only {product.stock} Left
-                  </span>
-                )}
+                {/* Check total stock across all variants */}
+                {(() => {
+                  const totalStock = product.variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) || 0;
+                  return totalStock === 0 ? (
+                    <span className="px-3 py-1.5 bg-mono-charcoal text-white text-xs font-semibold tracking-wide uppercase rounded-lg">
+                      Sold Out
+                    </span>
+                  ) : totalStock < 10 ? (
+                    <span className="px-3 py-1.5 bg-mono-rose/90 text-white text-xs font-semibold tracking-wide uppercase rounded-lg">
+                      Only {totalStock} Left
+                    </span>
+                  ) : null;
+                })()}
                 {product.comparePrice && parseFloat(product.comparePrice) > parseFloat(product.price) && (
                   <span className="px-3 py-1.5 bg-mono-terracotta text-white text-xs font-semibold tracking-wide uppercase rounded-lg">
                     Sale
@@ -238,11 +264,11 @@ export default function ProductDetailPage() {
             </motion.div>
 
             {/* Thumbnail Images */}
-            {product.images?.length > 1 && (
+            {product.media?.length > 1 && (
               <div className="flex gap-3 overflow-x-auto pb-2">
-                {product.images.map((image: string, index: number) => (
+                {product.media.map((mediaItem: any, index: number) => (
                   <motion.button
-                    key={index}
+                    key={mediaItem.id || index}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedImage(index)}
@@ -253,7 +279,7 @@ export default function ProductDetailPage() {
                     }`}
                   >
                     <img
-                      src={image}
+                      src={mediaItem.url}
                       alt={`${product.name} - ${index + 1}`}
                       className="w-full h-full object-cover"
                     />
@@ -330,6 +356,36 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
+            {/* Size Selector */}
+            {product.variants?.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Size:</span>
+                  <span className="text-sm text-muted-foreground">
+                    {selectedVariant ? `${selectedVariant.stock} in stock` : 'Select a size'}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {product.variants.map((variant: any) => (
+                    <button
+                      key={variant.id}
+                      onClick={() => setSelectedVariant(variant)}
+                      disabled={variant.stock === 0}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        selectedVariant?.id === variant.id
+                          ? 'bg-mono-charcoal text-white'
+                          : variant.stock === 0
+                          ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                          : 'bg-white border border-input hover:border-mono-charcoal'
+                      }`}
+                    >
+                      {variant.size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Quantity & Add to Cart */}
             <div className="space-y-4">
               {/* Quantity Selector */}
@@ -347,9 +403,9 @@ export default function ProductDetailPage() {
                     {quantity}
                   </span>
                   <button
-                    onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                    onClick={() => setQuantity(Math.min(selectedVariant?.stock || 0, quantity + 1))}
                     className="px-3 py-2 hover:bg-muted transition-colors"
-                    disabled={quantity >= product.stock}
+                    disabled={quantity >= (selectedVariant?.stock || 0)}
                   >
                     <Plus className="h-4 w-4" />
                   </button>
@@ -360,7 +416,7 @@ export default function ProductDetailPage() {
               <div className="flex gap-3">
                 <Button
                   onClick={handleAddToCart}
-                  disabled={product.stock === 0 || cartLoading}
+                  disabled={!selectedVariant || selectedVariant.stock === 0 || cartLoading}
                   className="flex-1 bg-mono-charcoal hover:bg-mono-charcoal/90 text-white h-14 text-lg"
                 >
                   {cartLoading ? (

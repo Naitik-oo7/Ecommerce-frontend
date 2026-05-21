@@ -118,35 +118,42 @@ export default function CartPage() {
     );
   }
 
-  const setUpdating = (productId: number, loading: boolean) => {
+  const setUpdating = (itemId: number, loading: boolean) => {
     setUpdatingIds((prev) => {
       const next = new Set(prev);
-      loading ? next.add(productId) : next.delete(productId);
+      loading ? next.add(itemId) : next.delete(itemId);
       return next;
     });
   };
 
-  const handleUpdateQuantity = async (productId: number, quantity: number) => {
+  // Updated: Now uses itemId (cart item ID) instead of productId
+  const handleUpdateQuantity = async (itemId: number, quantity: number) => {
     if (quantity < 1) return;
-    setUpdating(productId, true);
+    setUpdating(itemId, true);
     try {
-      await updateCartItem({ productId, quantity }).unwrap();
+      await updateCartItem({ itemId, quantity }).unwrap();
     } catch {}
-    setUpdating(productId, false);
+    setUpdating(itemId, false);
   };
 
-  const handleRemove = async (productId: number) => {
-    setRemovingIds((prev) => new Set(prev).add(productId));
+  // Updated: Now uses itemId (cart item ID) instead of productId
+  const handleRemove = async (itemId: number) => {
+    setRemovingIds((prev) => new Set(prev).add(itemId));
     // Wait for animation
     await new Promise(resolve => setTimeout(resolve, 300));
     try {
-      await removeFromCart(productId).unwrap();
+      await removeFromCart(itemId).unwrap();
     } catch {}
     setRemovingIds((prev) => {
       const next = new Set(prev);
-      next.delete(productId);
+      next.delete(itemId);
       return next;
     });
+  };
+
+  // Helper to get primary image from product
+  const getPrimaryImage = (product: any) => {
+    return product?.primaryImage || null;
   };
 
   const handleApplyCoupon = async () => {
@@ -164,11 +171,11 @@ export default function CartPage() {
 
   const handleRemoveCoupon = async () => {
     setCouponError('');
-    await removeCoupon().unwrap().catch(() => {});
+    await removeCoupon(undefined).unwrap().catch(() => {});
   };
 
   const subtotal = cartItems.reduce(
-    (sum: number, item: any) => sum + parseFloat(item.product.price) * item.quantity,
+    (sum: number, item: any) => sum + parseFloat(item.product?.price ?? 0) * item.quantity,
     0
   );
   const shipping = subtotal >= 50 ? 0 : 5.99;
@@ -197,7 +204,7 @@ export default function CartPage() {
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => clearCart().catch(() => {})}
+          onClick={() => clearCart(undefined).catch(() => {})}
           className="text-sm text-mono-rose hover:text-mono-rose/80 transition-colors flex items-center gap-1.5 self-start sm:self-auto"
         >
           <Trash2 className="h-4 w-4" />
@@ -215,8 +222,12 @@ export default function CartPage() {
         >
           <AnimatePresence mode="popLayout">
             {cartItems.map((item: any) => {
-              const isRemoving = removingIds.has(item.product.id);
-              const isUpdating = updatingIds.has(item.product.id);
+              const variant = item.variant;
+              const product = item.product;
+              const isRemoving = removingIds.has(item.id);
+              const isUpdating = updatingIds.has(item.id);
+              
+              if (!product) return null;
               
               return (
                 <motion.div
@@ -232,10 +243,10 @@ export default function CartPage() {
                     <CardContent className="p-4 sm:p-5">
                       <div className="flex gap-4 sm:gap-6">
                         {/* Product Image */}
-                        <Link href={`/products/${item.product.slug}`} className="flex-shrink-0">
+                        <Link href={`/products/${product.slug}`} className="flex-shrink-0">
                           <div className="w-24 h-24 sm:w-28 sm:h-28 bg-muted rounded-xl overflow-hidden">
-                            {item.product.images?.[0] ? (
-                              <img src={item.product.images[0]} alt={item.product.name} className="object-cover w-full h-full" />
+                            {getPrimaryImage(product) ? (
+                              <img src={getPrimaryImage(product)} alt={product.name} className="object-cover w-full h-full" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">No image</div>
                             )}
@@ -244,29 +255,32 @@ export default function CartPage() {
 
                         {/* Product Info */}
                         <div className="flex-1 min-w-0">
-                          <Link href={`/products/${item.product.slug}`}>
-                            <h3 className="font-semibold text-foreground hover:text-mono-terracotta transition-colors line-clamp-2">{item.product.name}</h3>
+                          <Link href={`/products/${product.slug}`}>
+                            <h3 className="font-semibold text-foreground hover:text-mono-terracotta transition-colors line-clamp-2">{product.name}</h3>
                           </Link>
-                          <p className="text-sm text-muted-foreground mt-1">{item.product.category?.name}</p>
-                          {item.product.stock < item.quantity && (
-                            <p className="text-xs text-mono-rose mt-1">Only {item.product.stock} in stock</p>
+                          <p className="text-sm text-muted-foreground mt-1">{product.category?.name}</p>
+                          {/* Show Size */}
+                          <p className="text-xs text-mono-terracotta mt-1 font-medium">Size: {item.size}</p>
+                          {/* Stock check on variant */}
+                          {variant.stock < item.quantity && (
+                            <p className="text-xs text-mono-rose mt-1">Only {variant.stock} in stock</p>
                           )}
                         </div>
 
                         {/* Quantity & Actions */}
                         <div className="flex flex-col items-end justify-between">
-                          <p className="font-semibold text-mono-charcoal">${(parseFloat(item.product.price) * item.quantity).toFixed(2)}</p>
+                          <p className="font-semibold text-mono-charcoal">${(parseFloat(product.price) * item.quantity).toFixed(2)}</p>
                           <div className="flex items-center gap-2">
                             <div className="flex items-center border border-input rounded-xl overflow-hidden bg-card">
-                              <button className="px-3 py-2 hover:bg-muted transition-colors disabled:opacity-30" onClick={() => handleUpdateQuantity(item.product.id, item.quantity - 1)} disabled={item.quantity <= 1 || isUpdating}>
+                              <button className="px-3 py-2 hover:bg-muted transition-colors disabled:opacity-30" onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 1 || isUpdating}>
                                 <Minus className="h-3.5 w-3.5" />
                               </button>
                               <span className="w-10 text-center text-sm font-medium">{isUpdating ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : item.quantity}</span>
-                              <button className="px-3 py-2 hover:bg-muted transition-colors disabled:opacity-30" onClick={() => handleUpdateQuantity(item.product.id, item.quantity + 1)} disabled={item.quantity >= item.product.stock || isUpdating}>
+                              <button className="px-3 py-2 hover:bg-muted transition-colors disabled:opacity-30" onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)} disabled={item.quantity >= variant.stock || isUpdating}>
                                 <Plus className="h-3.5 w-3.5" />
                               </button>
                             </div>
-                            <button onClick={() => handleRemove(item.product.id)} disabled={isRemoving} className="p-2 text-muted-foreground hover:text-mono-rose transition-colors"><Trash2 className="h-4 w-4" /></button>
+                            <button onClick={() => handleRemove(item.id)} disabled={isRemoving} className="p-2 text-muted-foreground hover:text-mono-rose transition-colors"><Trash2 className="h-4 w-4" /></button>
                           </div>
                         </div>
                       </div>

@@ -49,7 +49,6 @@ export default function CheckoutPage() {
   const [useNewAddress, setUseNewAddress] = useState(false);
   const [orderError, setOrderError] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('online');
-  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const [newAddrForm, setNewAddrForm] = useState<NewAddressForm>({
@@ -90,7 +89,8 @@ export default function CheckoutPage() {
 
   const handleRazorpayPayment = async (orderId: number, paymentData: any) => {
     if (!window.Razorpay) {
-      setOrderError('Payment system is not ready. Please try again.');
+      setOrderError('Payment system is loading. Please wait a moment and try again.');
+      setIsProcessing(false);
       return;
     }
 
@@ -108,10 +108,12 @@ export default function CheckoutPage() {
             razorpayPaymentId: response.razorpay_payment_id,
             razorpaySignature: response.razorpay_signature,
           }).unwrap();
+          dispatch(cartApi.util.invalidateTags(['Cart']));
           router.push(`/orders/${orderId}?success=true&payment=success`);
         } catch (err: any) {
-          setOrderError(err?.data?.message || 'Payment verification failed.');
+          setOrderError(err?.data?.message || 'Payment verification failed. Your payment may have been captured — please check your orders.');
           setIsProcessing(false);
+          router.push(`/orders/${orderId}?payment=failed`);
         }
       },
       prefill: {
@@ -148,7 +150,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      const order = await createOrder({ addressId, ...(coupon?.id ? { couponId: coupon.id } : {}) }).unwrap();
+      const order = await createOrder({ addressId, paymentMethod, ...(coupon?.id ? { couponId: coupon.id } : {}) }).unwrap();
       const orderId = (order as any)?.data?.id || (order as any)?.id;
       dispatch(cartApi.util.invalidateTags(['Cart']));
 
@@ -185,8 +187,7 @@ export default function CheckoutPage() {
     <>
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
-        onLoad={() => setRazorpayLoaded(true)}
-        strategy="lazyOnload"
+        strategy="afterInteractive"
       />
       <div className="container-mono py-8">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
@@ -370,18 +371,22 @@ export default function CheckoutPage() {
                           <span className="label-caps text-mono-stone">Items ({cartItems.length})</span>
                         </div>
                         <div className="space-y-3">
-                          {cartItems.map((item: any) => (
-                            <div key={item.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
-                              <div className="w-12 h-12 bg-muted rounded-lg overflow-hidden">
-                                {item.product?.images?.[0] && <img src={item.product.images[0]} alt={item.product.name} className="object-cover w-full h-full" />}
+                          {cartItems.map((item: any) => {
+                            const product = item.product;
+                            const primaryImage = product?.primaryImage;
+                            return (
+                              <div key={item.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
+                                <div className="w-12 h-12 bg-muted rounded-lg overflow-hidden">
+                                  {primaryImage && <img src={primaryImage} alt={product?.name} className="object-cover w-full h-full" />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">{product?.name}</p>
+                                  <p className="text-xs text-muted-foreground">Qty: {item.quantity} · Size: {item.size}</p>
+                                </div>
+                                <p className="text-sm font-semibold">${(parseFloat(product?.price || 0) * item.quantity).toFixed(2)}</p>
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">{item.product?.name}</p>
-                                <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
-                              </div>
-                              <p className="text-sm font-semibold">${(parseFloat(item.product?.price || 0) * item.quantity).toFixed(2)}</p>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
 
@@ -406,7 +411,7 @@ export default function CheckoutPage() {
 
                       <div className="flex gap-3">
                         <Button variant="outline" onClick={() => setStep(2)} className="flex-1 h-12" disabled={isProcessingOrder}>Back</Button>
-                        <Button className="flex-1 h-12 bg-mono-charcoal hover:bg-mono-charcoal/90" onClick={handlePlaceOrder} disabled={isProcessingOrder || (paymentMethod === 'online' && !razorpayLoaded)} size="lg">
+                        <Button className="flex-1 h-12 bg-mono-charcoal hover:bg-mono-charcoal/90" onClick={handlePlaceOrder} disabled={isProcessingOrder} size="lg">
                           {isProcessingOrder ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Processing...</> : <>Place Order · ${total.toFixed(2)}</>}
                         </Button>
                       </div>

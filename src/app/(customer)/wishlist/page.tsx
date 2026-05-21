@@ -1,7 +1,6 @@
 'use client';
 
 import { useGetWishlistQuery, useRemoveFromWishlistMutation, useClearWishlistMutation } from '@/services/api/wishlistApi';
-import { useAddToCartMutation } from '@/services/api/cartApi';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,8 +15,6 @@ export default function WishlistPage() {
   const { data: wishlistResponse, isLoading } = useGetWishlistQuery({}, { skip: !isAuthenticated });
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
   const [clearWishlist] = useClearWishlistMutation();
-  const [addToCart] = useAddToCartMutation();
-  const [cartLoadingIds, setCartLoadingIds] = useState<Set<number>>(new Set());
   const [removeLoadingIds, setRemoveLoadingIds] = useState<Set<number>>(new Set());
 
   if (!isAuthenticated) {
@@ -44,12 +41,9 @@ export default function WishlistPage() {
 
   const wishlistItems = (wishlistResponse as any)?.data || [];
 
-  const handleAddToCart = async (productId: number) => {
-    setCartLoadingIds((prev) => new Set(prev).add(productId));
-    try {
-      await addToCart({ productId, quantity: 1 }).unwrap();
-    } catch {}
-    setCartLoadingIds((prev) => { const n = new Set(prev); n.delete(productId); return n; });
+  // Updated: Wishlist items need size selection - redirect to product page
+  const handleAddToCart = (productSlug: string) => {
+    router.push(`/products/${productSlug}`);
   };
 
   const handleRemove = async (productId: number) => {
@@ -93,20 +87,27 @@ export default function WishlistPage() {
               <CardHeader className="p-0 relative">
                 <Link href={`/products/${item.product.slug}`}>
                   <div className="aspect-square bg-muted overflow-hidden">
-                    {item.product.images?.[0] ? (
-                      <img
-                        src={item.product.images[0]}
-                        alt={item.product.name}
-                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">No image</div>
-                    )}
+                    {(() => {
+                      const media = item.product.media || [];
+                      const primaryImage = media.find((m: any) => m.isPrimary)?.url || media[0]?.url;
+                      return primaryImage ? (
+                        <img
+                          src={primaryImage}
+                          alt={item.product.name}
+                          className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">No Image</div>
+                      );
+                    })()}
                   </div>
                 </Link>
-                {item.product.stock === 0 && (
-                  <div className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded">Out of Stock</div>
-                )}
+                {(() => {
+                  const totalStock = item.product.variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) || 0;
+                  return totalStock === 0 ? (
+                    <div className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded">Out of Stock</div>
+                  ) : null;
+                })()}
               </CardHeader>
 
               <CardContent className="p-4">
@@ -129,14 +130,13 @@ export default function WishlistPage() {
                 <Button
                   className="flex-1"
                   size="sm"
-                  onClick={() => handleAddToCart(item.product.id)}
-                  disabled={item.product.stock === 0 || cartLoadingIds.has(item.product.id)}
+                  onClick={() => handleAddToCart(item.product.slug)}
+                  disabled={(() => {
+                    const totalStock = item.product.variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) || 0;
+                    return totalStock === 0;
+                  })()}
                 >
-                  {cartLoadingIds.has(item.product.id) ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <><ShoppingCart className="h-4 w-4 mr-1" /> Add to Cart</>
-                  )}
+                  <><ShoppingCart className="h-4 w-4 mr-1" /> Select Size</>
                 </Button>
                 <Button
                   variant="outline"

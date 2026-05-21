@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useGetProductsQuery } from '@/services/api/productsApi';
-import { useAddToCartMutation } from '@/services/api/cartApi';
 import { useAddToWishlistMutation, useRemoveFromWishlistMutation } from '@/services/api/wishlistApi';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { useRouter } from 'next/navigation';
@@ -27,35 +26,18 @@ export default function HomePage() {
   const router = useRouter();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
-  const [cartLoadingIds, setCartLoadingIds] = useState<Set<number>>(new Set());
 
   const { data: productsData, isLoading } = useGetProductsQuery({
-    limit: 12,
+    isBestseller: 'true',
+    sortBy: 'avgRating',
+    sortOrder: 'desc',
+    limit: 8,
   });
 
-  const [addToCart] = useAddToCartMutation();
   const [addToWishlist] = useAddToWishlistMutation();
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
 
   const products = (productsData as any)?.data || [];
-
-  const handleAddToCart = async (productId: number, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
-    setCartLoadingIds((prev) => new Set(prev).add(productId));
-    try {
-      await addToCart({ productId, quantity: 1 }).unwrap();
-    } catch {}
-    setCartLoadingIds((prev) => {
-      const next = new Set(prev);
-      next.delete(productId);
-      return next;
-    });
-  };
 
   const handleToggleWishlist = async (productId: number, e: React.MouseEvent) => {
     e.preventDefault();
@@ -94,8 +76,6 @@ export default function HomePage() {
       <BestSellers
         products={products}
         wishlistIds={wishlistIds}
-        cartLoadingIds={cartLoadingIds}
-        onAddToCart={handleAddToCart}
         onToggleWishlist={handleToggleWishlist}
         isLoading={isLoading}
       />

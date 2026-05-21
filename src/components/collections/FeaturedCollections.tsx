@@ -2,35 +2,53 @@
 
 import { motion } from 'framer-motion';
 import { CollectionCard } from './CollectionCard';
+import { useGetCategoriesQuery } from '@/services/api/categoriesApi';
 
-const collections = [
-  {
-    title: 'Urban Essentials',
-    subtitle: 'City Ready',
-    image: 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=800&q=80',
-    href: '/products?category=streetwear',
-  },
-  {
-    title: 'Minimal Workspace',
-    subtitle: 'Work From Home',
-    image: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=800&q=80',
-    href: '/products?category=lifestyle',
-  },
-  {
-    title: 'Summer Linen',
-    subtitle: 'Breathe Easy',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
-    href: '/products?category=linen',
-  },
-  {
-    title: 'Performance Wear',
-    subtitle: 'Active Living',
-    image: 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=800&q=80',
-    href: '/products?category=activewear',
-  },
-];
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  imageUrl?: string;
+  isFeatured: boolean;
+  isActive: boolean;
+}
 
 export const FeaturedCollections = () => {
+  const { data: categoriesResponse, isLoading, error } = useGetCategoriesQuery({
+    isFeatured: 'true',
+    includeInactive: 'false',
+    limit: 8,
+  });
+
+  // Extract categories array from response - handle both paginated and non-paginated formats
+  const categories: Category[] = categoriesResponse?.data || categoriesResponse || [];
+
+  // Map categories to collection format
+  const collections = categories.map((category) => ({
+    title: category.name,
+    subtitle: category.parent?.name || 'Explore',
+    image: category.imageUrl || 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=800&q=80',
+    href: `/products?category=${category.slug}`,
+  }));
+
+  if (isLoading) {
+    return (
+      <section className="py-20 md:py-32 bg-[#F6F3EE]">
+        <div className="container-mono">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="aspect-[3/4] rounded-2xl bg-gray-200 animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error || collections.length === 0) {
+    return null;
+  }
+
   return (
     <section className="py-20 md:py-32 bg-[#F6F3EE]">
       <div className="container-mono">

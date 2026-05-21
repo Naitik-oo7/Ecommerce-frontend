@@ -19,8 +19,6 @@ interface Product {
 interface BestSellersProps {
   products: Product[];
   wishlistIds: Set<number>;
-  cartLoadingIds: Set<number>;
-  onAddToCart: (productId: number, e: React.MouseEvent) => void;
   onToggleWishlist: (productId: number, e: React.MouseEvent) => void;
   isLoading?: boolean;
 }
@@ -28,8 +26,6 @@ interface BestSellersProps {
 export const BestSellers = ({
   products,
   wishlistIds,
-  cartLoadingIds,
-  onAddToCart,
   onToggleWishlist,
   isLoading = false,
 }: BestSellersProps) => {
@@ -94,8 +90,6 @@ export const BestSellers = ({
                 product={product}
                 index={index}
                 isInWishlist={wishlistIds.has(product.id)}
-                isAddingToCart={cartLoadingIds.has(product.id)}
-                onAddToCart={(e) => onAddToCart(product.id, e)}
                 onToggleWishlist={(e) => onToggleWishlist(product.id, e)}
               />
             ))}

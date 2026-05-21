@@ -91,13 +91,17 @@ export default function OrdersPage() {
                   </div>
 
                   <div className="flex items-center gap-3 mb-3">
-                    {items.slice(0, 3).map((item: any, i: number) => (
-                      <div key={i} className="w-12 h-12 bg-muted rounded-md overflow-hidden flex-shrink-0">
-                        {item.product?.images?.[0] && (
-                          <img src={item.product.images[0]} alt={item.product?.name} className="object-cover w-full h-full" />
-                        )}
-                      </div>
-                    ))}
+                    {items.slice(0, 3).map((item: any, i: number) => {
+                      const image = item.productImage || item.variant?.product?.media?.[0]?.url;
+                      const name = item.productName || item.variant?.product?.name;
+                      return (
+                        <div key={i} className="w-12 h-12 bg-muted rounded-md overflow-hidden flex-shrink-0">
+                          {image && (
+                            <img src={image} alt={name} className="object-cover w-full h-full" />
+                          )}
+                        </div>
+                      );
+                    })}
                     {items.length > 3 && (
                       <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground">
                         +{items.length - 3}
