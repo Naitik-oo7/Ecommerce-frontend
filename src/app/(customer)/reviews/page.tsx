@@ -59,7 +59,7 @@ export default function ReviewsPage() {
           <Star className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
           <h2 className="text-2xl font-bold mb-2">No reviews yet</h2>
           <p className="text-muted-foreground mb-6">You can review products from your delivered orders.</p>
-          <Link href="/orders"><Button>View Orders</Button></Link>
+          <Link href="/profile/orders"><Button>View Orders</Button></Link>
         </Card>
       ) : (
         <div className="space-y-4">

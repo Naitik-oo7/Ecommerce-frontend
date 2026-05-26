@@ -12,16 +12,25 @@ const axiosInstance = axios.create({
 
 // Token refresh state management to prevent race conditions
 let isRefreshing = false;
-let refreshSubscribers: Array<(token: string) => void> = [];
+let refreshSubscribers: Array<{ onSuccess: (token: string) => void; onError: (error: unknown) => void }> = [];
 
 // Subscribe to token refresh
-function subscribeTokenRefresh(callback: (token: string) => void) {
-  refreshSubscribers.push(callback);
+function subscribeTokenRefresh(
+  onSuccess: (token: string) => void,
+  onError: (error: unknown) => void
+) {
+  refreshSubscribers.push({ onSuccess, onError });
 }
 
 // Notify all subscribers with new token
 function onTokenRefreshed(newToken: string) {
-  refreshSubscribers.forEach((callback) => callback(newToken));
+  refreshSubscribers.forEach((subscriber) => subscriber.onSuccess(newToken));
+  refreshSubscribers = [];
+}
+
+// Notify all subscribers of refresh failure
+function onRefreshFailed(error: unknown) {
+  refreshSubscribers.forEach((subscriber) => subscriber.onError(error));
   refreshSubscribers = [];
 }
 
@@ -52,13 +61,18 @@ axiosInstance.interceptors.response.use(
 
     // If already refreshing, queue this request
     if (isRefreshing) {
-      return new Promise((resolve) => {
-        subscribeTokenRefresh((newToken: string) => {
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+      return new Promise((resolve, reject) => {
+        subscribeTokenRefresh(
+          (newToken: string) => {
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            }
+            resolve(axiosInstance(originalRequest));
+          },
+          (error: unknown) => {
+            reject(error);
           }
-          resolve(axiosInstance(originalRequest));
-        });
+        );
       });
     }
 
@@ -102,6 +116,9 @@ axiosInstance.interceptors.response.use(
       }
       return axiosInstance(originalRequest);
     } catch (refreshError) {
+      // Notify all queued requests that refresh failed
+      onRefreshFailed(refreshError);
+
       // Refresh failed - clear tokens and redirect
       if (typeof window !== 'undefined') {
         localStorage.removeItem('accessToken');

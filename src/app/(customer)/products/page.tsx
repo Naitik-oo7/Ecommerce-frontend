@@ -243,7 +243,7 @@ function ShopPageInner() {
     >
       {/* ── Page Header ─────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-[#E5E2DD]">
-        <div className="container-mono py-6 md:py-10">
+        <div className="container-mono py-4 md:py-6">
           {/* Breadcrumbs */}
           <nav className="flex items-center gap-1.5 text-xs text-[#9B9B9B] mb-4">
             <Link href="/" className="flex items-center gap-1 hover:text-[#111111] transition-colors">

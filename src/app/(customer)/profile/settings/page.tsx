@@ -1,8 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Lock, Bell, Eye, EyeOff, Check, Loader2 } from 'lucide-react';
@@ -53,118 +51,144 @@ export default function SettingsPage() {
     }
   };
 
+  const notifPrefs = [
+    { key: 'email', label: 'Email Notifications', desc: 'Order updates and promotions via email' },
+    { key: 'sms', label: 'SMS Notifications', desc: 'Important order alerts via text message' },
+    { key: 'push', label: 'Push Notifications', desc: 'Browser push notifications' },
+  ];
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <h1 className="text-3xl font-bold mb-8">Settings</h1>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <span className="text-xs font-semibold tracking-[0.15em] uppercase text-[#C7A27C] block mb-1">Preferences</span>
+        <h1 className="text-2xl font-bold text-[#111111]">Account Settings</h1>
+      </div>
 
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lock className="h-5 w-5" /> Change Password
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {pwSuccess && (
-              <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-md text-sm">
-                <Check className="h-4 w-4" /> Password updated successfully
-              </div>
-            )}
-            {pwError && (
-              <p className="text-sm text-destructive">{pwError}</p>
-            )}
-
-            <div className="space-y-1">
-              <Label>Current Password</Label>
-              <div className="relative">
-                <Input
-                  type={showCurrentPw ? 'text' : 'password'}
-                  value={passwordForm.currentPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-full"
-                  onClick={() => setShowCurrentPw(!showCurrentPw)}
-                >
-                  {showCurrentPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-              </div>
+      {/* Change Password */}
+      <div className="bg-white rounded-2xl border border-[#E5E2DD] overflow-hidden">
+        <div className="flex items-center gap-3 px-6 py-4 border-b border-[#F0EDE8]">
+          <div className="w-9 h-9 rounded-xl bg-[#F6F3EE] flex items-center justify-center shrink-0">
+            <Lock className="h-4 w-4 text-[#C7A27C]" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-[#111111]">Change Password</h2>
+            <p className="text-xs text-[#9B9B9B]">Keep your account secure with a strong password</p>
+          </div>
+        </div>
+        <div className="p-6 space-y-4">
+          {pwSuccess && (
+            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm">
+              <Check className="h-4 w-4 shrink-0" /> Password updated successfully
             </div>
+          )}
+          {pwError && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-2">{pwError}</p>
+          )}
 
-            <div className="space-y-1">
-              <Label>New Password</Label>
-              <div className="relative">
-                <Input
-                  type={showNewPw ? 'text' : 'password'}
-                  value={passwordForm.newPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-full"
-                  onClick={() => setShowNewPw(!showNewPw)}
-                >
-                  {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
-            </div>
-
-            <div className="space-y-1">
-              <Label>Confirm New Password</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-[#6B6B6B] uppercase tracking-wider">Current Password</Label>
+            <div className="relative">
               <Input
-                type="password"
-                value={passwordForm.confirmPassword}
-                onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                type={showCurrentPw ? 'text' : 'password'}
+                value={passwordForm.currentPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                className="pr-10 h-11 border-[#E5E2DD] focus:border-[#C7A27C] focus:ring-[#C7A27C]/20"
               />
+              <button
+                type="button"
+                onClick={() => setShowCurrentPw(!showCurrentPw)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9B9B9B] hover:text-[#111111] transition-colors"
+              >
+                {showCurrentPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
+          </div>
 
-            <Button onClick={handlePasswordSubmit} disabled={changingPw}>
-              {changingPw ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Updating...</> : 'Update Password'}
-            </Button>
-          </CardContent>
-        </Card>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-[#6B6B6B] uppercase tracking-wider">New Password</Label>
+            <div className="relative">
+              <Input
+                type={showNewPw ? 'text' : 'password'}
+                value={passwordForm.newPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                className="pr-10 h-11 border-[#E5E2DD] focus:border-[#C7A27C] focus:ring-[#C7A27C]/20"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPw(!showNewPw)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9B9B9B] hover:text-[#111111] transition-colors"
+              >
+                {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            <p className="text-xs text-[#9B9B9B]">Minimum 8 characters</p>
+          </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" /> Notification Preferences
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {[
-              { key: 'email', label: 'Email Notifications', desc: 'Receive order updates and promotions via email' },
-              { key: 'sms', label: 'SMS Notifications', desc: 'Get important order alerts via text message' },
-              { key: 'push', label: 'Push Notifications', desc: 'Receive browser push notifications' },
-            ].map((pref) => (
-              <div key={pref.key} className="flex items-center justify-between py-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-[#6B6B6B] uppercase tracking-wider">Confirm New Password</Label>
+            <Input
+              type="password"
+              value={passwordForm.confirmPassword}
+              onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+              className="h-11 border-[#E5E2DD] focus:border-[#C7A27C] focus:ring-[#C7A27C]/20"
+            />
+          </div>
+
+          <button
+            onClick={handlePasswordSubmit}
+            disabled={changingPw}
+            className="h-11 px-6 bg-[#111111] text-white text-sm font-medium rounded-xl hover:bg-[#333] transition-colors disabled:opacity-50 flex items-center gap-2"
+          >
+            {changingPw ? <><Loader2 className="h-4 w-4 animate-spin" /> Updating…</> : 'Update Password'}
+          </button>
+        </div>
+      </div>
+
+      {/* Notification Preferences */}
+      <div className="bg-white rounded-2xl border border-[#E5E2DD] overflow-hidden">
+        <div className="flex items-center gap-3 px-6 py-4 border-b border-[#F0EDE8]">
+          <div className="w-9 h-9 rounded-xl bg-[#F6F3EE] flex items-center justify-center shrink-0">
+            <Bell className="h-4 w-4 text-[#C7A27C]" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-[#111111]">Notification Preferences</h2>
+            <p className="text-xs text-[#9B9B9B]">Control how we reach you</p>
+          </div>
+        </div>
+        <div className="divide-y divide-[#F0EDE8]">
+          {notifPrefs.map((pref) => {
+            const isOn = notifications[pref.key as keyof typeof notifications];
+            return (
+              <div key={pref.key} className="flex items-center justify-between px-6 py-4">
                 <div>
-                  <p className="font-medium text-sm">{pref.label}</p>
-                  <p className="text-xs text-muted-foreground">{pref.desc}</p>
+                  <p className="text-sm font-medium text-[#111111]">{pref.label}</p>
+                  <p className="text-xs text-[#9B9B9B] mt-0.5">{pref.desc}</p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={notifications[pref.key as keyof typeof notifications]}
-                    onChange={(e) => setNotifications({ ...notifications, [pref.key]: e.target.checked })}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isOn}
+                  onClick={() => setNotifications({ ...notifications, [pref.key]: !isOn })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                    isOn ? 'bg-[#C7A27C]' : 'bg-[#D4D0CA]'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                      isOn ? 'translate-x-6' : 'translate-x-1'
+                    }`}
                   />
-                  <div className={`w-11 h-6 rounded-full transition-colors ${notifications[pref.key as keyof typeof notifications] ? 'bg-primary' : 'bg-muted'}`}>
-                    <div className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform mt-0.5 ${notifications[pref.key as keyof typeof notifications] ? 'translate-x-5.5 ml-5.5' : 'translate-x-0.5 ml-0.5'}`} style={{ marginLeft: notifications[pref.key as keyof typeof notifications] ? '22px' : '2px' }} />
-                  </div>
-                </label>
+                </button>
               </div>
-            ))}
-            <Button className="mt-2">Save Preferences</Button>
-          </CardContent>
-        </Card>
+            );
+          })}
+        </div>
+        <div className="px-6 py-4 bg-[#FAFAF8] border-t border-[#F0EDE8]">
+          <button className="h-10 px-5 bg-[#111111] text-white text-sm font-medium rounded-xl hover:bg-[#333] transition-colors">
+            Save Preferences
+          </button>
+        </div>
       </div>
     </div>
   );

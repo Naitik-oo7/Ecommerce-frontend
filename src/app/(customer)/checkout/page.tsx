@@ -87,6 +87,14 @@ export default function CheckoutPage() {
     }
   }, [isAuthenticated, router]);
 
+  useEffect(() => {
+    if (addresses.length > 0 && selectedAddressId === null) {
+      const defaultAddr = addresses.find((a: any) => a.isDefault) || addresses[0];
+      setSelectedAddressId(defaultAddr.id);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addresses.length]);
+
   const handleRazorpayPayment = async (orderId: number, paymentData: any) => {
     if (!window.Razorpay) {
       setOrderError('Payment system is loading. Please wait a moment and try again.');
@@ -109,11 +117,11 @@ export default function CheckoutPage() {
             razorpaySignature: response.razorpay_signature,
           }).unwrap();
           dispatch(cartApi.util.invalidateTags(['Cart']));
-          router.push(`/orders/${orderId}?success=true&payment=success`);
+          router.push(`/order-placed/${orderId}?success=true&payment=success`);
         } catch (err: any) {
           setOrderError(err?.data?.message || 'Payment verification failed. Your payment may have been captured — please check your orders.');
           setIsProcessing(false);
-          router.push(`/orders/${orderId}?payment=failed`);
+          router.push(`/order-placed/${orderId}?payment=failed`);
         }
       },
       prefill: {
@@ -124,7 +132,7 @@ export default function CheckoutPage() {
       modal: {
         ondismiss: () => {
           setIsProcessing(false);
-          router.push(`/orders/${orderId}?payment=pending`);
+          router.push(`/order-placed/${orderId}?payment=pending`);
         },
       },
     };
@@ -155,7 +163,7 @@ export default function CheckoutPage() {
       dispatch(cartApi.util.invalidateTags(['Cart']));
 
       if (paymentMethod === 'cod') {
-        router.push(`/orders/${orderId}?success=true`);
+        router.push(`/order-placed/${orderId}?success=true`);
       } else {
         const payment = await createPayment({ orderId }).unwrap();
         const paymentData = (payment as any)?.data || payment;

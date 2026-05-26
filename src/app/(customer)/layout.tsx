@@ -10,6 +10,7 @@ import { useGetCartQuery } from '@/services/api/cartApi';
 import { useLogoutMutation } from '@/services/api/authApi';
 import { useGetNotificationsQuery, useGetUnreadCountQuery, useMarkAsReadByIdMutation, useMarkAsReadMutation } from '@/services/api/notificationsApi';
 import { useGetProductsQuery } from '@/services/api/productsApi';
+import CategoryNav from '@/components/navigation/CategoryNav';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { gsap } from 'gsap';
@@ -76,7 +77,6 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   const notificationsRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
-  const navIndicatorRef = useRef<HTMLDivElement>(null);
 
   const { data: cart } = useGetCartQuery(undefined, { skip: !isAuthenticated });
   const { data: notificationsData } = useGetNotificationsQuery({ limit: 10 }, { skip: !isAuthenticated });
@@ -115,10 +115,8 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
     const header = headerRef.current;
     if (!header) return;
 
-    // Initial state
+    // Initial state - only animate shadow/border, leave bg to Tailwind
     gsap.set(header, { 
-      backgroundColor: 'rgba(255, 255, 255, 0)',
-      backdropFilter: 'blur(0px)',
       boxShadow: '0 0 0 rgba(0,0,0,0)',
       borderBottomWidth: '0px'
     });
@@ -131,8 +129,6 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
         onUpdate: (self) => {
           const progress = self.progress;
           gsap.to(header, {
-            backgroundColor: `rgba(255, 255, 255, ${progress * 0.95})`,
-            backdropFilter: `blur(${progress * 12}px)`,
             boxShadow: `0 1px 3px rgba(0,0,0,${progress * 0.05})`,
             borderBottomWidth: `${progress * 1}px`,
             borderBottomColor: 'rgba(0,0,0,0.05)',
@@ -147,28 +143,6 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
     return () => ctx.revert();
   }, []);
 
-  // Animate nav indicator to active link
-  useEffect(() => {
-    const indicator = navIndicatorRef.current;
-    if (!indicator) return;
-
-    const activeLink = document.querySelector(`[data-nav-link][data-active="true"]`);
-    if (activeLink) {
-      const rect = activeLink.getBoundingClientRect();
-      const parentRect = activeLink.parentElement?.getBoundingClientRect();
-      if (parentRect) {
-        gsap.to(indicator, {
-          x: rect.left - parentRect.left,
-          width: rect.width,
-          opacity: 1,
-          duration: 0.4,
-          ease: 'power2.out'
-        });
-      }
-    } else {
-      gsap.to(indicator, { opacity: 0, duration: 0.2 });
-    }
-  }, [pathname]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -218,85 +192,42 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   const navLinks = [
     { href: '/', label: 'Home', icon: Home },
     { href: '/products', label: 'Shop', icon: ShoppingCart },
-    { href: '/orders', label: 'Orders', icon: Package },
+    { href: '/profile/orders', label: 'Orders', icon: Package },
     { href: '/wishlist', label: 'Wishlist', icon: Heart },
-  ];
-
-  const premiumNavLinks = [
-    { href: '/products', label: 'Shop' },
-    { href: '/products?filter=new', label: 'New Arrivals' },
-    { href: '/journal', label: 'Journal' },
-    { href: '/about', label: 'About' },
   ];
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* ============================================
-          MONO Header - Premium Fashion Navigation
+          MONO Header - Centered Logo Style (ONLY.in inspired)
           ============================================ */}
       <motion.header
         ref={headerRef}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="fixed top-0 left-0 right-0 z-50 border-b border-transparent will-change-transform"
+        className="fixed top-0 left-0 right-0 z-50 border-b border-transparent will-change-transform bg-background/95 backdrop-blur-md"
       >
+        {/* Top Row - Logo Centered, Actions Right */}
         <div className="container-mono">
-          <div className="flex items-center justify-between h-16 md:h-20">
-            {/* Logo - MONO Brand */}
-            <Link href="/" className="flex items-center flex-shrink-0 group">
-              <motion.span 
-                className="text-xl md:text-2xl font-bold tracking-tight text-mono-charcoal"
+          <div className="flex items-center h-14 md:h-16 relative">
+            {/* Centered Logo - absolute positioned to stay truly centered */}
+            <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center group whitespace-nowrap">
+              <motion.span
+                className="text-2xl md:text-3xl font-bold tracking-tight text-mono-charcoal"
                 whileHover={{ scale: 1.02 }}
                 transition={{ duration: 0.2 }}
               >
                 <span className="tracking-[-0.08em]">M</span>
                 <span className="tracking-[-0.02em]">ONO</span>
               </motion.span>
-              <span className="ml-2 text-[10px] font-medium text-mono-stone tracking-widest uppercase hidden sm:inline-block">
+              <span className="ml-2 text-[10px] font-medium text-mono-stone tracking-widest uppercase hidden sm:inline">
                 Curated
               </span>
             </Link>
 
-            {/* Desktop Navigation - Premium with Animated Indicator */}
-            <nav className="hidden md:flex items-center space-x-10 relative">
-              {/* Animated underline indicator */}
-              <div
-                ref={navIndicatorRef}
-                className="absolute -bottom-1 h-0.5 bg-mono-terracotta rounded-full opacity-0 pointer-events-none"
-                style={{ width: 0 }}
-              />
-              {premiumNavLinks.map((link) => {
-                const isActive = pathname === link.href || pathname.startsWith(link.href.split('?')[0]);
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    data-nav-link
-                    data-active={isActive}
-                    className="relative text-sm font-medium text-foreground/70 hover:text-foreground transition-colors duration-300 tracking-wide py-2"
-                  >
-                    <motion.span
-                      className="relative z-10"
-                      whileHover={{ y: -1 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      {link.label}
-                    </motion.span>
-                    {/* Hover glow effect */}
-                    <motion.span
-                      className="absolute inset-0 -z-10 bg-mono-terracotta/5 rounded-lg"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      whileHover={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.2 }}
-                    />
-                  </Link>
-                );
-              })}
-            </nav>
-
-            {/* Right Actions */}
-            <div className="flex items-center gap-1 md:gap-2">
+            {/* Right Actions - pushed to right */}
+            <div className="flex items-center gap-1 md:gap-2 ml-auto">
               {/* Search */}
               <Button
                 variant="ghost"
@@ -458,7 +389,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
                             <Link href="/profile" className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-muted/50 transition-colors" onClick={() => setUserMenuOpen(false)}>
                               <User className="h-4 w-4 text-muted-foreground" /> Profile
                             </Link>
-                            <Link href="/orders" className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-muted/50 transition-colors" onClick={() => setUserMenuOpen(false)}>
+                            <Link href="/profile/orders" className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-muted/50 transition-colors" onClick={() => setUserMenuOpen(false)}>
                               <Package className="h-4 w-4 text-muted-foreground" /> Orders
                             </Link>
                             <Link href="/wishlist" className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-muted/50 transition-colors" onClick={() => setUserMenuOpen(false)}>
@@ -551,111 +482,117 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
         </AnimatePresence>
       </motion.header>
 
-      {/* Spacer for fixed header */}
-      <div className="h-16 md:h-20" />
+      {/* Category Navigation Bar */}
+      <CategoryNav scrolled={scrolled} />
 
       {/* Search Modal */}
       <AnimatePresence>
         {searchOpen && (
           <>
+            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
-              onClick={() => setSearchOpen(false)}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60]"
+              onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
             />
+
+            {/* Modal */}
             <motion.div
-              initial={{ opacity: 0, y: -20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.95 }}
-              className="fixed top-20 left-1/2 -translate-x-1/2 w-full max-w-2xl z-50 px-4"
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="fixed top-24 left-1/2 -translate-x-1/2 w-full max-w-xl z-[61] px-4"
             >
-              <div className="bg-card rounded-xl shadow-2xl border overflow-hidden">
-                <form onSubmit={handleSearchSubmit} className="flex items-center border-b">
-                  <Search className="h-5 w-5 text-muted-foreground ml-4" />
+              <div className="bg-white rounded-2xl shadow-2xl border border-border/60 overflow-hidden">
+                {/* Input row */}
+                <form onSubmit={handleSearchSubmit} className="flex items-center gap-3 px-4 py-3 border-b border-border/50">
+                  <Search className="h-5 w-5 text-muted-foreground shrink-0" />
                   <input
                     type="text"
                     placeholder="Search products..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="flex-1 px-4 py-4 bg-transparent outline-none text-lg"
+                    className="flex-1 bg-transparent outline-none ring-0 focus:outline-none focus:ring-0 border-none text-base placeholder:text-muted-foreground/60 py-1"
                     autoFocus
                   />
-                  {searchQuery && (
+                  {searchQuery ? (
                     <button
                       type="button"
                       onClick={() => setSearchQuery('')}
-                      className="p-2 hover:bg-muted rounded-full mr-2"
+                      className="shrink-0 p-1.5 rounded-full hover:bg-muted transition-colors"
                     >
                       <X className="h-4 w-4 text-muted-foreground" />
                     </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+                      className="shrink-0 text-xs text-muted-foreground border border-border/60 rounded px-2 py-1 hover:bg-muted transition-colors"
+                    >
+                      Esc
+                    </button>
                   )}
-                  <button
-                    type="submit"
-                    className="px-4 py-4 text-primary font-medium hover:bg-muted transition-colors border-l"
-                  >
-                    Search
-                  </button>
                 </form>
 
-                {/* Search Results */}
-                {searchQuery.length >= 2 && (
-                  <div className="max-h-[60vh] overflow-y-auto">
+                {/* Results */}
+                {searchQuery.length >= 2 ? (
+                  <div className="max-h-[55vh] overflow-y-auto">
                     {searchResults.length > 0 ? (
-                      <div className="divide-y">
-                        {searchResults.slice(0, 6).map((product: any) => (
-                          <Link
-                            key={product.id}
-                            href={`/products/${product.slug}`}
-                            onClick={() => {
-                              setSearchOpen(false);
-                              setSearchQuery('');
-                            }}
-                            className="flex items-center gap-4 p-3 hover:bg-muted transition-colors"
+                      <>
+                        <p className="px-4 pt-3 pb-1 text-[11px] font-semibold tracking-widest uppercase text-muted-foreground">
+                          Products
+                        </p>
+                        <div className="pb-2">
+                          {searchResults.slice(0, 6).map((product: any) => (
+                            <Link
+                              key={product.id}
+                              href={`/products/${product.slug}`}
+                              onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+                              className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/60 transition-colors group"
+                            >
+                              <div className="h-12 w-12 bg-muted rounded-lg overflow-hidden shrink-0">
+                                {product.images?.[0] ? (
+                                  <img
+                                    src={product.images[0]}
+                                    alt={product.name}
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="h-full w-full flex items-center justify-center">
+                                    <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">₹{product.price}</p>
+                              </div>
+                              <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                            </Link>
+                          ))}
+                        </div>
+                        <div className="px-4 py-3 border-t border-border/50 bg-muted/20">
+                          <button
+                            onClick={handleSearchSubmit}
+                            className="w-full text-center text-sm font-medium text-mono-terracotta hover:underline"
                           >
-                            <div className="h-14 w-14 bg-muted rounded-md overflow-hidden flex-shrink-0">
-                              {product.variants?.[0]?.images?.[0] ? (
-                                <img
-                                  src={product.variants[0].images[0]}
-                                  alt={product.name}
-                                  className="h-full w-full object-cover"
-                                />
-                              ) : (
-                                <div className="h-full w-full flex items-center justify-center">
-                                  <ShoppingCart className="h-5 w-5 text-muted-foreground" />
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium truncate">{product.name}</p>
-                              <p className="text-sm text-muted-foreground">${product.price}</p>
-                            </div>
-                            <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                          </Link>
-                        ))}
-                      </div>
+                            View all results for &ldquo;{searchQuery}&rdquo; →
+                          </button>
+                        </div>
+                      </>
                     ) : (
-                      <div className="p-8 text-center text-muted-foreground">
-                        No products found
-                      </div>
-                    )}
-                    {searchResults.length > 0 && (
-                      <div className="p-3 border-t bg-muted/30">
-                        <button
-                          onClick={handleSearchSubmit}
-                          className="w-full text-center text-primary hover:underline text-sm"
-                        >
-                          View all {searchResults.length} results
-                        </button>
+                      <div className="py-10 text-center text-muted-foreground text-sm">
+                        No products found for &ldquo;{searchQuery}&rdquo;
                       </div>
                     )}
                   </div>
-                )}
-
-                {searchQuery.length < 2 && (
-                  <div className="p-4 text-sm text-muted-foreground text-center">
-                    Type at least 2 characters to search
+                ) : (
+                  <div className="px-4 py-6 text-sm text-muted-foreground text-center">
+                    Start typing to search products…
                   </div>
                 )}
               </div>
@@ -665,7 +602,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
       </AnimatePresence>
 
       {/* Main Content Area */}
-      <motion.main initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }} className="flex-1">
+      <motion.main initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }} className="flex-1 pt-14 md:pt-16">
         {children}
       </motion.main>
 
@@ -693,7 +630,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
               <ul className="space-y-3 text-sm">
                 <li><Link href="/" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">All Products</Link></li>
                 <li><Link href="/cart" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">Shopping Cart</Link></li>
-                <li><Link href="/orders" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">Order History</Link></li>
+                <li><Link href="/profile/orders" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">Order History</Link></li>
                 <li><Link href="/wishlist" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">Wishlist</Link></li>
               </ul>
             </div>
@@ -719,7 +656,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
           <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-mono-stone"> {new Date().getFullYear()} MONO. All rights reserved.</p>
             <div className="flex gap-6 text-sm text-mono-stone">
-              <span className="hover:text-mono-cream cursor-default transition-colors">Privacy</span>
+              <Link href="/privacy" className="hover:text-mono-cream transition-colors">Privacy</Link>
               <span className="hover:text-mono-cream cursor-default transition-colors">Terms</span>
               <span className="hover:text-mono-cream cursor-default transition-colors">Cookies</span>
             </div>
