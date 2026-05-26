@@ -8,6 +8,8 @@ import { Heart, Trash2, ShoppingCart, Star, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { EmptyState } from '@/components/common';
+import { extractWishlist } from '@/lib/api-utils';
 
 export default function WishlistPage() {
   const router = useRouter();
@@ -20,11 +22,11 @@ export default function WishlistPage() {
   if (!isAuthenticated) {
     return (
       <div className="container mx-auto px-4 py-16">
-        <Card className="max-w-md mx-auto text-center p-8">
-          <Heart className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <h2 className="text-2xl font-bold mb-2">Sign in to view your wishlist</h2>
-          <Link href="/login"><Button className="mt-4">Login</Button></Link>
-        </Card>
+        <EmptyState
+          icon={Heart}
+          title="Sign in to view your wishlist"
+          action={{ label: 'Login', href: '/login' }}
+        />
       </div>
     );
   }
@@ -39,7 +41,7 @@ export default function WishlistPage() {
     );
   }
 
-  const wishlistItems = (wishlistResponse as any)?.data || [];
+  const wishlistItems = extractWishlist(wishlistResponse);
 
   // Updated: Wishlist items need size selection - redirect to product page
   const handleAddToCart = (productSlug: string) => {
@@ -74,12 +76,12 @@ export default function WishlistPage() {
       </div>
 
       {wishlistItems.length === 0 ? (
-        <Card className="max-w-md mx-auto text-center p-10">
-          <Heart className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <h2 className="text-2xl font-bold mb-2">Your wishlist is empty</h2>
-          <p className="text-muted-foreground mb-6">Save products you love for later</p>
-          <Link href="/"><Button>Browse Products</Button></Link>
-        </Card>
+        <EmptyState
+          icon={Heart}
+          title="Your wishlist is empty"
+          description="Save products you love for later"
+          action={{ label: 'Browse Products', href: '/' }}
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {wishlistItems.map((item: any) => (

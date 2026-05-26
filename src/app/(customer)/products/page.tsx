@@ -8,14 +8,16 @@ import Link from 'next/link';
 
 import { useGetProductsQuery } from '@/services/api/productsApi';
 import { useGetCategoriesQuery } from '@/services/api/categoriesApi';
-import { useAddToWishlistMutation, useRemoveFromWishlistMutation, useGetWishlistQuery } from '@/services/api/wishlistApi';
-import { useAppSelector } from '@/lib/redux/hooks';
+import { useWishlist } from '@/hooks/useWishlist';
 
-import { FilterSidebar, MobileFilterDrawer } from '@/components/shop/FilterSidebar';
-import type { ShopFilters } from '@/components/shop/FilterSidebar';
-import { ActiveFilterChips } from '@/components/shop/ActiveFilterChips';
-import type { ActiveFilter } from '@/components/shop/ActiveFilterChips';
-import { ProductGrid } from '@/components/shop/ProductGrid';
+import {
+  FilterSidebar,
+  MobileFilterDrawer,
+  ActiveFilterChips,
+  ProductGrid,
+  type ShopFilters,
+  type ActiveFilter,
+} from '@/components/shop';
 
 const PAGE_SIZE = 12;
 
@@ -56,8 +58,6 @@ function ShopPageInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
-
   // Filter state initialised from URL
   const [filters, setFilters] = useState<ShopFilters>(() => paramsToFilters(searchParams));
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -70,8 +70,7 @@ function ShopPageInner() {
   const [totalCount, setTotalCount] = useState<number | undefined>(undefined);
   const prevFiltersRef = useRef<string>('');
 
-  // Wishlist & cart state
-  const [optimisticWishlistIds, setOptimisticWishlistIds] = useState<Set<number> | null>(null);
+  const { wishlistIds, toggleWishlist } = useWishlist();
 
   // ── API Queries ──────────────────────────────────────────────────────────
 
@@ -87,30 +86,12 @@ function ShopPageInner() {
 
   const { data: productsResponse, isLoading, isFetching } = useGetProductsQuery(queryParams);
 
-  const { data: wishlistResponse } = useGetWishlistQuery(
-    {},
-    { skip: !isAuthenticated }
-  );
-
   const { data: categoriesResponse } = useGetCategoriesQuery({});
   const categories = useMemo<{ id: number; name: string }[]>(() => {
     return Array.isArray(categoriesResponse)
       ? (categoriesResponse as { id: number; name: string }[])
       : ((categoriesResponse as { data?: { id: number; name: string }[] })?.data || []);
   }, [categoriesResponse]);
-
-  const [addToWishlist] = useAddToWishlistMutation();
-  const [removeFromWishlist] = useRemoveFromWishlistMutation();
-
-  // ── Derive wishlist IDs from API (optimistic overrides on toggle) ─────────
-
-  const serverWishlistIds = useMemo<Set<number>>(() => {
-    const items = (wishlistResponse as { data?: { productId?: number; product?: { id?: number }; id?: number }[] })?.data ||
-      (Array.isArray(wishlistResponse) ? (wishlistResponse as { productId?: number; product?: { id?: number }; id?: number }[]) : []);
-    return new Set(items.map((i) => i.productId ?? i.product?.id ?? i.id ?? 0).filter(Boolean));
-  }, [wishlistResponse]);
-
-  const wishlistIds = optimisticWishlistIds ?? serverWishlistIds;
 
   // ── Accumulate products for infinite scroll ──────────────────────────────
 
@@ -170,26 +151,6 @@ function ShopPageInner() {
   const handleLoadMore = useCallback(() => {
     if (!isFetching) setPage((p) => p + 1);
   }, [isFetching]);
-
-  // ── Wishlist handler ─────────────────────────────────────────────────────
-
-  const handleToggleWishlist = useCallback(
-    async (productId: number, e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (!isAuthenticated) { router.push('/login'); return; }
-      try {
-        if (wishlistIds.has(productId)) {
-          setOptimisticWishlistIds((prev) => { const n = new Set(prev ?? wishlistIds); n.delete(productId); return n; });
-          await removeFromWishlist(productId).unwrap();
-        } else {
-          setOptimisticWishlistIds((prev) => new Set(prev ?? wishlistIds).add(productId));
-          await addToWishlist(productId).unwrap();
-        }
-      } catch { /* ignore */ }
-    },
-    [isAuthenticated, router, wishlistIds, addToWishlist, removeFromWishlist]
-  );
 
   // ── Active filter chips ──────────────────────────────────────────────────
 
@@ -357,7 +318,7 @@ function ShopPageInner() {
             <ProductGrid
               products={allProducts}
               wishlistIds={wishlistIds}
-              onToggleWishlist={handleToggleWishlist}
+              onToggleWishlist={toggleWishlist}
               isLoading={isLoading && page === 1}
               isFetchingMore={isFetching && page > 1}
               hasMore={hasMore}

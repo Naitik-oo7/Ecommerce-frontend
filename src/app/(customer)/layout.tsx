@@ -12,10 +12,11 @@ import { useGetNotificationsQuery, useGetUnreadCountQuery, useMarkAsReadByIdMuta
 import { useGetProductsQuery } from '@/services/api/productsApi';
 import CategoryNav from '@/components/navigation/CategoryNav';
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { fadeInDown, fadeInUp, staggerContainer, staggerItem, dropdownMenu } from '@/lib/animations';
+import { MagneticButton } from '@/components/effects';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -23,45 +24,6 @@ gsap.registerPlugin(ScrollTrigger);
 // MONO Brand Layout Component
 // Premium Fashion E-commerce Experience
 // ============================================
-
-// Magnetic button effect for premium hover interaction
-function MagneticButton({ children, className, ...props }: { children: React.ReactNode; className?: string } & React.ComponentProps<typeof Button>) {
-  const ref = useRef<HTMLButtonElement>(null);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  
-  const springConfig = { damping: 15, stiffness: 150 };
-  const springX = useSpring(x, springConfig);
-  const springY = useSpring(y, springConfig);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    x.set((e.clientX - centerX) * 0.15);
-    y.set((e.clientY - centerY) * 0.15);
-  };
-
-  const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
-  };
-
-  return (
-    <motion.div style={{ x: springX, y: springY }}>
-      <Button
-        ref={ref}
-        className={className}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        {...props}
-      >
-        {children}
-      </Button>
-    </motion.div>
-  );
-}
 
 export default function CustomerLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);

@@ -3,7 +3,9 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { PackageSearch } from 'lucide-react';
-import { PremiumProductCard } from '@/components/products/PremiumProductCard';
+import { ProductCard } from '@/components/products/ProductCard';
+import { CardSkeleton } from '@/components/common/CardSkeleton';
+import { EmptyState } from '@/components/common/EmptyState';
 
 interface Product {
   id: number;
@@ -26,17 +28,6 @@ interface ProductGridProps {
   onLoadMore: () => void;
   totalCount?: number;
   currentCount?: number;
-}
-
-function CardSkeleton() {
-  return (
-    <div className="animate-pulse">
-      <div className="aspect-[4/5] bg-[#F0EDE8] rounded-2xl mb-4" />
-      <div className="h-3 bg-[#F0EDE8] rounded w-1/3 mb-2" />
-      <div className="h-4 bg-[#F0EDE8] rounded w-3/4 mb-2" />
-      <div className="h-4 bg-[#F0EDE8] rounded w-1/2" />
-    </div>
-  );
 }
 
 export function ProductGrid({
@@ -72,29 +63,19 @@ export function ProductGrid({
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-        {[...Array(9)].map((_, i) => (
-          <CardSkeleton key={i} />
-        ))}
+        <CardSkeleton count={9} />
       </div>
     );
   }
 
   if (!isLoading && products.length === 0) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex flex-col items-center justify-center py-24 text-center"
-      >
-        <div className="w-16 h-16 bg-[#F6F3EE] rounded-full flex items-center justify-center mb-5">
-          <PackageSearch className="h-7 w-7 text-[#6B6B6B]" />
-        </div>
-        <h3 className="text-lg font-semibold text-[#111111] mb-2">No products found</h3>
-        <p className="text-sm text-[#6B6B6B] max-w-xs">
-          Try adjusting your filters or browse a different category.
-        </p>
-      </motion.div>
+      <EmptyState
+        icon={PackageSearch}
+        title="No products found"
+        description="Try adjusting your filters or browse a different category."
+        className="py-24"
+      />
     );
   }
 
@@ -111,7 +92,7 @@ export function ProductGrid({
       {/* Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
         {products.map((product, index) => (
-          <PremiumProductCard
+          <ProductCard
             key={product.id}
             product={product}
             index={index}
@@ -124,9 +105,7 @@ export function ProductGrid({
       {/* Skeleton rows when fetching more */}
       {isFetchingMore && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mt-4 md:mt-6">
-          {[...Array(3)].map((_, i) => (
-            <CardSkeleton key={i} />
-          ))}
+          <CardSkeleton count={3} />
         </div>
       )}
 

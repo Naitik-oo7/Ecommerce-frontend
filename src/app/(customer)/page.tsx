@@ -1,16 +1,14 @@
 'use client';
 
-import { useState } from 'react';
 import { useGetProductsQuery } from '@/services/api/productsApi';
-import { useAddToWishlistMutation, useRemoveFromWishlistMutation } from '@/services/api/wishlistApi';
-import { useAppSelector } from '@/lib/redux/hooks';
-import { useRouter } from 'next/navigation';
+import { useWishlist } from '@/hooks/useWishlist';
+import { extractData } from '@/lib/api-utils';
 
 // Premium Components
 import { CinematicHero } from '@/components/hero/CinematicHero';
 import { TrustMarquee } from '@/components/trust/TrustMarquee';
 import { FeaturedCollections } from '@/components/collections/FeaturedCollections';
-import { BestSellers } from '@/components/products/BestSellers';
+import { BestSellers } from '@/components/products';
 import { BrandStory } from '@/components/story/BrandStory';
 import { HorizontalGallery } from '@/components/gallery/HorizontalGallery';
 import { JournalSection } from '@/components/journal/JournalSection';
@@ -23,10 +21,6 @@ import { NewsletterSection } from '@/components/newsletter/NewsletterSection';
 // ============================================
 
 export default function HomePage() {
-  const router = useRouter();
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
-  const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
-
   const { data: productsData, isLoading } = useGetProductsQuery({
     isBestseller: 'true',
     sortBy: 'avgRating',
@@ -34,32 +28,20 @@ export default function HomePage() {
     limit: 8,
   });
 
-  const [addToWishlist] = useAddToWishlistMutation();
-  const [removeFromWishlist] = useRemoveFromWishlistMutation();
+  const { wishlistIds, toggleWishlist } = useWishlist();
 
-  const products = (productsData as any)?.data || [];
-
-  const handleToggleWishlist = async (productId: number, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
-    try {
-      if (wishlistIds.has(productId)) {
-        await removeFromWishlist(productId).unwrap();
-        setWishlistIds((prev) => {
-          const next = new Set(prev);
-          next.delete(productId);
-          return next;
-        });
-      } else {
-        await addToWishlist(productId).unwrap();
-        setWishlistIds((prev) => new Set(prev).add(productId));
-      }
-    } catch {}
-  };
+  const products = extractData<{
+    id: number;
+    name: string;
+    slug: string;
+    price: string;
+    comparePrice?: string;
+    stock: number;
+    images?: string[];
+    category?: { name: string };
+    avgRating?: number;
+    reviewCount?: number;
+  }[]>(productsData) ?? [];
 
   return (
     <div className="min-h-screen">
@@ -76,7 +58,7 @@ export default function HomePage() {
       <BestSellers
         products={products}
         wishlistIds={wishlistIds}
-        onToggleWishlist={handleToggleWishlist}
+        onToggleWishlist={toggleWishlist}
         isLoading={isLoading}
       />
 

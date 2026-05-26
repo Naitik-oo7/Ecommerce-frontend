@@ -24,6 +24,8 @@ import {
   fadeInUp,
   hoverLift 
 } from '@/lib/animations';
+import { EmptyState } from '@/components/common';
+import { extractCart } from '@/lib/api-utils';
 
 // ============================================
 // MONO Cart Page - Premium Shopping Experience
@@ -86,34 +88,19 @@ export default function CartPage() {
     );
   }
 
-  const cartData = (cartResponse as any)?.data || cartResponse;
-  const cart = cartData?.cart || cartData;
-  const cartItems = cart?.items || [];
+  const cart = extractCart(cartResponse);
+  const cartItems = (cart as { items?: unknown[] })?.items || [];
   const appliedCoupon = cart?.appliedCoupon;
 
   if (cartItems.length === 0) {
     return (
       <div className="container-mono py-16">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-center"
-        >
-          <div className="w-24 h-24 rounded-full bg-mono-cream flex items-center justify-center mx-auto mb-6">
-            <ShoppingBag className="h-12 w-12 text-mono-terracotta/60" />
-          </div>
-          <h2 className="text-editorial text-3xl text-mono-charcoal mb-3">Your cart is empty</h2>
-          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-            Discover our curated collection and find pieces that speak to your style
-          </p>
-          <Link href="/">
-            <Button size="lg" className="bg-mono-charcoal hover:bg-mono-charcoal/90">
-              Browse Collection
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-        </motion.div>
+        <EmptyState
+          icon={ShoppingBag}
+          title="Your cart is empty"
+          description="Discover our curated collection and find pieces that speak to your style"
+          action={{ label: 'Browse Collection', href: '/' }}
+        />
       </div>
     );
   }

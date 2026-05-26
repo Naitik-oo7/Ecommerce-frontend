@@ -4,21 +4,23 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Public routes that don't require authentication
   const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email'];
-  
-  // Check if the current path is a public route
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
-  // If it's a public route, allow access
   if (isPublicRoute) {
     return NextResponse.next();
   }
 
-  // For protected routes, we'll check authentication on the client side
-  // This middleware is a basic check - actual auth validation happens via RTK Query
-  // and httpOnly cookies
-  
+  // Block unauthenticated access to admin routes at the network layer.
+  // The auth flow must set an `accessToken` cookie alongside localStorage
+  // so middleware can read it (localStorage is not accessible here).
+  const isAdminRoute = pathname.startsWith('/admin');
+  const token = request.cookies.get('accessToken')?.value;
+
+  if (isAdminRoute && !token) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
   return NextResponse.next();
 }
 

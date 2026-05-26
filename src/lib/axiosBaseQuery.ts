@@ -2,6 +2,10 @@ import { AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axio
 import { BaseQueryFn } from '@reduxjs/toolkit/query/react';
 import axios from 'axios';
 
+// Auth model: tokens are stored in localStorage and sent via the Authorization header.
+// withCredentials is kept for CORS credentialed requests (non-auth cookies, CSRF).
+// To switch to httpOnly cookies, remove the localStorage interceptors below and
+// have the backend set Set-Cookie on login — the frontend would then send no header.
 const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5555',
   withCredentials: true,

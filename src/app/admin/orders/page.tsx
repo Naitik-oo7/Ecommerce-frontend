@@ -7,14 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Eye, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-
-const STATUS_COLORS: Record<string, string> = {
-  pending:    'bg-yellow-100 text-yellow-800',
-  processing: 'bg-blue-100 text-blue-800',
-  shipped:    'bg-indigo-100 text-indigo-800',
-  delivered:  'bg-green-100 text-green-800',
-  cancelled:  'bg-red-100 text-red-800',
-};
+import { ORDER_STATUS_CONFIG } from '@/constants';
 
 export default function AdminOrdersPage() {
   const [search, setSearch] = useState('');
@@ -126,7 +119,7 @@ export default function AdminOrdersPage() {
                               value={order.status}
                               onChange={(e) => handleStatusChange(order.id, e.target.value)}
                               disabled={updatingIds.has(order.id)}
-                              className={`border rounded px-2 py-1 text-xs font-medium ${STATUS_COLORS[order.status] || ''}`}
+                              className={`border rounded px-2 py-1 text-xs font-medium ${ORDER_STATUS_CONFIG[order.status]?.bg || ''} ${ORDER_STATUS_CONFIG[order.status]?.color || ''}`}
                             >
                               <option value="pending">Pending</option>
                               <option value="processing">Processing</option>

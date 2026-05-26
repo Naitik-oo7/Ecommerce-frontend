@@ -16,7 +16,6 @@ function SmoothScrollProvider({ children }: { children: React.ReactNode }) {
   const lenisRef = useRef<Lenis | null>(null);
 
   useEffect(() => {
-    // Initialize Lenis smooth scroll
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -29,23 +28,20 @@ function SmoothScrollProvider({ children }: { children: React.ReactNode }) {
 
     lenisRef.current = lenis;
 
-    // Connect Lenis to GSAP ScrollTrigger
     lenis.on('scroll', ScrollTrigger.update);
 
-    gsap.ticker.add((time) => {
-      lenis.raf(time * 1000);
-    });
-
+    // Hoist to a stable reference so gsap.ticker.remove() matches the same function
+    const ticker = (time: number) => lenis.raf(time * 1000);
+    gsap.ticker.add(ticker);
     gsap.ticker.lagSmoothing(0);
 
-    // Expose lenis to window for debugging
-    (window as typeof window & { lenis: Lenis }).lenis = lenis;
+    if (process.env.NODE_ENV === 'development') {
+      (window as typeof window & { lenis: Lenis }).lenis = lenis;
+    }
 
     return () => {
+      gsap.ticker.remove(ticker);
       lenis.destroy();
-      gsap.ticker.remove((time) => {
-        lenis.raf(time * 1000);
-      });
     };
   }, []);
 
