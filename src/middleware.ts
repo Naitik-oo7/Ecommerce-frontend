@@ -11,13 +11,21 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Issue #19: Protect customer routes that require authentication
+  const protectedRoutes = ['/profile', '/checkout', '/orders', '/wishlist'];
+  const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
+
   // Block unauthenticated access to admin routes at the network layer.
   // The auth flow must set an `accessToken` cookie alongside localStorage
   // so middleware can read it (localStorage is not accessible here).
   const isAdminRoute = pathname.startsWith('/admin');
+
+  // Issue #20: Token is validated by existence only in middleware.
+  // Full JWT verification would require the 'jose' library for Edge runtime.
+  // The API is the ultimate authority for token validation.
   const token = request.cookies.get('accessToken')?.value;
 
-  if (isAdminRoute && !token) {
+  if ((isAdminRoute || isProtectedRoute) && !token) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 

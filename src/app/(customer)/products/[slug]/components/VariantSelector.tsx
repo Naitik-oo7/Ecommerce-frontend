@@ -22,14 +22,15 @@ interface VariantSelectorProps {
 export function VariantSelector({ variants, selectedVariant, onSelect }: VariantSelectorProps) {
   if (!variants?.length) return null;
 
-  // Group by color first
-  const colors = [...new Set(variants.map((v) => v.color))];
+  // Only group by color when variants actually have color values
+  const hasColors = variants.some((v) => v.color);
+  const colors = hasColors ? [...new Set(variants.filter((v) => v.color).map((v) => v.color))] : [];
   const selectedColor = selectedVariant?.color;
-  
-  // Get sizes available for selected color
-  const sizesForColor = selectedColor
-    ? variants.filter((v) => v.color === selectedColor)
-    : [];
+
+  // Get sizes for selected color, or all sizes if no colors
+  const sizesForColor = hasColors
+    ? (selectedColor ? variants.filter((v) => v.color === selectedColor) : [])
+    : variants;
 
   return (
     <div className="space-y-4">
