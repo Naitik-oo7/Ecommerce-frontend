@@ -72,6 +72,13 @@ export const authApi = createApi({
         data,
       }),
     }),
+    googleAuth: builder.mutation<AuthResponse, { idToken: string }>({
+      query: (data) => ({
+        url: '/api/v1/auth/google',
+        method: 'POST',
+        data,
+      }),
+    }),
     verifyEmail: builder.mutation<void, { token: string }>({
       query: (data) => ({
         url: '/api/v1/auth/verify-email',
@@ -89,5 +96,6 @@ export const {
   useRefreshTokenMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,
+  useGoogleAuthMutation,
   useVerifyEmailMutation,
 } = authApi;

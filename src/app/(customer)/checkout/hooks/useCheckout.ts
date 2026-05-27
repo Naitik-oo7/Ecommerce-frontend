@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppSelector, useAppDispatch } from '@/lib/redux/hooks';
-import { cartApi } from '@/services/api/cartApi';
+import { useGetCartQuery, cartApi } from '@/services/api/cartApi';
 import { useGetAddressesQuery, useCreateAddressMutation } from '@/services/api/addressesApi';
 import { useCreateOrderMutation } from '@/services/api/ordersApi';
 import { useCreatePaymentMutation, useVerifyPaymentMutation } from '@/services/api/paymentsApi';
@@ -75,10 +75,25 @@ export function useCheckout() {
 
   const handleRazorpayPayment = async (orderId: number, paymentData: any) => {
     if (!window.Razorpay) {
-      setOrderError('Payment system is loading. Please wait a moment and try again.');
-      setIsProcessing(false);
-      return;
+      await new Promise<void>((resolve, reject) => {
+        let elapsed = 0;
+        const interval = setInterval(() => {
+          elapsed += 200;
+          if (window.Razorpay) {
+            clearInterval(interval);
+            resolve();
+          } else if (elapsed >= 5000) {
+            clearInterval(interval);
+            reject(new Error('Razorpay SDK failed to load'));
+          }
+        }, 200);
+      }).catch(() => {
+        setOrderError('Payment system failed to load. Please refresh and try again.');
+        setIsProcessing(false);
+        return;
+      });
     }
+    if (!window.Razorpay) return;
 
     const options = {
       key: paymentData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '',
@@ -142,14 +157,13 @@ export function useCheckout() {
         ...(coupon ? { couponId: (cart as any)?.appliedCoupon?.id } : {}),
       }).unwrap();
       const orderId = (order as any)?.data?.id || (order as any)?.id;
-      dispatch(cartApi.util.invalidateTags(['Cart']));
 
       if (paymentMethod === 'cod') {
+        dispatch(cartApi.util.invalidateTags(['Cart']));
         router.push(`/order-placed/${orderId}?success=true`);
       } else {
         const payment = await createPayment({ orderId }).unwrap();
-        const paymentData = (payment as any)?.data || payment;
-        await handleRazorpayPayment(orderId, paymentData);
+        await handleRazorpayPayment(orderId, payment);
       }
     } catch (err: any) {
       setOrderError(err?.data?.message || 'Failed to place order.');

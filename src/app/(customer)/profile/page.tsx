@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
   pending:    { label: 'Pending',    color: 'text-yellow-700', bg: 'bg-yellow-50 border-yellow-200',  icon: Clock },
@@ -114,9 +115,11 @@ export default function ProfilePage() {
           <div className="flex items-end justify-between -mt-10 mb-4">
             <div className="relative">
               {profile?.avatar ? (
-                <img
+                <Image
                   src={profile.avatar}
                   alt={profile.name}
+                  width={80}
+                  height={80}
                   className="w-20 h-20 rounded-full object-cover ring-4 ring-white border border-[#E5E2DD]"
                 />
               ) : (

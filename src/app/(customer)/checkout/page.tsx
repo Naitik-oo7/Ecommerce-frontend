@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import Script from 'next/script';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,13 +21,6 @@ declare global {
 
 export default function CheckoutPage() {
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
-  
-  // Debug logging
-  useEffect(() => {
-    console.log('[Checkout] isAuthenticated:', isAuthenticated);
-    console.log('[Checkout] user:', user);
-    console.log('[Checkout] localStorage accessToken:', localStorage.getItem('accessToken'));
-  }, [isAuthenticated, user]);
   const {
     step,
     setStep,
@@ -88,7 +80,7 @@ export default function CheckoutPage() {
 
   return (
     <>
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
       
       <div className="container-mono py-8">
         {/* Back Button */}

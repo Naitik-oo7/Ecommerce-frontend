@@ -93,6 +93,22 @@ export const productsApi = createApi({
       query: (params = {}) => ({ url: '/api/v1/products/filters/meta', method: 'GET', params }),
       providesTags: ['Products'],
     }),
+    getRelatedProducts: builder.query<Product[], { slug: string; limit?: number }>({
+      query: ({ slug, limit = 8 }) => ({
+        url: `/api/v1/products/${slug}/related`,
+        method: 'GET',
+        params: { limit },
+      }),
+      transformResponse: (response: unknown) => {
+        const r = response as { data?: RawProduct[] } | RawProduct[];
+        if (Array.isArray((r as { data?: RawProduct[] }).data)) {
+          return (r as { data: RawProduct[] }).data.map(mapImages);
+        }
+        if (Array.isArray(r)) return (r as RawProduct[]).map(mapImages);
+        return r as Product[];
+      },
+      providesTags: (_result, _error, { slug }) => [{ type: 'Products', id: `related-${slug}` }],
+    }),
   }),
 });
 
@@ -104,4 +120,5 @@ export const {
   useDeleteProductMutation,
   useUpdateStockMutation,
   useGetFilterMetadataQuery,
+  useGetRelatedProductsQuery,
 } = productsApi;

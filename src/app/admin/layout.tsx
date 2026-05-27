@@ -49,6 +49,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     dispatch(clearUser());
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    document.cookie = 'accessToken=; path=/; max-age=0; SameSite=Lax';
     router.push('/login');
   };
 

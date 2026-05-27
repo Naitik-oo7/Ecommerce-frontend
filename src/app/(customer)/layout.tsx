@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAppSelector, useAppDispatch } from '@/lib/redux/hooks';
 import { clearUser } from '@/lib/redux/authSlice';
@@ -48,12 +49,20 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   const [logoutMutation] = useLogoutMutation();
 
   // Search functionality
+  const { data: defaultProductsData } = useGetProductsQuery({
+    limit: 4,
+    sortBy: 'avgRating',
+    sortOrder: 'desc',
+    isActive: 'true',
+  }, { skip: !searchOpen });
+
   const { data: productsData } = useGetProductsQuery({
     search: searchQuery,
     limit: 8,
     isActive: 'true',
   }, { skip: !searchOpen || searchQuery.length < 2 });
 
+  const defaultProducts = (defaultProductsData as any)?.data || [];
   const searchResults = (productsData as any)?.data || [];
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -132,6 +141,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
     dispatch(clearUser());
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    document.cookie = 'accessToken=; path=/; max-age=0; SameSite=Lax';
     router.push('/login');
     setUserMenuOpen(false);
     setMobileOpen(false);
@@ -329,7 +339,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
                   <motion.div whileTap={{ scale: 0.95 }}>
                     <Button variant="ghost" size="icon" onClick={() => setUserMenuOpen(!userMenuOpen)} className="text-foreground/70 hover:text-foreground hover:bg-muted/50" aria-label="User menu">
                       {user?.avatar ? (
-                        <img src={user.avatar} alt={user.name} className="h-8 w-8 rounded-full object-cover ring-2 ring-border" />
+                        <Image src={user.avatar} alt={user.name} width={32} height={32} className="h-8 w-8 rounded-full object-cover ring-2 ring-border" />
                       ) : (
                         <div className="h-8 w-8 rounded-full bg-mono-charcoal text-white flex items-center justify-center text-sm font-semibold">
                           {user?.name?.charAt(0).toUpperCase()}
@@ -553,8 +563,40 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
                     )}
                   </div>
                 ) : (
-                  <div className="px-4 py-6 text-sm text-muted-foreground text-center">
-                    Start typing to search products…
+                  <div className="pb-3">
+                    <p className="px-4 pt-3 pb-2 text-[11px] font-semibold tracking-widest uppercase text-muted-foreground">
+                      Featured
+                    </p>
+                    {defaultProducts.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-2 px-4 pb-2">
+                        {defaultProducts.map((product: any) => (
+                          <Link
+                            key={product.id}
+                            href={`/products/${product.slug}`}
+                            onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+                            className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/60 transition-colors group"
+                          >
+                            <div className="h-12 w-12 bg-muted rounded-lg overflow-hidden shrink-0">
+                              {product.images?.[0] ? (
+                                <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover" />
+                              ) : (
+                                <div className="h-full w-full flex items-center justify-center">
+                                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-foreground truncate">{product.name}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">₹{product.price}</p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="px-4 py-4 text-sm text-muted-foreground text-center">
+                        Start typing to search…
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -42,7 +42,10 @@ function onRefreshFailed(error: unknown) {
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    const token =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('accessToken') ?? sessionStorage.getItem('accessToken')
+        : null;
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -86,7 +89,11 @@ axiosInstance.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+      const refreshToken =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('refreshToken') ?? sessionStorage.getItem('refreshToken')
+          : null;
+      const isPersisted = typeof window !== 'undefined' && !!localStorage.getItem('refreshToken');
 
       if (!refreshToken || refreshToken === 'null' || refreshToken === 'undefined') {
         throw new Error('No valid refresh token available');
@@ -104,11 +111,16 @@ axiosInstance.interceptors.response.use(
         throw new Error('No access token received from refresh endpoint');
       }
 
-      // Store new tokens
+      // Store new tokens in whichever storage was originally used
       if (typeof window !== 'undefined') {
-        localStorage.setItem('accessToken', newAccessToken);
-        if (newRefreshToken) {
-          localStorage.setItem('refreshToken', newRefreshToken);
+        if (isPersisted) {
+          localStorage.setItem('accessToken', newAccessToken);
+          if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
+          document.cookie = `accessToken=${newAccessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+        } else {
+          sessionStorage.setItem('accessToken', newAccessToken);
+          if (newRefreshToken) sessionStorage.setItem('refreshToken', newRefreshToken);
+          document.cookie = `accessToken=${newAccessToken}; path=/; SameSite=Lax`;
         }
       }
 
@@ -124,11 +136,15 @@ axiosInstance.interceptors.response.use(
       // Notify all queued requests that refresh failed
       onRefreshFailed(refreshError);
 
-      // Refresh failed - clear tokens and redirect
+      // Refresh failed - clear tokens but do NOT hard-redirect.
+      // Let the calling code (AuthInitializer, requireAuth, etc.) handle navigation.
       if (typeof window !== 'undefined') {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
-        window.location.href = '/login';
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('accessToken');
+        sessionStorage.removeItem('refreshToken');
+        document.cookie = 'accessToken=; path=/; max-age=0; SameSite=Lax';
       }
       return Promise.reject(refreshError);
     } finally {

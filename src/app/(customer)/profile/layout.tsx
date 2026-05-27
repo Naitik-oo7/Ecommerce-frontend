@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { User, Package, MapPin, Settings, ChevronRight } from 'lucide-react';
@@ -43,9 +44,11 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
               <div className="flex flex-col items-center text-center">
                 <div className="relative mb-4">
                   {user?.avatar ? (
-                    <img
+                    <Image
                       src={user.avatar}
                       alt={user.name}
+                      width={80}
+                      height={80}
                       className="w-20 h-20 rounded-full object-cover ring-4 ring-[#F6F3EE]"
                     />
                   ) : (

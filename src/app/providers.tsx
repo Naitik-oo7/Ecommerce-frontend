@@ -73,14 +73,12 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
           store.dispatch(setUser(user));
         } else {
           store.dispatch(clearUser());
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
         }
       })
       .catch(() => {
+        // Token is invalid/expired and refresh also failed.
+        // The interceptor already cleared localStorage tokens.
         store.dispatch(clearUser());
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
       })
       .finally(() => {
         store.dispatch(setLoading(false));

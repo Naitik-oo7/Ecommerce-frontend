@@ -13,6 +13,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
+  --font-playfair: var(--font-playfair), 'Playfair Display', Georgia, serif;
   
   /* MONO Premium Brand Colors */
   --color-mono-charcoal: #111111;
