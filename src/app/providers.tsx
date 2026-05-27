@@ -49,13 +49,22 @@ function SmoothScrollProvider({ children }: { children: React.ReactNode }) {
 }
 
 function AuthInitializer({ children }: { children: React.ReactNode }) {
+  const hasInitialized = useRef(false);
+
   useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
     const token = localStorage.getItem('accessToken');
     if (!token) {
       store.dispatch(clearUser());
       return;
     }
-    store.dispatch(setLoading(true));
+
+    // Token exists — verify it in the background.
+    // The Redux initial state already restored user from localStorage,
+    // so isAuthenticated is already true. This just confirms the token
+    // is still valid and refreshes user data.
     axiosInstance
       .get('/api/v1/users/me')
       .then((res) => {
@@ -64,10 +73,17 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
           store.dispatch(setUser(user));
         } else {
           store.dispatch(clearUser());
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
         }
       })
       .catch(() => {
         store.dispatch(clearUser());
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+      })
+      .finally(() => {
+        store.dispatch(setLoading(false));
       });
   }, []);
 

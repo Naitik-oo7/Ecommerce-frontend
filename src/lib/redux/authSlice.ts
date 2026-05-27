@@ -14,10 +14,29 @@ interface AuthState {
   isLoading: boolean;
 }
 
+function getPersistedUser(): User | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      const user = JSON.parse(stored);
+      if (user?.id) return user;
+    }
+  } catch {}
+  return null;
+}
+
+function hasToken(): boolean {
+  if (typeof window === 'undefined') return false;
+  return !!localStorage.getItem('accessToken');
+}
+
+const persistedUser = getPersistedUser();
+
 const initialState: AuthState = {
-  user: null,
-  isAuthenticated: false,
-  isLoading: false,
+  user: persistedUser,
+  isAuthenticated: !!persistedUser && hasToken(),
+  isLoading: !persistedUser && hasToken(),
 };
 
 const authSlice = createSlice({
@@ -28,11 +47,17 @@ const authSlice = createSlice({
       state.user = action.payload;
       state.isAuthenticated = true;
       state.isLoading = false;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user', JSON.stringify(action.payload));
+      }
     },
     clearUser: (state) => {
       state.user = null;
       state.isAuthenticated = false;
       state.isLoading = false;
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user');
+      }
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;

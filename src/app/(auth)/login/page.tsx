@@ -32,11 +32,21 @@ export default function LoginPage() {
     try {
       setError(null);
       const response = await loginMutation(data).unwrap();
-      dispatch(setUser(response.user));
-      // Store tokens in localStorage for authentication
+      console.log('[Login] Login successful, response:', response);
+      
+      // Store tokens FIRST before setting user in Redux
       localStorage.setItem('accessToken', response.accessToken);
       localStorage.setItem('refreshToken', response.refreshToken);
-      router.push('/');
+      console.log('[Login] Tokens stored in localStorage');
+      
+      // Then set user in Redux
+      dispatch(setUser(response.user));
+      console.log('[Login] User set in Redux, redirecting...');
+      
+      // Small delay to ensure state is updated
+      setTimeout(() => {
+        router.push('/');
+      }, 100);
     } catch (err: unknown) {
       const error = err as { data?: { message?: string } };
       setError(error.data?.message || 'Login failed. Please try again.');
