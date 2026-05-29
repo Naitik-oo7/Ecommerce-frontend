@@ -32,7 +32,6 @@ export const BestSellers = ({
     );
   }
 
-  // Show only first 8 products for best sellers
   const displayProducts = products.slice(0, 8);
 
   return (
@@ -47,17 +46,35 @@ export const BestSellers = ({
           className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12 md:mb-16"
         >
           <div>
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-[#C7A27C] mb-4 block">
+            <span
+              className="text-xs font-semibold tracking-[0.2em] uppercase mb-4 block"
+              style={{ color: '#C8703A', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
               Shop Now
             </span>
-            <h2 className="text-4xl md:text-5xl font-bold text-[#111111] leading-[1.1]">
+            <h2
+              className="leading-[1.05] mb-3"
+              style={{
+                fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+                fontSize: 'clamp(2rem, 3.5vw, 3rem)',
+                fontWeight: 700,
+                color: '#1A1A18',
+              }}
+            >
               Best Sellers
             </h2>
+            <p
+              className="text-sm leading-relaxed max-w-xs"
+              style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
+              Our most-loved pieces — trusted by thousands of customers worldwide.
+            </p>
           </div>
-          
+
           <Link href="/products">
-            <motion.span 
-              className="inline-flex items-center gap-2 text-[#111111] font-medium hover:text-[#C7A27C] transition-colors cursor-pointer group"
+            <motion.span
+              className="inline-flex items-center gap-2 font-medium transition-colors cursor-pointer group hover:opacity-70"
+              style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)', letterSpacing: '0.04em' }}
               whileHover={{ x: 5 }}
             >
               View All Products
@@ -81,7 +98,9 @@ export const BestSellers = ({
           </div>
         ) : (
           <div className="text-center py-16">
-            <p className="text-[#6B6B6B]">No products available</p>
+            <p style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}>
+              No products available
+            </p>
           </div>
         )}
       </div>

@@ -27,7 +27,6 @@ export const NewsletterSection = () => {
         setEmail('');
       }, 3000);
     } catch {
-      // already subscribed or error — still show success UX
       setIsSubmitted(true);
       setTimeout(() => {
         setIsSubmitted(false);
@@ -37,11 +36,11 @@ export const NewsletterSection = () => {
   };
 
   return (
-    <section className="relative py-24 md:py-32 bg-[#0F0F0F] overflow-hidden">
+    <section className="relative py-24 md:py-32 overflow-hidden" style={{ background: '#0F0F0F' }}>
       {/* Background gradient */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full bg-[#C7A27C]/10 blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-[#C7A27C]/5 blur-[100px]" />
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full blur-[120px]" style={{ background: 'rgba(200,112,58,0.08)' }} />
+        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full blur-[100px]" style={{ background: 'rgba(200,112,58,0.04)' }} />
       </div>
 
       <div className="container-mono relative z-10">
@@ -53,15 +52,28 @@ export const NewsletterSection = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }}
           >
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-[#C7A27C] mb-6 block">
+            <span
+              className="text-xs font-semibold tracking-[0.2em] uppercase mb-6 block"
+              style={{ color: '#C8703A', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
               Stay Connected
             </span>
-            
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.1] mb-6">
-              {g?.newsletterHeadline || "Stay close to what\u2019s next."}
+
+            <h2
+              className="leading-[1.05] text-white mb-6"
+              style={{
+                fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+                fontSize: 'clamp(2.2rem, 4vw, 3.8rem)',
+                fontWeight: 700,
+              }}
+            >
+              {g?.newsletterHeadline || "Stay close to what’s next."}
             </h2>
-            
-            <p className="text-white/60 text-lg mb-10 max-w-lg mx-auto">
+
+            <p
+              className="text-lg mb-10 max-w-lg mx-auto"
+              style={{ color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
               {g?.newsletterSubtext || 'Be the first to know about new collections, exclusive offers, and style inspiration.'}
             </p>
           </motion.div>
@@ -84,24 +96,23 @@ export const NewsletterSection = () => {
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 className={`h-14 bg-white/10 border-white/20 text-white placeholder:text-white/40 rounded-full px-6 transition-all duration-300 ${
-                  isFocused ? 'border-[#C7A27C] shadow-[0_0_20px_rgba(199,162,124,0.3)]' : ''
+                  isFocused ? 'border-[#C8703A] shadow-[0_0_20px_rgba(200,112,58,0.25)]' : ''
                 }`}
+                style={{ fontFamily: 'var(--font-body, Jost, sans-serif)' }}
                 required
               />
             </div>
-            
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Button 
+
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
                 type="submit"
                 disabled={isSubmitted || isLoading}
                 className={`h-14 px-8 rounded-full font-medium transition-all duration-300 ${
-                  isSubmitted 
-                    ? 'bg-green-500 hover:bg-green-500' 
-                    : 'bg-[#C7A27C] hover:bg-[#b08d68] text-[#111111]'
+                  isSubmitted
+                    ? 'bg-green-500 hover:bg-green-500'
+                    : 'bg-[#C8703A] hover:bg-[#b5632f] text-white'
                 }`}
+                style={{ fontFamily: 'var(--font-body, Jost, sans-serif)', letterSpacing: '0.06em' }}
               >
                 {isSubmitted ? (
                   <>
@@ -124,7 +135,8 @@ export const NewsletterSection = () => {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-white/40 text-sm mt-6"
+            className="text-sm mt-6"
+            style={{ color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
           >
             Join 50,000+ subscribers. No spam, unsubscribe anytime.
           </motion.p>

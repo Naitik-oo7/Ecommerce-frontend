@@ -27,7 +27,7 @@ export const BrandStory = () => {
   const s = (storyData as typeof defaultStory | undefined) || defaultStory;
 
   return (
-    <section className="py-20 md:py-32 bg-white overflow-hidden">
+    <section className="py-20 md:py-32 overflow-hidden" style={{ background: '#F0ECE4' }}>
       <div className="container-mono">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Left Column - Content */}
@@ -37,24 +37,39 @@ export const BrandStory = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }}
           >
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-[#C7A27C] mb-6 block">
+            <span
+              className="text-xs font-semibold tracking-[0.2em] uppercase mb-6 block"
+              style={{ color: '#C8703A', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
               {s.eyebrow}
             </span>
-            
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#111111] leading-[1.1] mb-8">
-              {s.headline}
-              <br />
-              <span className="text-[#6B6B6B]">{s.subheadline}</span>
+
+            <h2
+              className="leading-[1.05] mb-8"
+              style={{
+                fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+                fontSize: 'clamp(2rem, 3.5vw, 3rem)',
+                color: '#1A1A18',
+              }}
+            >
+              <span className="font-bold block">{s.headline}</span>
+              <em className="font-normal italic block" style={{ color: '#6B6560' }}>
+                {s.subheadline}
+              </em>
             </h2>
 
-            <div className="space-y-6 text-[#6B6B6B] leading-relaxed mb-10">
+            <div
+              className="space-y-6 leading-relaxed mb-10 text-sm"
+              style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
               <p>{s.body1}</p>
               <p>{s.body2}</p>
             </div>
 
             <Link href="/about">
-              <motion.span 
-                className="inline-flex items-center gap-2 text-[#111111] font-medium hover:text-[#C7A27C] transition-colors cursor-pointer group"
+              <motion.span
+                className="inline-flex items-center gap-2 font-medium transition-colors cursor-pointer group hover:opacity-70"
+                style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)', letterSpacing: '0.04em' }}
                 whileHover={{ x: 5 }}
               >
                 Discover Our Story
@@ -103,10 +118,21 @@ export const BrandStory = () => {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] as const }}
-              className="absolute top-1/2 left-[10%] transform -translate-y-1/2 bg-[#111111] text-white rounded-xl p-5 shadow-2xl z-20"
+              className="absolute top-1/2 left-[10%] transform -translate-y-1/2 text-white p-5 shadow-2xl z-20"
+              style={{ background: '#1A1A18' }}
             >
-              <p className="text-3xl font-bold">{s.stat.value}</p>
-              <p className="text-xs text-white/70 mt-1">{s.stat.label}</p>
+              <p
+                className="text-3xl font-bold"
+                style={{ fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)' }}
+              >
+                {s.stat.value}
+              </p>
+              <p
+                className="text-xs text-white/70 mt-1"
+                style={{ fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+              >
+                {s.stat.label}
+              </p>
             </motion.div>
           </div>
         </div>
@@ -117,12 +143,23 @@ export const BrandStory = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] as const }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-20 pt-12 border-t border-[#111111]/10"
+          className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-20 pt-12"
+          style={{ borderTop: '1px solid rgba(26,26,24,0.12)' }}
         >
           {s.materials.map((item) => (
             <div key={item.label} className="text-center">
-              <p className="font-semibold text-[#111111] mb-1">{item.label}</p>
-              <p className="text-sm text-[#6B6B6B]">{item.desc}</p>
+              <p
+                className="font-semibold mb-1"
+                style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+              >
+                {item.label}
+              </p>
+              <p
+                className="text-sm"
+                style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+              >
+                {item.desc}
+              </p>
             </div>
           ))}
         </motion.div>

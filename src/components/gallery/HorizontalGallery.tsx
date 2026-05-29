@@ -55,12 +55,9 @@ export const HorizontalGallery = () => {
 
     if (!container || !scrollContainer || !progress || !section) return;
 
-    // Calculate scroll distance
     const scrollWidth = scrollContainer.scrollWidth - window.innerWidth;
 
-    // Create the horizontal scroll animation
     const ctx = gsap.context(() => {
-      // Pin the section and scroll horizontally
       const scrollTween = gsap.to(scrollContainer, {
         x: () => -scrollWidth,
         ease: 'none',
@@ -73,7 +70,6 @@ export const HorizontalGallery = () => {
           anticipatePin: 1,
           invalidateOnRefresh: true,
           onUpdate: (self) => {
-            // Update progress bar
             gsap.to(progress, {
               scaleX: self.progress,
               duration: 0.1,
@@ -83,9 +79,8 @@ export const HorizontalGallery = () => {
         },
       });
 
-      // Animate items as they enter viewport
       const items = scrollContainer.querySelectorAll('.gallery-item');
-      items.forEach((item, index) => {
+      items.forEach((item) => {
         gsap.fromTo(
           item,
           { opacity: 0, y: 50, rotateY: 15 },
@@ -111,7 +106,7 @@ export const HorizontalGallery = () => {
   }, [isLoading, galleryItems.length]);
 
   return (
-    <section ref={sectionRef} className="bg-mono-charcoal text-white overflow-hidden">
+    <section ref={sectionRef} className="overflow-hidden" style={{ background: '#1A1A18' }}>
       {/* Section Header */}
       <div className="container-mono py-16 md:py-24">
         <motion.div
@@ -122,16 +117,30 @@ export const HorizontalGallery = () => {
           className="flex flex-col md:flex-row md:items-end md:justify-between gap-6"
         >
           <div>
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-mono-terracotta mb-4 block">
+            <span
+              className="text-xs font-semibold tracking-[0.2em] uppercase mb-4 block"
+              style={{ color: '#C8703A', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
               The Collection
             </span>
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight">
+            <h2
+              className="leading-[1.05]"
+              style={{
+                fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+                fontSize: 'clamp(2.2rem, 4vw, 3.8rem)',
+                fontWeight: 700,
+                color: '#F6F3EE',
+              }}
+            >
               Explore The
               <br />
-              <span className="text-white/40">Essentials</span>
+              <em className="font-normal italic" style={{ color: 'rgba(246,243,238,0.35)' }}>Essentials</em>
             </h2>
           </div>
-          <p className="text-white/60 max-w-md text-lg leading-relaxed">
+          <p
+            className="max-w-md text-lg leading-relaxed"
+            style={{ color: 'rgba(246,243,238,0.55)', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+          >
             A curated selection of timeless pieces designed to elevate your everyday wardrobe with
             intention and quality.
           </p>
@@ -145,7 +154,6 @@ export const HorizontalGallery = () => {
           className="flex items-center gap-6 md:gap-10 px-6 md:px-16 h-full will-change-transform"
           style={{ width: 'fit-content' }}
         >
-          {/* Spacer for initial offset */}
           <div className="w-[10vw] md:w-[20vw] flex-shrink-0" />
 
           {isLoading
@@ -169,7 +177,6 @@ export const HorizontalGallery = () => {
                 whileHover={{ y: -10 }}
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               >
-                {/* Image Container */}
                 <div className="relative aspect-[3/4] overflow-hidden rounded-lg mb-6 bg-white/5">
                   <motion.div
                     className="absolute inset-0"
@@ -183,54 +190,69 @@ export const HorizontalGallery = () => {
                     />
                   </motion.div>
 
-                  {/* Overlay gradient */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                  {/* Index number */}
-                  <div className="absolute top-4 left-4 text-6xl font-bold text-white/10">
+                  <div className="absolute top-4 left-4 text-6xl font-bold text-white/10"
+                    style={{ fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)' }}>
                     0{index + 1}
                   </div>
 
-                  {/* Hover arrow */}
                   <motion.div
                     className="absolute bottom-4 right-4 w-12 h-12 rounded-full bg-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                     initial={{ scale: 0.8 }}
                     whileHover={{ scale: 1 }}
                   >
-                    <ArrowRight className="h-5 w-5 text-mono-charcoal" />
+                    <ArrowRight className="h-5 w-5" style={{ color: '#1A1A18' }} />
                   </motion.div>
                 </div>
 
-                {/* Content */}
                 <div className="space-y-2">
-                  <span className="text-xs font-medium tracking-wider uppercase text-mono-terracotta">
+                  <span
+                    className="text-xs font-medium tracking-wider uppercase"
+                    style={{ color: '#C8703A', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                  >
                     {item.category}
                   </span>
-                  <h3 className="text-xl font-semibold text-white group-hover:text-white/80 transition-colors">
+                  <h3
+                    className="text-xl font-semibold group-hover:opacity-70 transition-opacity"
+                    style={{ color: '#F6F3EE', fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)' }}
+                  >
                     {item.title}
                   </h3>
-                  <p className="text-lg text-white/60">{item.price}</p>
+                  <p
+                    className="text-lg"
+                    style={{ color: 'rgba(246,243,238,0.55)', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                  >
+                    {item.price}
+                  </p>
                 </div>
               </motion.article>
             </Link>
           ))}
 
-          {/* Spacer for ending */}
           <div className="w-[20vw] flex-shrink-0" />
         </div>
 
         {/* Progress Bar */}
         <div className="absolute bottom-8 left-6 right-6 md:left-16 md:right-16">
           <div className="flex items-center gap-4">
-            <span className="text-xs font-medium tracking-wider text-white/40">01</span>
-            <div className="flex-1 h-px bg-white/20 relative overflow-hidden">
+            <span
+              className="text-xs font-medium tracking-wider"
+              style={{ color: 'rgba(246,243,238,0.35)', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
+              01
+            </span>
+            <div className="flex-1 h-px relative overflow-hidden" style={{ background: 'rgba(246,243,238,0.15)' }}>
               <div
                 ref={progressRef}
-                className="absolute inset-y-0 left-0 bg-mono-terracotta origin-left"
-                style={{ transform: 'scaleX(0)' }}
+                className="absolute inset-y-0 left-0 origin-left"
+                style={{ background: '#C8703A', transform: 'scaleX(0)' }}
               />
             </div>
-            <span className="text-xs font-medium tracking-wider text-white/40">
+            <span
+              className="text-xs font-medium tracking-wider"
+              style={{ color: 'rgba(246,243,238,0.35)', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
               {String(galleryItems.length || 6).padStart(2, '0')}
             </span>
           </div>

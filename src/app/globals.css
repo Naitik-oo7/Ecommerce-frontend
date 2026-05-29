@@ -196,10 +196,11 @@
   .bg-mono-terracotta { background-color: #C4A484; }
   .bg-mono-sand { background-color: #E8E4DE; }
   
-  .text-mono-charcoal { color: #1A1A1A; }
+  .text-mono-charcoal { color: #1A1A18; }
   .text-mono-cream { color: #F5F2ED; }
-  .text-mono-terracotta { color: #C4A484; }
+  .text-mono-terracotta { color: #C8703A; }
   .text-mono-stone { color: #8A8A8A; }
+  .text-mono-warm-gray { color: #6B6560; }
   
   /* Animation timing utilities */
   .ease-out-expo {
@@ -214,29 +215,29 @@
   .container-mono {
     margin-left: auto;
     margin-right: auto;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
     max-width: 1400px;
   }
 
   @media (min-width: 640px) {
     .container-mono {
-      padding-left: 0.75rem;
-      padding-right: 0.75rem;
+      padding-left: 2rem;
+      padding-right: 2rem;
     }
   }
 
   @media (min-width: 1024px) {
     .container-mono {
-      padding-left: 1rem;
-      padding-right: 1rem;
+      padding-left: 3rem;
+      padding-right: 3rem;
     }
   }
 
   @media (min-width: 1280px) {
     .container-mono {
-      padding-left: 1.5rem;
-      padding-right: 1.5rem;
+      padding-left: 4rem;
+      padding-right: 4rem;
     }
   }
   
