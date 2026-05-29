@@ -22,11 +22,19 @@ export default function AdminUsersPage() {
   const [updateUserRole] = useUpdateUserRoleMutation();
   const [deleteUser] = useDeleteUserMutation();
 
-  const users = (usersResponse as any)?.data || [];
-  const pagination = (usersResponse as any)?.pagination;
+  interface User {
+    id: number;
+    name?: string;
+    email?: string;
+    role?: string;
+    createdAt?: string;
+  }
+  interface UsersResponse { data?: User[]; pagination?: { total?: number; totalPages?: number }; }
+  const users = (usersResponse as UsersResponse | undefined)?.data || [];
+  const pagination = (usersResponse as UsersResponse | undefined)?.pagination;
 
   const filteredUsers = search
-    ? users.filter((u: any) =>
+    ? users.filter((u) =>
         u.name?.toLowerCase().includes(search.toLowerCase()) ||
         u.email?.toLowerCase().includes(search.toLowerCase())
       )
@@ -104,7 +112,7 @@ export default function AdminUsersPage() {
                       <td colSpan={5} className="p-12 text-center text-muted-foreground">No users found.</td>
                     </tr>
                   ) : (
-                    filteredUsers.map((user: any) => (
+                    filteredUsers.map((user) => (
                       <tr key={user.id} className="border-b hover:bg-muted/30 transition-colors">
                         <td className="p-3">
                           <div className="flex items-center gap-3">
@@ -124,7 +132,7 @@ export default function AdminUsersPage() {
                           </span>
                         </td>
                         <td className="p-3 text-sm text-muted-foreground">
-                          {new Date(user.createdAt).toLocaleDateString()}
+                          {new Date(user.createdAt ?? '').toLocaleDateString()}
                         </td>
                         <td className="p-3">
                           <div className="flex gap-1">
@@ -132,7 +140,7 @@ export default function AdminUsersPage() {
                               variant="ghost"
                               size="sm"
                               className="h-8 text-xs"
-                              onClick={() => handleToggleRole(user.id, user.role)}
+                              onClick={() => handleToggleRole(user.id, user.role ?? '')}
                               disabled={updatingIds.has(user.id)}
                             >
                               {updatingIds.has(user.id) ? (
@@ -160,12 +168,12 @@ export default function AdminUsersPage() {
             </div>
           )}
 
-          {pagination && pagination.totalPages > 1 && (
+          {pagination && (pagination.totalPages ?? 0) > 1 && (
             <div className="flex items-center justify-between mt-4 pt-4 border-t">
               <p className="text-sm text-muted-foreground">Page {page} of {pagination.totalPages}</p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1}>Previous</Button>
-                <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page >= pagination.totalPages}>Next</Button>
+                <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page >= (pagination.totalPages ?? 1)}>Next</Button>
               </div>
             </div>
           )}

@@ -6,15 +6,15 @@ export const settingsApi = createApi({
   baseQuery: axiosBaseQuery(),
   tagTypes: ['Settings'],
   endpoints: (builder) => ({
-    getSetting: builder.query<any, string>({
+    getSetting: builder.query<unknown, string>({
       query: (key) => ({ url: `/api/v1/settings/${key}`, method: 'GET' }),
       providesTags: (result, error, key) => [{ type: 'Settings', id: key }],
     }),
-    getAllSettings: builder.query<Record<string, any>, void>({
+    getAllSettings: builder.query<Record<string, unknown>, void>({
       query: () => ({ url: '/api/v1/settings', method: 'GET' }),
       providesTags: ['Settings'],
     }),
-    updateSetting: builder.mutation<any, { key: string; value: any }>({
+    updateSetting: builder.mutation<unknown, { key: string; value: unknown }>({
       query: ({ key, value }) => ({ url: `/api/v1/settings/${key}`, method: 'PUT', data: { value } }),
       invalidatesTags: (result, error, { key }) => [{ type: 'Settings', id: key }, 'Settings'],
     }),

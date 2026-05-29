@@ -135,11 +135,22 @@ export default function AddressesPage() {
     );
   }
 
-  const addresses = (addressesResponse as any) || [];
+  interface Address {
+    id: number;
+    label: string;
+    street: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country: string;
+    isDefault: boolean;
+  }
 
-  const updateForm = (field: keyof AddressForm, value: any) => setForm((prev) => ({ ...prev, [field]: value }));
+  const addresses = (addressesResponse as Address[] | undefined) || [];
 
-  const openEditForm = (addr: any) => {
+  const updateForm = (field: keyof AddressForm, value: string | boolean) => setForm((prev) => ({ ...prev, [field]: value }));
+
+  const openEditForm = (addr: Address) => {
     setEditingId(addr.id);
     setForm({
       label: addr.label || '',
@@ -176,8 +187,9 @@ export default function AddressesPage() {
       setShowForm(false);
       setEditingId(null);
       setForm(emptyForm);
-    } catch (err: any) {
-      setError(err?.data?.message || 'Failed to save address');
+    } catch (err) {
+      const errorWithData = err as { data?: { message?: string } };
+      setError(errorWithData?.data?.message || 'Failed to save address');
     }
   };
 
@@ -254,7 +266,7 @@ export default function AddressesPage() {
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
-          {addresses.map((addr: any) => (
+          {(addresses as Address[]).map((addr) => (
             <div
               key={addr.id}
               className={`bg-white rounded-2xl border p-5 transition-all ${

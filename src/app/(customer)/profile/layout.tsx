@@ -33,14 +33,14 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
     : 'U';
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8]">
+    <div className="min-h-screen bg-muted/20">
       <div className="container-mono py-8 md:py-12">
         <div className="flex flex-col lg:flex-row gap-8">
 
           {/* Sidebar */}
           <aside className="lg:w-64 flex-shrink-0">
             {/* Profile card */}
-            <div className="bg-white rounded-2xl border border-[#E5E2DD] p-6 mb-4">
+            <div className="bg-card rounded-2xl border border-border p-6 mb-4">
               <div className="flex flex-col items-center text-center">
                 <div className="relative mb-4">
                   {user?.avatar ? (
@@ -49,17 +49,17 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
                       alt={user.name}
                       width={80}
                       height={80}
-                      className="w-20 h-20 rounded-full object-cover ring-4 ring-[#F6F3EE]"
+                      className="w-20 h-20 rounded-full object-cover ring-4 ring-background"
                     />
                   ) : (
-                    <div className="w-20 h-20 rounded-full bg-[#111111] flex items-center justify-center ring-4 ring-[#F6F3EE]">
+                    <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center ring-4 ring-background">
                       <span className="text-2xl font-bold text-white">{initials}</span>
                     </div>
                   )}
                   <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-green-400 border-2 border-white" />
                 </div>
-                <p className="font-semibold text-[#111111] text-base leading-tight">{user?.name}</p>
-                <p className="text-xs text-[#9B9B9B] mt-0.5 truncate max-w-full">{user?.email}</p>
+                <p className="font-semibold text-foreground text-base leading-tight">{user?.name}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-full">{user?.email}</p>
                 {user?.role === 'admin' && (
                   <span className="mt-2 text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">
                     Admin
@@ -69,7 +69,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
             </div>
 
             {/* Nav */}
-            <nav className="bg-white rounded-2xl border border-[#E5E2DD] overflow-hidden">
+            <nav className="bg-card rounded-2xl border border-border overflow-hidden">
               {navItems.map((item, i) => {
                 const Icon = item.icon;
                 const isActive = item.exact
@@ -80,11 +80,11 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
                     key={item.href}
                     href={item.href}
                     className={`flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition-colors relative ${
-                      i > 0 ? 'border-t border-[#F0EDE8]' : ''
+                      i > 0 ? 'border-t border-border' : ''
                     } ${
                       isActive
-                        ? 'bg-[#F6F3EE] text-[#111111]'
-                        : 'text-[#6B6B6B] hover:bg-[#FAFAF8] hover:text-[#111111]'
+                        ? 'bg-muted text-foreground'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                   >
                     {isActive && (
@@ -94,9 +94,9 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
                       />
                     )}
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      isActive ? 'bg-[#C7A27C]/10' : 'bg-[#F6F3EE]'
+                      isActive ? 'bg-accent/10' : 'bg-muted'
                     }`}>
-                      <Icon className={`h-4 w-4 ${isActive ? 'text-[#C7A27C]' : 'text-[#9B9B9B]'}`} />
+                      <Icon className={`h-4 w-4 ${isActive ? 'text-accent' : 'text-muted-foreground'}`} />
                     </div>
                     <span className="flex-1">{item.label}</span>
                     <ChevronRight className={`h-3.5 w-3.5 transition-opacity ${isActive ? 'opacity-40' : 'opacity-20'}`} />

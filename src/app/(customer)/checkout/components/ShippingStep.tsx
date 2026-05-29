@@ -7,15 +7,23 @@ import { Label } from '@/components/ui/label';
 import { MapPin, Plus, Home, Briefcase, Building } from 'lucide-react';
 import type { NewAddressForm } from '../hooks/useCheckout';
 
+interface Address {
+  id: number;
+  label: string;
+  street: string;
+  city: string;
+  state: string;
+  pincode: string;
+}
+
 interface ShippingStepProps {
-  addresses: any[];
+  addresses: Address[];
   selectedAddressId: number | null;
   setSelectedAddressId: (id: number) => void;
   showNewForm: boolean;
   setUseNewAddress: (val: boolean) => void;
   newAddrForm: NewAddressForm;
   setNewAddrForm: (form: NewAddressForm) => void;
-  newFormValid: boolean;
 }
 
 const addressTypeIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -32,7 +40,6 @@ export function ShippingStep({
   setUseNewAddress,
   newAddrForm,
   setNewAddrForm,
-  newFormValid,
 }: ShippingStepProps) {
   return (
     <div className="space-y-6">
@@ -48,7 +55,7 @@ export function ShippingStep({
 
       {addresses.length > 0 && (
         <div className="grid gap-4">
-          {addresses.map((addr: any) => {
+          {addresses.map((addr) => {
             const Icon = addressTypeIcons[addr.label?.toLowerCase()] || MapPin;
             const isSelected = selectedAddressId === addr.id;
             return (

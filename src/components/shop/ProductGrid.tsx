@@ -6,17 +6,7 @@ import { PackageSearch } from 'lucide-react';
 import { ProductCard } from '@/components/products/ProductCard';
 import { CardSkeleton } from '@/components/common/CardSkeleton';
 import { EmptyState } from '@/components/common/EmptyState';
-
-interface Product {
-  id: number;
-  name: string;
-  slug: string;
-  price: string;
-  comparePrice?: string;
-  stock: number;
-  images?: string[];
-  category?: { name: string };
-}
+import type { Product } from '@/types';
 
 interface ProductGridProps {
   products: Product[];

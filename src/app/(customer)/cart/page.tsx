@@ -15,24 +15,20 @@ import { Input } from '@/components/ui/input';
 import { Trash2, Plus, Minus, ShoppingBag, Tag, X, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useAppSelector } from '@/lib/redux/hooks';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   staggerContainer, 
-  staggerItem, 
-  cartItem,
-  fadeInUp,
-  hoverLift 
+  cartItem
 } from '@/lib/animations';
 import { EmptyState } from '@/components/common';
 import { extractCart } from '@/lib/api-utils';
+import type { Cart } from '@/types/order';
 
 // ============================================
 // MONO Cart Page - Premium Shopping Experience
 // ============================================
 
 export default function CartPage() {
-  const router = useRouter();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
   const { data: cartResponse, isLoading } = useGetCartQuery(undefined, { skip: !isAuthenticated });
   const [updateCartItem] = useUpdateCartItemMutation();
@@ -88,8 +84,8 @@ export default function CartPage() {
     );
   }
 
-  const cart = extractCart(cartResponse);
-  const cartItems = (cart as { items?: unknown[] })?.items || [];
+  const cart = extractCart(cartResponse) as Cart | null;
+  const cartItems = cart?.items || [];
   const appliedCoupon = cart?.appliedCoupon;
 
   if (cartItems.length === 0) {
@@ -139,8 +135,25 @@ export default function CartPage() {
   };
 
   // Helper to get primary image from product
-  const getPrimaryImage = (product: any) => {
-    return product?.primaryImage || null;
+  interface CartProduct {
+    primaryImage?: string | null;
+    name: string;
+    slug: string;
+    price: string;
+    category?: { name: string };
+  }
+
+  interface LocalCartItem {
+    id: number;
+    product: CartProduct;
+    variant: { stock: number };
+    quantity: number;
+    size: string;
+  }
+
+  const getPrimaryImage = (product: CartProduct): string | undefined => {
+    const image = product?.primaryImage;
+    return image === null ? undefined : image;
   };
 
   const handleApplyCoupon = async () => {
@@ -150,8 +163,9 @@ export default function CartPage() {
     try {
       await applyCoupon(couponCode.trim().toUpperCase()).unwrap();
       setCouponCode('');
-    } catch (err: any) {
-      setCouponError(err?.data?.message || 'Invalid coupon code');
+    } catch (err) {
+      const errorWithData = err as { data?: { message?: string } };
+      setCouponError(errorWithData?.data?.message || 'Invalid coupon code');
     }
     setCouponLoading(false);
   };
@@ -162,7 +176,10 @@ export default function CartPage() {
   };
 
   const subtotal = cartItems.reduce(
-    (sum: number, item: any) => sum + parseFloat(item.product?.price ?? 0) * item.quantity,
+    (sum: number, item: unknown) => {
+      const cartItem = item as LocalCartItem;
+      return sum + parseFloat(cartItem.product?.price ?? 0) * cartItem.quantity;
+    },
     0
   );
   const shipping = subtotal >= 50 ? 0 : 5.99;
@@ -208,17 +225,18 @@ export default function CartPage() {
           className="lg:col-span-2 space-y-4"
         >
           <AnimatePresence mode="popLayout">
-            {cartItems.map((item: any) => {
-              const variant = item.variant;
-              const product = item.product;
-              const isRemoving = removingIds.has(item.id);
-              const isUpdating = updatingIds.has(item.id);
-              
+            {cartItems.map((item) => {
+              const cartItemTyped = item as unknown as LocalCartItem;
+              const variant = cartItemTyped.variant;
+              const product = cartItemTyped.product;
+              const isRemoving = removingIds.has(cartItemTyped.id);
+              const isUpdating = updatingIds.has(cartItemTyped.id);
+
               if (!product) return null;
-              
+
               return (
                 <motion.div
-                  key={item.id}
+                  key={cartItemTyped.id}
                   layout
                   variants={cartItem}
                   initial="hidden"
@@ -230,7 +248,7 @@ export default function CartPage() {
                     <CardContent className="p-4 sm:p-5">
                       <div className="flex gap-4 sm:gap-6">
                         {/* Product Image */}
-                        <Link href={`/products/${product.slug}`} className="flex-shrink-0">
+                        <Link href={`/products/${product.slug}`} className="shrink-0">
                           <div className="w-24 h-24 sm:w-28 sm:h-28 bg-muted rounded-xl overflow-hidden">
                             {getPrimaryImage(product) ? (
                               <img src={getPrimaryImage(product)} alt={product.name} className="object-cover w-full h-full" />
@@ -247,27 +265,27 @@ export default function CartPage() {
                           </Link>
                           <p className="text-sm text-muted-foreground mt-1">{product.category?.name}</p>
                           {/* Show Size */}
-                          <p className="text-xs text-mono-terracotta mt-1 font-medium">Size: {item.size}</p>
+                          <p className="text-xs text-mono-terracotta mt-1 font-medium">Size: {cartItemTyped.size}</p>
                           {/* Stock check on variant */}
-                          {variant.stock < item.quantity && (
+                          {variant.stock < cartItemTyped.quantity && (
                             <p className="text-xs text-mono-rose mt-1">Only {variant.stock} in stock</p>
                           )}
                         </div>
 
                         {/* Quantity & Actions */}
                         <div className="flex flex-col items-end justify-between">
-                          <p className="font-semibold text-mono-charcoal">${(parseFloat(product.price) * item.quantity).toFixed(2)}</p>
+                          <p className="font-semibold text-mono-charcoal">${(parseFloat(product.price) * cartItemTyped.quantity).toFixed(2)}</p>
                           <div className="flex items-center gap-2">
                             <div className="flex items-center border border-input rounded-xl overflow-hidden bg-card">
-                              <button className="px-3 py-2 hover:bg-muted transition-colors disabled:opacity-30" onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 1 || isUpdating}>
+                              <button className="px-3 py-2 hover:bg-muted transition-colors disabled:opacity-30" onClick={() => handleUpdateQuantity(cartItemTyped.id, cartItemTyped.quantity - 1)} disabled={cartItemTyped.quantity <= 1 || isUpdating}>
                                 <Minus className="h-3.5 w-3.5" />
                               </button>
-                              <span className="w-10 text-center text-sm font-medium">{isUpdating ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : item.quantity}</span>
-                              <button className="px-3 py-2 hover:bg-muted transition-colors disabled:opacity-30" onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)} disabled={item.quantity >= variant.stock || isUpdating}>
+                              <span className="w-10 text-center text-sm font-medium">{isUpdating ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : cartItemTyped.quantity}</span>
+                              <button className="px-3 py-2 hover:bg-muted transition-colors disabled:opacity-30" onClick={() => handleUpdateQuantity(cartItemTyped.id, cartItemTyped.quantity + 1)} disabled={cartItemTyped.quantity >= variant.stock || isUpdating}>
                                 <Plus className="h-3.5 w-3.5" />
                               </button>
                             </div>
-                            <button onClick={() => handleRemove(item.id)} disabled={isRemoving} className="p-2 text-muted-foreground hover:text-mono-rose transition-colors"><Trash2 className="h-4 w-4" /></button>
+                            <button onClick={() => handleRemove(cartItemTyped.id)} disabled={isRemoving} className="p-2 text-muted-foreground hover:text-mono-rose transition-colors"><Trash2 className="h-4 w-4" /></button>
                           </div>
                         </div>
                       </div>
@@ -288,7 +306,7 @@ export default function CartPage() {
                 <h2 className="text-xl font-semibold text-mono-charcoal">Order Details</h2>
               </div>
               <div className="space-y-3 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Subtotal ({cartItems.reduce((sum: number, item: any) => sum + item.quantity, 0)} items)</span><span className="font-medium">${subtotal.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Subtotal ({cartItems.reduce((sum: number, item: unknown) => sum + (item as LocalCartItem).quantity, 0)} items)</span><span className="font-medium">${subtotal.toFixed(2)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span className={shipping === 0 ? 'text-green-600 font-medium' : 'font-medium'}>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span></div>
                 {discount > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span className="font-medium">-${discount.toFixed(2)}</span></div>}
                 <div className="flex justify-between"><span className="text-muted-foreground">Tax (10%)</span><span className="font-medium">${tax.toFixed(2)}</span></div>

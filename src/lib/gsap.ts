@@ -109,7 +109,7 @@ export const parallaxAnimation = (
       scrub: true,
       ...options,
     },
-  });
+  } as gsap.TweenVars);
 };
 
 // Horizontal scroll section
@@ -138,7 +138,7 @@ export const horizontalScrollAnimation = (
       end: () => '+=' + containerEl.scrollWidth,
       ...options,
     },
-  });
+  } as gsap.TweenVars);
 };
 
 // Export configured GSAP

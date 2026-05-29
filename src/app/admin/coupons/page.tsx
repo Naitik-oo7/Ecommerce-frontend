@@ -34,7 +34,19 @@ export default function AdminCouponsPage() {
   const [error, setError] = useState('');
   const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
 
-  const coupons = (couponsResponse as any)?.data || [];
+  interface Coupon {
+    id: number;
+    code: string;
+    type: 'percentage' | 'flat';
+    value: string;
+    minOrderValue?: string;
+    usageLimit: number;
+    expiresAt: string;
+    isActive: boolean;
+    usedCount?: number;
+  }
+  interface CouponsResponse { data?: Coupon[]; }
+  const coupons = (couponsResponse as CouponsResponse | undefined)?.data || [];
 
   const openCreate = () => {
     setEditingId(null);
@@ -43,7 +55,7 @@ export default function AdminCouponsPage() {
     setShowForm(true);
   };
 
-  const openEdit = (coupon: any) => {
+  const openEdit = (coupon: Coupon) => {
     setEditingId(coupon.id);
     setForm({
       code: coupon.code,
@@ -80,8 +92,9 @@ export default function AdminCouponsPage() {
         await createCoupon(payload).unwrap();
       }
       setShowForm(false);
-    } catch (err: any) {
-      setError(err?.data?.message || 'Failed to save coupon');
+    } catch (err) {
+      const errorWithData = err as { data?: { message?: string } };
+      setError(errorWithData?.data?.message || 'Failed to save coupon');
     }
   };
 
@@ -219,7 +232,7 @@ export default function AdminCouponsPage() {
                       </td>
                     </tr>
                   ) : (
-                    coupons.map((coupon: any) => {
+                    coupons.map((coupon) => {
                       const isExpired = new Date(coupon.expiresAt) < new Date();
                       return (
                         <tr key={coupon.id} className="border-b hover:bg-muted/30">

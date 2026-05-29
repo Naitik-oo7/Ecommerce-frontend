@@ -7,7 +7,7 @@ export const ordersApi = createApi({
   tagTypes: ['Orders'],
   endpoints: (builder) => ({
     getOrders: builder.query({
-      query: (params: Record<string, any> = {}) => {
+      query: (params: Record<string, unknown> = {}) => {
         const { isAdmin, ...rest } = params;
         const url = isAdmin ? '/api/v1/orders/admin' : '/api/v1/orders';
         return { url, method: 'GET', params: rest };

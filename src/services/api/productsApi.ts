@@ -2,7 +2,7 @@ import { createApi } from '@reduxjs/toolkit/query/react';
 import { axiosBaseQuery } from '@/lib/axiosBaseQuery';
 import type { Product, ProductMedia } from '@/types/product';
 
-interface RawProduct extends Omit<Product, 'price' | 'comparePrice' | 'avgRating' | 'images'> {
+interface RawProduct extends Omit<Product, 'price' | 'comparePrice' | 'avgRating' | 'images' | 'media'> {
   price: string | number;
   comparePrice?: string | number;
   avgRating?: string | number;
@@ -20,6 +20,7 @@ const mapImages = (p: RawProduct): Product => {
   const sorted = [...media].sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0));
   return {
     ...p,
+    media,
     price: typeof p.price === 'string' ? parseFloat(p.price) : p.price,
     comparePrice:
       p.comparePrice != null

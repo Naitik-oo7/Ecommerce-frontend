@@ -34,7 +34,7 @@ export const store = configureStore({
     ...Object.fromEntries(apis.map((api) => [api.reducerPath, api.reducer])),
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(apis.map((api) => api.middleware)),
+    getDefaultMiddleware().concat(...apis.map((api) => api.middleware)) as ReturnType<typeof getDefaultMiddleware>,
 });
 
 setupListeners(store.dispatch);

@@ -86,7 +86,7 @@ export const ScrollReveal = ({
   }, [isInView, controls, once]);
 
   const selectedVariant = variants[variant];
-  const customTransition = duration || selectedVariant.visible?.transition?.duration;
+  const customTransition = duration || (selectedVariant.visible as { transition?: { duration?: number } } | undefined)?.transition?.duration;
 
   return (
     <motion.div

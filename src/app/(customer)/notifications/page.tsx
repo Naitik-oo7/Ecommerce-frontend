@@ -108,12 +108,12 @@ export default function NotificationsPage() {
               <AnimatePresence mode="popLayout">
                 <div className="space-y-2">
                   {notifications.map((notification: any) => {
-                    const Icon = notificationIcons[notification.type] || Info;
+                    const Icon = notificationIcons[notification.type as keyof typeof notificationIcons] || Info;
                     return (
                       <motion.div key={notification.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }} layout>
                         <div className={`p-4 border rounded-xl transition-colors ${notification.isRead ? 'bg-background' : 'bg-mono-terracotta/5 border-mono-terracotta/20'}`}>
                           <div className="flex items-start gap-3">
-                            <div className={`p-2 rounded-full ${notificationColors[notification.type]} text-white`}><Icon className="h-4 w-4" /></div>
+                            <div className={`p-2 rounded-full ${notificationColors[notification.type as keyof typeof notificationColors]} text-white`}><Icon className="h-4 w-4" /></div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex-1">

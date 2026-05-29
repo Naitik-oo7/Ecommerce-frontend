@@ -43,7 +43,7 @@ export default function JournalPage() {
     category: category || undefined,
   });
 
-  const pagination = postsResponse?.pagination;
+  const pagination = postsResponse ? { total: postsResponse.total, totalPages: postsResponse.totalPages } : undefined;
 
   // Filter posts by search term
   const filteredPosts = useMemo(() => {

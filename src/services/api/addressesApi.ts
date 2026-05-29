@@ -15,7 +15,7 @@ export const addressesApi = createApi({
       invalidatesTags: ['Addresses'],
     }),
     updateAddress: builder.mutation({
-      query: ({ id, ...data }: { id: number; [key: string]: any }) => ({
+      query: ({ id, ...data }: { id: number; [key: string]: unknown }) => ({
         url: `/api/v1/addresses/${id}`,
         method: 'PATCH',
         data,

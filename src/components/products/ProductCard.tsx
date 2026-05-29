@@ -31,8 +31,8 @@ export const ProductCard = ({
 
   const hasSecondaryImage = product.images && product.images.length > 1;
 
-  const salePercent = product.comparePrice && parseFloat(product.comparePrice) > parseFloat(product.price)
-    ? Math.round((1 - parseFloat(product.price) / parseFloat(product.comparePrice)) * 100)
+  const salePercent = product.comparePrice && product.comparePrice > product.price
+    ? Math.round((1 - product.price / product.comparePrice) * 100)
     : null;
 
   return (
@@ -191,11 +191,11 @@ export const ProductCard = ({
             {/* Price row */}
             <div className="flex items-baseline gap-2">
               <span className="font-bold text-[15px] text-[#111111]">
-                ₹{parseFloat(product.price).toLocaleString('en-IN')}
+                ₹{product.price.toLocaleString('en-IN')}
               </span>
-              {product.comparePrice && parseFloat(product.comparePrice) > parseFloat(product.price) && (
+              {product.comparePrice && product.comparePrice > product.price && (
                 <span className="text-xs text-[#9B9B9B] line-through">
-                  ₹{parseFloat(product.comparePrice).toLocaleString('en-IN')}
+                  ₹{product.comparePrice.toLocaleString('en-IN')}
                 </span>
               )}
             </div>

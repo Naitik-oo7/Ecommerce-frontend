@@ -68,12 +68,12 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="w-full max-w-md bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl p-10 flex flex-col items-center text-center gap-4">
+      <div className="w-full max-w-md bg-card rounded-2xl shadow-xl p-10 flex flex-col items-center text-center gap-4">
         <div className="w-16 h-16 rounded-full bg-[#C7A27C]/15 flex items-center justify-center">
-          <CheckCircle className="w-8 h-8 text-[#C7A27C]" />
+          <CheckCircle className="w-8 h-8 text-accent" />
         </div>
-        <h2 className="text-2xl font-bold text-[#111111] dark:text-[#F6F3EE]">Account Created!</h2>
-        <p className="text-sm text-[#6B6B6B] dark:text-[#8A8A8A]">
+        <h2 className="text-2xl font-bold text-foreground">Account Created!</h2>
+        <p className="text-sm text-muted-foreground">
           Your account has been created successfully. Redirecting you now…
         </p>
         <div className="w-8 h-8 border-2 border-[#E5E2DD] border-t-[#C7A27C] rounded-full animate-spin mt-2" />
@@ -82,7 +82,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="w-full max-w-5xl bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
+    <div className="w-full max-w-5xl bg-card rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
 
       {/* ── Left panel — Form ── */}
       <div className="flex flex-col justify-center px-8 md:px-12 py-10 md:w-[52%]">
@@ -90,109 +90,109 @@ export default function RegisterPage() {
           {/* Brand mark */}
           <div className="flex items-center gap-2.5 mb-8">
             <div className="w-8 h-8 rounded-lg bg-[#111111] dark:bg-[#C7A27C] flex items-center justify-center">
-              <ShoppingBag className="w-4 h-4 text-white dark:text-[#111111]" />
+              <ShoppingBag className="w-4 h-4 text-white dark:text-foreground" />
             </div>
-            <span className="font-bold text-sm tracking-widest uppercase text-[#111111] dark:text-[#F6F3EE]">
+            <span className="font-bold text-sm tracking-widest uppercase text-foreground">
               Mono
             </span>
           </div>
 
-          <h2 className="text-2xl font-bold text-[#111111] dark:text-[#F6F3EE]">Create account</h2>
-          <p className="mt-1 text-sm text-[#6B6B6B] dark:text-[#8A8A8A]">
+          <h2 className="text-2xl font-bold text-foreground">Create account</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
             Join thousands of happy shoppers today
           </p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="mt-7 space-y-4">
             {error && (
-              <div className="p-3 text-sm text-[#B54A4A] bg-[#B54A4A]/10 rounded-lg border border-[#B54A4A]/20">
+              <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg border border-destructive/20">
                 {error}
               </div>
             )}
 
             {/* Full name */}
             <div className="space-y-1.5">
-              <Label htmlFor="name" className="text-sm font-medium text-[#111111] dark:text-[#F6F3EE]">
+              <Label htmlFor="name" className="text-sm font-medium text-foreground">
                 Full name
               </Label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B]" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="name"
                   type="text"
                   placeholder="John Doe"
-                  className="pl-9 bg-[#F6F3EE] dark:bg-[#111111] border-[#E5E2DD] dark:border-[#2A2A2A] focus:border-[#C7A27C] focus:ring-[#C7A27C]/20"
+                  className="pl-9 bg-background border-border focus:border-accent focus:ring-accent/20"
                   {...register('name')}
                   aria-invalid={errors.name ? 'true' : 'false'}
                 />
               </div>
               {errors.name && (
-                <p className="text-xs text-[#B54A4A]" role="alert">{errors.name.message}</p>
+                <p className="text-xs text-destructive" role="alert">{errors.name.message}</p>
               )}
             </div>
 
             {/* Email */}
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-sm font-medium text-[#111111] dark:text-[#F6F3EE]">
+              <Label htmlFor="email" className="text-sm font-medium text-foreground">
                 Email address
               </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B]" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
                   placeholder="you@example.com"
-                  className="pl-9 bg-[#F6F3EE] dark:bg-[#111111] border-[#E5E2DD] dark:border-[#2A2A2A] focus:border-[#C7A27C] focus:ring-[#C7A27C]/20"
+                  className="pl-9 bg-background border-border focus:border-accent focus:ring-accent/20"
                   {...register('email')}
                   aria-invalid={errors.email ? 'true' : 'false'}
                 />
               </div>
               {errors.email && (
-                <p className="text-xs text-[#B54A4A]" role="alert">{errors.email.message}</p>
+                <p className="text-xs text-destructive" role="alert">{errors.email.message}</p>
               )}
             </div>
 
             {/* Password */}
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-sm font-medium text-[#111111] dark:text-[#F6F3EE]">
+              <Label htmlFor="password" className="text-sm font-medium text-foreground">
                 Password
               </Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B]" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Min. 6 characters"
-                  className="pl-9 pr-10 bg-[#F6F3EE] dark:bg-[#111111] border-[#E5E2DD] dark:border-[#2A2A2A] focus:border-[#C7A27C] focus:ring-[#C7A27C]/20"
+                  className="pl-9 pr-10 bg-background border-border focus:border-accent focus:ring-accent/20"
                   {...register('password')}
                   aria-invalid={errors.password ? 'true' : 'false'}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B6B6B] hover:text-[#111111] dark:hover:text-[#F6F3EE] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
               {errors.password && (
-                <p className="text-xs text-[#B54A4A]" role="alert">{errors.password.message}</p>
+                <p className="text-xs text-destructive" role="alert">{errors.password.message}</p>
               )}
             </div>
 
             {/* Terms note */}
-            <p className="text-xs text-[#6B6B6B] dark:text-[#8A8A8A] leading-relaxed">
+            <p className="text-xs text-muted-foreground leading-relaxed">
               By creating an account you agree to our{' '}
-              <span className="text-[#C7A27C] font-medium cursor-pointer hover:underline">Terms of Service</span>
+              <span className="text-accent font-medium cursor-pointer hover:underline">Terms of Service</span>
               {' '}and{' '}
-              <span className="text-[#C7A27C] font-medium cursor-pointer hover:underline">Privacy Policy</span>.
+              <span className="text-accent font-medium cursor-pointer hover:underline">Privacy Policy</span>.
             </p>
 
             {/* Submit */}
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-11 bg-[#111111] hover:bg-[#C7A27C] dark:bg-[#C7A27C] dark:hover:bg-[#F6F3EE] dark:hover:text-[#111111] text-white dark:text-[#111111] font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+              className="w-full h-11 bg-primary hover:bg-accent text-primary-foreground font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
@@ -209,20 +209,20 @@ export default function RegisterPage() {
 
             {/* Divider */}
             <div className="relative flex items-center gap-3">
-              <div className="flex-1 h-px bg-[#E5E2DD] dark:bg-[#2A2A2A]" />
-              <span className="text-xs text-[#6B6B6B] dark:text-[#8A8A8A]">or continue with</span>
-              <div className="flex-1 h-px bg-[#E5E2DD] dark:bg-[#2A2A2A]" />
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs text-muted-foreground">or continue with</span>
+              <div className="flex-1 h-px bg-border" />
             </div>
 
             {/* Google */}
             <GoogleAuthButton onError={(msg) => setError(msg)} />
 
             {/* Login link */}
-            <p className="text-center text-sm text-[#6B6B6B] dark:text-[#8A8A8A]">
+            <p className="text-center text-sm text-muted-foreground">
               Already have an account?{' '}
               <Link
                 href="/login"
-                className="font-semibold text-[#C7A27C] hover:text-[#111111] dark:hover:text-[#F6F3EE] transition-colors"
+                className="font-semibold text-accent hover:text-foreground transition-colors"
               >
                 Sign in
               </Link>
@@ -232,17 +232,17 @@ export default function RegisterPage() {
       </div>
 
       {/* ── Right panel — Branding ── */}
-      <div className="relative flex flex-col justify-between p-8 md:p-10 bg-[#F6F3EE] dark:bg-[#111111] md:w-[48%] overflow-hidden">
+      <div className="relative flex flex-col justify-between p-8 md:p-10 bg-background md:w-[48%] overflow-hidden">
         {/* Headline */}
         <div className="mt-8 md:mt-12">
-          <h1 className="text-3xl font-bold text-[#111111] dark:text-[#F6F3EE] leading-tight">
+          <h1 className="text-3xl font-bold text-foreground leading-tight">
             Start your journey!
           </h1>
-          <p className="mt-1 text-[#C7A27C] font-semibold flex items-center gap-1.5">
+          <p className="mt-1 text-accent font-semibold flex items-center gap-1.5">
             Create a free account today
             <Star className="w-4 h-4 fill-[#C7A27C]" />
           </p>
-          <p className="mt-3 text-sm text-[#6B6B6B] dark:text-[#8A8A8A] leading-relaxed max-w-xs">
+          <p className="mt-3 text-sm text-muted-foreground leading-relaxed max-w-xs">
             Join our community and unlock a world of exclusive deals, fast delivery, and a seamless shopping experience.
           </p>
 
@@ -250,12 +250,12 @@ export default function RegisterPage() {
           <ul className="mt-7 space-y-4">
             {perks.map(({ icon: Icon, title, desc }) => (
               <li key={title} className="flex items-start gap-3">
-                <div className="mt-0.5 w-9 h-9 rounded-xl bg-[#E8E4DE] dark:bg-[#1F1F1F] flex items-center justify-center shrink-0">
-                  <Icon className="w-4 h-4 text-[#C7A27C]" />
+                <div className="mt-0.5 w-9 h-9 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                  <Icon className="w-4 h-4 text-accent" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-[#111111] dark:text-[#F6F3EE]">{title}</p>
-                  <p className="text-xs text-[#6B6B6B] dark:text-[#8A8A8A] leading-relaxed">{desc}</p>
+                  <p className="text-sm font-semibold text-foreground">{title}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>
                 </div>
               </li>
             ))}
@@ -302,7 +302,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Member count badge */}
-        <div className="mt-6 flex items-center gap-2 bg-white dark:bg-[#1A1A1A] rounded-xl px-4 py-2.5 w-fit shadow-sm">
+        <div className="mt-6 flex items-center gap-2 bg-card rounded-xl px-4 py-2.5 w-fit shadow-sm">
           <div className="flex -space-x-2">
             {['#C7A27C', '#111111', '#6B6B6B'].map((c, i) => (
               <div
@@ -314,12 +314,12 @@ export default function RegisterPage() {
               </div>
             ))}
           </div>
-          <span className="text-xs font-medium text-[#6B6B6B] dark:text-[#8A8A8A]">
+          <span className="text-xs font-medium text-muted-foreground">
             50K+ members joined
           </span>
           <div className="flex gap-0.5 ml-1">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} className="w-3 h-3 fill-[#C7A27C] text-[#C7A27C]" />
+              <Star key={i} className="w-3 h-3 fill-[#C7A27C] text-accent" />
             ))}
           </div>
         </div>

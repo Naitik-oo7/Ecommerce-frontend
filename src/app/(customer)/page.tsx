@@ -3,6 +3,7 @@
 import { useGetProductsQuery } from '@/services/api/productsApi';
 import { useWishlist } from '@/hooks/useWishlist';
 import { extractData } from '@/lib/api-utils';
+import type { Product } from '@/types';
 
 // Premium Components
 import { CinematicHero } from '@/components/hero/CinematicHero';
@@ -30,18 +31,7 @@ export default function HomePage() {
 
   const { wishlistIds, toggleWishlist } = useWishlist();
 
-  const products = extractData<{
-    id: number;
-    name: string;
-    slug: string;
-    price: string;
-    comparePrice?: string;
-    stock: number;
-    images?: string[];
-    category?: { name: string };
-    avgRating?: number;
-    reviewCount?: number;
-  }[]>(productsData) ?? [];
+  const products = extractData<Product[]>(productsData) ?? [];
 
   return (
     <div className="min-h-screen">

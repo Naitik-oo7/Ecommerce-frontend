@@ -19,7 +19,7 @@ export const couponsApi = createApi({
       invalidatesTags: ['Coupons'],
     }),
     updateCoupon: builder.mutation({
-      query: ({ id, ...data }: { id: number; [key: string]: any }) => ({
+      query: ({ id, ...data }: { id: number; [key: string]: unknown }) => ({
         url: `/api/v1/coupons/${id}`,
         method: 'PATCH',
         data,

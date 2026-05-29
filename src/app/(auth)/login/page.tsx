@@ -48,7 +48,7 @@ export default function LoginPage() {
         setCookie('accessToken', response.accessToken, 0);
       }
       dispatch(setUser(response.user));
-      router.push('/');
+      router.push(response.user.role === 'admin' ? '/admin/dashboard' : '/');
     } catch (err: unknown) {
       const error = err as { data?: { message?: string } };
       setError(error.data?.message || 'Login failed. Please try again.');
@@ -74,29 +74,29 @@ export default function LoginPage() {
   ];
 
   return (
-    <div className="w-full max-w-5xl bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[580px]">
+    <div className="w-full max-w-5xl bg-card rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[580px]">
       {/* ── Left panel ── */}
-      <div className="relative flex flex-col justify-between p-8 md:p-10 bg-[#F6F3EE] dark:bg-[#111111] md:w-[48%] overflow-hidden">
+      <div className="relative flex flex-col justify-between p-8 md:p-10 bg-background md:w-[48%] overflow-hidden">
         {/* Brand */}
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-[#111111] dark:bg-[#C7A27C] flex items-center justify-center">
             <ShoppingBag className="w-4 h-4 text-white dark:text-[#111111]" />
           </div>
-          <span className="font-bold text-sm tracking-widest uppercase text-[#111111] dark:text-[#F6F3EE]">
+          <span className="font-bold text-sm tracking-widest uppercase text-foreground">
             Mono
           </span>
         </div>
 
         {/* Headline */}
         <div className="mt-8">
-          <h1 className="text-3xl font-bold text-[#111111] dark:text-[#F6F3EE] leading-tight">
+          <h1 className="text-3xl font-bold text-foreground leading-tight">
             Welcome back!
           </h1>
-          <p className="mt-1 text-[#C7A27C] font-semibold flex items-center gap-1.5">
+          <p className="mt-1 text-accent font-semibold flex items-center gap-1.5">
             Sign in to continue shopping
             <ShoppingBag className="w-4 h-4" />
           </p>
-          <p className="mt-3 text-sm text-[#6B6B6B] dark:text-[#8A8A8A] leading-relaxed max-w-xs">
+          <p className="mt-3 text-sm text-muted-foreground leading-relaxed max-w-xs">
             Access your account to track orders, save favorites, and enjoy exclusive deals.
           </p>
 
@@ -104,12 +104,12 @@ export default function LoginPage() {
           <ul className="mt-7 space-y-4">
             {features.map(({ icon: Icon, title, desc }) => (
               <li key={title} className="flex items-start gap-3">
-                <div className="mt-0.5 w-9 h-9 rounded-xl bg-[#E8E4DE] dark:bg-[#1F1F1F] flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-4 h-4 text-[#C7A27C]" />
+                <div className="mt-0.5 w-9 h-9 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                  <Icon className="w-4 h-4 text-accent" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-[#111111] dark:text-[#F6F3EE]">{title}</p>
-                  <p className="text-xs text-[#6B6B6B] dark:text-[#8A8A8A] leading-relaxed">{desc}</p>
+                  <p className="text-sm font-semibold text-foreground">{title}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>
                 </div>
               </li>
             ))}
@@ -158,14 +158,14 @@ export default function LoginPage() {
         </div>
 
         {/* Trust badge */}
-        <div className="mt-8 flex items-center gap-2 bg-white dark:bg-[#1A1A1A] rounded-xl px-4 py-2.5 w-fit shadow-sm">
-          <ShieldCheck className="w-4 h-4 text-[#C7A27C]" />
-          <span className="text-xs font-medium text-[#6B6B6B] dark:text-[#8A8A8A]">
+        <div className="mt-8 flex items-center gap-2 bg-card rounded-xl px-4 py-2.5 w-fit shadow-sm">
+          <ShieldCheck className="w-4 h-4 text-accent" />
+          <span className="text-xs font-medium text-muted-foreground">
             Trusted by 50K+ happy customers
           </span>
           <div className="flex gap-0.5 ml-1">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} className="w-3 h-3 fill-[#C7A27C] text-[#C7A27C]" />
+              <Star key={i} className="w-3 h-3 fill-[#C7A27C] text-accent" />
             ))}
           </div>
         </div>
@@ -174,36 +174,36 @@ export default function LoginPage() {
       {/* ── Right panel ── */}
       <div className="flex flex-col justify-center px-8 md:px-12 py-10 md:w-[52%]">
         <div className="max-w-sm w-full mx-auto">
-          <h2 className="text-2xl font-bold text-[#111111] dark:text-[#F6F3EE]">Login</h2>
-          <p className="mt-1 text-sm text-[#6B6B6B] dark:text-[#8A8A8A]">
+          <h2 className="text-2xl font-bold text-foreground">Login</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
             Enter your credentials to access your account
           </p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
             {error && (
-              <div className="p-3 text-sm text-[#B54A4A] bg-[#B54A4A]/10 rounded-lg border border-[#B54A4A]/20">
+              <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg border border-destructive/20">
                 {error}
               </div>
             )}
 
             {/* Email */}
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-sm font-medium text-[#111111] dark:text-[#F6F3EE]">
+              <Label htmlFor="email" className="text-sm font-medium text-foreground">
                 Email address
               </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B]" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
                   placeholder="you@example.com"
-                  className="pl-9 bg-[#F6F3EE] dark:bg-[#111111] border-[#E5E2DD] dark:border-[#2A2A2A] focus:border-[#C7A27C] focus:ring-[#C7A27C]/20"
+                  className="pl-9 bg-background border-border focus:border-accent focus:ring-accent/20"
                   {...register('email')}
                   aria-invalid={errors.email ? 'true' : 'false'}
                 />
               </div>
               {errors.email && (
-                <p className="text-xs text-[#B54A4A]" role="alert">
+                <p className="text-xs text-destructive" role="alert">
                   {errors.email.message}
                 </p>
               )}
@@ -211,30 +211,30 @@ export default function LoginPage() {
 
             {/* Password */}
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-sm font-medium text-[#111111] dark:text-[#F6F3EE]">
+              <Label htmlFor="password" className="text-sm font-medium text-foreground">
                 Password
               </Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B]" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••••••"
-                  className="pl-9 pr-10 bg-[#F6F3EE] dark:bg-[#111111] border-[#E5E2DD] dark:border-[#2A2A2A] focus:border-[#C7A27C] focus:ring-[#C7A27C]/20"
+                  className="pl-9 pr-10 bg-background border-border focus:border-accent focus:ring-accent/20"
                   {...register('password')}
                   aria-invalid={errors.password ? 'true' : 'false'}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B6B6B] hover:text-[#111111] dark:hover:text-[#F6F3EE] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
               {errors.password && (
-                <p className="text-xs text-[#B54A4A]" role="alert">
+                <p className="text-xs text-destructive" role="alert">
                   {errors.password.message}
                 </p>
               )}
@@ -249,11 +249,11 @@ export default function LoginPage() {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 rounded border-[#E5E2DD] accent-[#C7A27C]"
                 />
-                <span className="text-sm text-[#6B6B6B] dark:text-[#8A8A8A]">Remember me</span>
+                <span className="text-sm text-muted-foreground">Remember me</span>
               </label>
               <Link
                 href="/forgot-password"
-                className="text-sm font-medium text-[#C7A27C] hover:text-[#111111] dark:hover:text-[#F6F3EE] transition-colors"
+                className="text-sm font-medium text-accent hover:text-foreground transition-colors"
               >
                 Forgot password?
               </Link>
@@ -263,7 +263,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-11 bg-[#111111] hover:bg-[#C7A27C] dark:bg-[#C7A27C] dark:hover:bg-[#F6F3EE] dark:hover:text-[#111111] text-white dark:text-[#111111] font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+              className="w-full h-11 bg-primary hover:bg-accent text-primary-foreground font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
@@ -280,20 +280,20 @@ export default function LoginPage() {
 
             {/* Divider */}
             <div className="relative flex items-center gap-3">
-              <div className="flex-1 h-px bg-[#E5E2DD] dark:bg-[#2A2A2A]" />
-              <span className="text-xs text-[#6B6B6B] dark:text-[#8A8A8A]">or continue with</span>
-              <div className="flex-1 h-px bg-[#E5E2DD] dark:bg-[#2A2A2A]" />
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs text-muted-foreground">or continue with</span>
+              <div className="flex-1 h-px bg-border" />
             </div>
 
             {/* Social buttons */}
             <GoogleAuthButton onError={(msg) => setError(msg)} />
 
             {/* Register link */}
-            <p className="text-center text-sm text-[#6B6B6B] dark:text-[#8A8A8A]">
+            <p className="text-center text-sm text-muted-foreground">
               Don&apos;t have an account?{' '}
               <Link
                 href="/register"
-                className="font-semibold text-[#C7A27C] hover:text-[#111111] dark:hover:text-[#F6F3EE] transition-colors"
+                className="font-semibold text-accent hover:text-foreground transition-colors"
               >
                 Register
               </Link>

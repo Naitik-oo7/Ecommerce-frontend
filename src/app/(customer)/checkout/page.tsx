@@ -3,7 +3,7 @@
 import Script from 'next/script';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useAppSelector } from '@/lib/redux/hooks';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,10 +12,29 @@ import { StepIndicator } from './components/StepIndicator';
 import { ShippingStep } from './components/ShippingStep';
 import { PaymentStep } from './components/PaymentStep';
 import { ReviewStep } from './components/ReviewStep';
+import type { CartItem } from '@/types/order';
+
+interface Address {
+  id: number;
+  label: string;
+  street: string;
+  city: string;
+  state: string;
+  pincode: string;
+  country: string;
+}
+
+interface RazorpayInstance {
+  open: () => void;
+}
+
+interface RazorpayConstructor {
+  new (options: unknown): RazorpayInstance;
+}
 
 declare global {
   interface Window {
-    Razorpay: any;
+    Razorpay: RazorpayConstructor;
   }
 }
 
@@ -122,14 +141,13 @@ export default function CheckoutPage() {
                   >
                     {step === 1 && (
                       <ShippingStep
-                        addresses={addresses}
+                        addresses={addresses as Address[]}
                         selectedAddressId={selectedAddressId}
                         setSelectedAddressId={setSelectedAddressId}
                         showNewForm={showNewForm}
                         setUseNewAddress={setUseNewAddress}
                         newAddrForm={newAddrForm}
                         setNewAddrForm={setNewAddrForm}
-                        newFormValid={canContinue}
                       />
                     )}
 
@@ -146,15 +164,15 @@ export default function CheckoutPage() {
                         onBack={() => setStep(2)}
                         onPlaceOrder={handlePlaceOrder}
                         isProcessing={isProcessingOrder}
-                        cartItems={cartItems}
-                        selectedAddress={selectedAddress}
+                        cartItems={cartItems as CartItem[]}
+                        selectedAddress={selectedAddress as { label: string; street: string; city: string; state: string; pincode: string; country: string } | null}
                         paymentMethod={paymentMethod}
                         subtotal={subtotal}
                         shipping={shipping}
                         discount={discount}
                         tax={tax}
                         total={total}
-                        coupon={coupon}
+                        coupon={(coupon ?? null) as { code?: string } | null}
                       />
                     )}
                   </motion.div>

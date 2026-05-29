@@ -60,7 +60,7 @@ const STATUS_BG_COLORS: Record<string, string> = {
   cancelled:  'bg-red-100 text-red-700',
 };
 
-const PIE_COLORS = ['#FBBF24', '#60A5FA', '#818CF8', '#34D399', '#F87171'];
+const PIE_COLORS = ['#C7A27C', '#111111', '#4A7C59', '#6B6B6B', '#B54A4A'];
 
 function StatCard({
   title,
@@ -73,7 +73,7 @@ function StatCard({
   title: string;
   value: string | number;
   subtitle?: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   trend?: number;
   trendLabel?: string;
 }) {
@@ -158,75 +158,112 @@ export default function AdminDashboardPage() {
 
   const isLoading = isDashLoading || isSalesLoading || isProductLoading || isUserLoading || isOrderLoading || isCouponLoading || isReviewLoading || isInventoryLoading;
 
-  const stats = (dashData as any)?.data || (dashData as any) || {};
+  interface LowStockProduct { id?: number; variantId?: number; name?: string; sku?: string; size?: string; stock?: number; }
+  interface RecentOrder { id?: number; user?: { name?: string; email?: string }; total?: string; status?: string; }
+  interface Overview { totalRevenue?: string | number; totalOrders?: number; totalUsers?: number; totalProducts?: number }
+  interface DashStats {
+    overview?: Overview;
+    monthly?: Record<string, unknown>;
+    weekly?: Record<string, unknown>;
+    topProducts?: unknown[];
+    lowStockProducts?: LowStockProduct[];
+    recentOrders?: RecentOrder[];
+    orderStatusStats?: unknown[];
+  }
+  const stats = (dashData as { data?: DashStats } | undefined)?.data || (dashData as DashStats | undefined) || {};
   const overview = stats?.overview || {};
   const monthly = stats?.monthly || {};
   const weekly = stats?.weekly || {};
   const topProducts = stats?.topProducts || [];
   const lowStockProducts = stats?.lowStockProducts || [];
   const recentOrders = stats?.recentOrders || [];
-  const orderStatusStats: any[] = stats?.orderStatusStats || [];
+  interface OrderStatusStat { status: string; count: string | number; }
+  const orderStatusStats = (stats?.orderStatusStats || []) as OrderStatusStat[];
 
-  const salesAnalytics = (salesData as any)?.data || (salesData as any) || {};
-  const monthlySales: any[] = salesAnalytics?.monthly || [];
-  const revenueChartData = monthlySales.map((item: any) => ({
-    month: new Date(item.month).toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
-    revenue: parseFloat(item.revenue) || 0,
-    orders: item.orders,
+  interface SalesAnalytics { monthly?: { month: string; revenue: string | number; orders: number }[]; }
+  const salesAnalytics = (salesData as { data?: SalesAnalytics } | undefined)?.data || (salesData as SalesAnalytics | undefined) || {};
+  const monthlySales = salesAnalytics?.monthly || [];
+  const revenueChartData = monthlySales.map((item: { month?: string; revenue?: string | number; orders?: number }) => ({
+    month: item.month ? new Date(item.month).toLocaleDateString('en-US', { month: 'short', year: '2-digit' }) : '',
+    revenue: typeof item.revenue === 'string' ? parseFloat(item.revenue) || 0 : (item.revenue || 0),
+    orders: item.orders || 0,
   }));
 
-  const productAnalytics = (productData as any)?.data || (productData as any) || {};
-  const categoryPerformance: any[] = productAnalytics?.categoryPerformance || [];
-  const categoryChartData = categoryPerformance.slice(0, 5).map((cat: any) => ({
+  interface ProductAnalytics { categoryPerformance?: { name?: string; revenue?: number; orders?: number }[]; }
+  const productAnalytics = (productData as { data?: ProductAnalytics } | undefined)?.data || (productData as ProductAnalytics | undefined) || {};
+  const categoryPerformance = productAnalytics?.categoryPerformance || [];
+  const categoryChartData = categoryPerformance.slice(0, 5).map((cat: { name?: string; revenue?: number; orders?: number }) => ({
     name: cat.name?.slice(0, 12) || 'Unknown',
     revenue: cat.revenue || 0,
     orders: cat.orders || 0,
   }));
 
-  const userAnalytics = (userData as any)?.data || (userData as any) || {};
-  const userGrowth: any[] = userAnalytics?.userGrowth || [];
-  const topCustomers: any[] = userAnalytics?.topCustomers || [];
+  interface UserAnalytics {
+    userGrowth?: { date: string; users: number }[];
+    topCustomers?: { userId: number; name?: string; email?: string; orderCount?: number; totalSpent?: string }[];
+  }
+  const userAnalytics = (userData as { data?: UserAnalytics } | undefined)?.data || (userData as UserAnalytics | undefined) || {};
+  const userGrowth = userAnalytics?.userGrowth || [];
+  const topCustomers = userAnalytics?.topCustomers || [];
 
-  const orderAnalytics = (orderData as any)?.data || (orderData as any) || {};
-  const hourlyDistribution: any[] = orderAnalytics?.hourlyDistribution || [];
-  const hourlyChartData = hourlyDistribution.map((h: any) => ({
+  interface OrderAnalytics { hourlyDistribution?: { hour: number; orders: number }[]; averageOrderValue?: number; monthlyAverageOrderValue?: number; repeatCustomerRate?: number; repeatCustomers?: number; }
+  const orderAnalytics = (orderData as { data?: OrderAnalytics } | undefined)?.data || (orderData as OrderAnalytics | undefined) || {};
+  const hourlyDistribution = orderAnalytics?.hourlyDistribution || [];
+  const hourlyChartData = hourlyDistribution.map((h: { hour: number; orders: number }) => ({
     hour: `${h.hour}:00`,
     orders: h.orders,
   }));
 
-  const couponAnalytics = (couponData as any)?.data || (couponData as any) || {};
-  const topCoupons: any[] = couponAnalytics?.topCoupons || [];
+  interface CouponAnalytics { topCoupons?: { couponId: number; code?: string; usageCount?: number; totalDiscount?: string; type?: string; value?: number }[]; totalDiscountGiven?: number; }
+  const couponAnalytics = (couponData as { data?: CouponAnalytics } | undefined)?.data || (couponData as CouponAnalytics | undefined) || {};
+  const topCoupons = couponAnalytics?.topCoupons || [];
 
-  const reviewAnalytics = (reviewData as any)?.data || (reviewData as any) || {};
-  const ratingDistribution: any[] = reviewAnalytics?.ratingDistribution || [];
-  const recentReviews: any[] = reviewAnalytics?.recentReviews || [];
-  const ratingChartData = ratingDistribution.map((r: any) => ({
+  interface ReviewAnalytics {
+    ratingDistribution?: { rating: number; count: number }[];
+    recentReviews?: unknown[];
+    averageRating?: number;
+    totalReviews?: number;
+  }
+  const reviewAnalytics = (reviewData as { data?: ReviewAnalytics } | undefined)?.data || (reviewData as ReviewAnalytics | undefined) || {};
+  const ratingDistribution = reviewAnalytics?.ratingDistribution || [];
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _recentReviews = reviewAnalytics?.recentReviews || [];
+  const ratingChartData = ratingDistribution.map((r: { rating: number; count: number }) => ({
     rating: `${r.rating}★`,
     count: r.count,
   }));
 
-  const inventoryAnalytics = (inventoryData as any)?.data || (inventoryData as any) || {};
+  interface InventoryAnalytics { lowStockProducts?: unknown[]; totalInventoryValue?: number; totalVariants?: number; healthyStockCount?: number; lowStockCount?: number; outOfStockCount?: number; }
+  const inventoryAnalytics = (inventoryData as { data?: InventoryAnalytics } | undefined)?.data || (inventoryData as InventoryAnalytics | undefined) || {};
 
-  const userGrowthChartData = userGrowth.map((item: any) => ({
+  const userGrowthChartData = userGrowth.map((item: { date: string; users: number }) => ({
     date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     users: item.users,
   }));
 
-  const orderStatusChartData = orderStatusStats.map((s: any) => ({
+  const orderStatusChartData = orderStatusStats.map((s: OrderStatusStat) => ({
     name: s.status.charAt(0).toUpperCase() + s.status.slice(1),
-    value: parseInt(s.count),
+    value: typeof s.count === 'string' ? parseInt(s.count) || 0 : s.count || 0,
   }));
 
   // Updated to use variant.product chain from fixed backend
-  const topProductsChart = topProducts.slice(0, 5).map((item: any) => ({
+  interface TopProduct {
+    id?: number;
+    variantId?: number;
+    variant?: { product?: { name?: string } };
+    productName?: string;
+    totalSold?: string | number;
+    get?: (key: string) => unknown;
+  }
+  const topProductsChart = (topProducts as TopProduct[]).slice(0, 5).map((item) => ({
     name: item.variant?.product?.name?.slice(0, 15) || item.productName?.slice(0, 15) || `#${item.variantId || item.id}`,
-    sales: parseInt(item.totalSold || item.get?.('totalSold') || 0),
+    sales: parseInt(String(item.totalSold || item.get?.('totalSold') || '0')),
   }));
 
   // Calculate trends (mock for now, can be calculated from historical data)
-  const revenueTrend = monthly.revenue > 0 ? 12.5 : 0;
-  const ordersTrend = monthly.orders > 0 ? 8.3 : 0;
-  const usersTrend = monthly.users > 0 ? 24.1 : 0;
+  const revenueTrend = Number(monthly.revenue) > 0 ? 12.5 : 0;
+  const ordersTrend = Number(monthly.orders) > 0 ? 8.3 : 0;
+  const usersTrend = Number(monthly.users) > 0 ? 24.1 : 0;
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -247,8 +284,8 @@ export default function AdminDashboardPage() {
       <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Revenue"
-          value={`$${(overview.totalRevenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-          subtitle={`$${(monthly.revenue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} this month`}
+          value={`$${Number(overview.totalRevenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          subtitle={`$${Number(monthly.revenue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} this month`}
           icon={DollarSign}
           trend={revenueTrend}
           trendLabel="vs last month"
@@ -292,15 +329,15 @@ export default function AdminDashboardPage() {
                   <AreaChart data={revenueChartData}>
                     <defs>
                       <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8884d8" stopOpacity={0.4}/>
-                        <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#C7A27C" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="#C7A27C" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#9ca3af" />
-                    <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v.toLocaleString()}`} stroke="#9ca3af" />
-                    <Tooltip formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Revenue']} />
-                    <Area type="monotone" dataKey="revenue" stroke="#8884d8" fillOpacity={1} fill="url(#colorRevenue)" strokeWidth={2} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E2DD" />
+                    <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#9B9B9B" />
+                    <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v.toLocaleString()}`} stroke="#9B9B9B" />
+                    <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Revenue']} />
+                    <Area type="monotone" dataKey="revenue" stroke="#C7A27C" fillOpacity={1} fill="url(#colorRevenue)" strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
@@ -357,11 +394,11 @@ export default function AdminDashboardPage() {
               {topProductsChart.length > 0 ? (
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={topProductsChart}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="#9ca3af" />
-                    <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E2DD" />
+                    <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="#9B9B9B" />
+                    <YAxis tick={{ fontSize: 12 }} stroke="#9B9B9B" />
                     <Tooltip />
-                    <Bar dataKey="sales" fill="#8884d8" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="sales" fill="#111111" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -383,11 +420,11 @@ export default function AdminDashboardPage() {
               {categoryChartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={categoryChartData} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis type="number" tick={{ fontSize: 11 }} stroke="#9ca3af" tickFormatter={(v) => `$${v.toLocaleString()}`} />
-                    <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={80} stroke="#9ca3af" />
-                    <Tooltip formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Revenue']} />
-                    <Bar dataKey="revenue" fill="#34d399" radius={[0, 4, 4, 0]} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E2DD" />
+                    <XAxis type="number" tick={{ fontSize: 11 }} stroke="#9B9B9B" tickFormatter={(v) => `$${v.toLocaleString()}`} />
+                    <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={80} stroke="#9B9B9B" />
+                    <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Revenue']} />
+                    <Bar dataKey="revenue" fill="#4A7C59" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -409,11 +446,11 @@ export default function AdminDashboardPage() {
               {userGrowthChartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={280}>
                   <LineChart data={userGrowthChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#9ca3af" />
-                    <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E2DD" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#9B9B9B" />
+                    <YAxis tick={{ fontSize: 12 }} stroke="#9B9B9B" />
                     <Tooltip />
-                    <Line type="monotone" dataKey="users" stroke="#f59e0b" strokeWidth={2} dot={{ fill: '#f59e0b' }} />
+                    <Line type="monotone" dataKey="users" stroke="#C7A27C" strokeWidth={2} dot={{ fill: '#C7A27C' }} />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
@@ -439,7 +476,7 @@ export default function AdminDashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-3 max-h-[280px] overflow-y-auto">
-                  {lowStockProducts.map((p: any) => (
+                  {lowStockProducts.map((p: LowStockProduct) => (
                     <Link key={`${p.id}-${p.variantId}`} href={`/admin/products/${p.id}`}>
                       <div className="flex items-center justify-between py-2 border-b last:border-0 hover:bg-muted/30 rounded-md px-2 -mx-2 transition-colors cursor-pointer">
                         <div>
@@ -488,7 +525,7 @@ export default function AdminDashboardPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {recentOrders.map((order: any) => (
+                      {recentOrders.map((order: RecentOrder) => (
                         <tr key={order.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                           <td className="py-2 pr-4 font-medium">
                             <Link href={`/admin/orders/${order.id}`} className="hover:underline text-primary cursor-pointer">#{order.id}</Link>
@@ -497,9 +534,9 @@ export default function AdminDashboardPage() {
                             <p className="font-medium">{order.user?.name || 'Unknown'}</p>
                             <p className="text-xs text-muted-foreground">{order.user?.email}</p>
                           </td>
-                          <td className="py-2 pr-4 font-semibold">${parseFloat(order.total).toFixed(2)}</td>
+                          <td className="py-2 pr-4 font-semibold">${parseFloat(order.total || '0').toFixed(2)}</td>
                           <td className="py-2">
-                            <Badge variant="outline" className={STATUS_BG_COLORS[order.status]}>
+                            <Badge variant="outline" className={STATUS_BG_COLORS[order.status || 'pending']}>
                               {order.status}
                             </Badge>
                           </td>
@@ -529,17 +566,17 @@ export default function AdminDashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {topCustomers.slice(0, 5).map((customer: any, index: number) => (
+                  {topCustomers.slice(0, 5).map((customer: { userId: number; name?: string; email?: string; orderCount?: number; totalSpent?: string }, index: number) => (
                     <div key={customer.userId} className="flex items-center gap-4">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
                         {index + 1}
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium">{customer.user?.name || 'Unknown'}</p>
-                        <p className="text-xs text-muted-foreground">{customer.orderCount} orders</p>
+                        <p className="text-sm font-medium">{customer.name || 'Unknown'}</p>
+                        <p className="text-xs text-muted-foreground">{customer.orderCount || 0} orders</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold">${parseFloat(customer.totalSpent || 0).toFixed(2)}</p>
+                        <p className="text-sm font-semibold">${parseFloat(customer.totalSpent || '0').toFixed(2)}</p>
                         <p className="text-xs text-muted-foreground">lifetime</p>
                       </div>
                     </div>
@@ -594,11 +631,11 @@ export default function AdminDashboardPage() {
               {hourlyChartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={hourlyChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="hour" tick={{ fontSize: 11 }} stroke="#9ca3af" />
-                    <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E2DD" />
+                    <XAxis dataKey="hour" tick={{ fontSize: 11 }} stroke="#9B9B9B" />
+                    <YAxis tick={{ fontSize: 12 }} stroke="#9B9B9B" />
                     <Tooltip />
-                    <Bar dataKey="orders" fill="#60a5fa" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="orders" fill="#6B6B6B" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -627,7 +664,7 @@ export default function AdminDashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {topCoupons.map((coupon: any) => (
+                  {topCoupons.map((coupon) => (
                     <div key={coupon.couponId} className="flex items-center justify-between py-2 border-b last:border-0">
                       <div>
                         <div className="flex items-center gap-2">
@@ -639,7 +676,7 @@ export default function AdminDashboardPage() {
                         <p className="text-xs text-muted-foreground mt-1">Used {coupon.usageCount} times</p>
                       </div>
                       <span className="text-sm font-semibold text-green-600">
-                        -${coupon.totalDiscount?.toFixed(2) || 0}
+                        -${parseFloat(coupon.totalDiscount || '0').toFixed(2)}
                       </span>
                     </div>
                   ))}
@@ -681,11 +718,11 @@ export default function AdminDashboardPage() {
               {ratingChartData.length > 0 && (
                 <ResponsiveContainer width="100%" height={150}>
                   <BarChart data={ratingChartData} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E2DD" />
                     <XAxis type="number" hide />
-                    <YAxis type="category" dataKey="rating" width={40} tick={{ fontSize: 12 }} stroke="#9ca3af" />
+                    <YAxis type="category" dataKey="rating" width={40} tick={{ fontSize: 12 }} stroke="#9B9B9B" />
                     <Tooltip />
-                    <Bar dataKey="count" fill="#fbbf24" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="count" fill="#C7A27C" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}

@@ -8,7 +8,7 @@ export interface Notification {
   message: string;
   type: 'info' | 'success' | 'warning' | 'error';
   isRead: boolean;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
@@ -29,7 +29,7 @@ export const notificationsApi = createApi({
   baseQuery: axiosBaseQuery(),
   tagTypes: ['Notifications'],
   endpoints: (builder) => ({
-    getNotifications: builder.query<{ data: Notification[]; metadata: any }, GetNotificationsParams>({
+    getNotifications: builder.query<{ data: Notification[]; metadata: unknown }, GetNotificationsParams>({
       query: (params = {}) => ({
         url: '/api/v1/notifications',
         method: 'GET',
@@ -89,7 +89,7 @@ export const notificationsApi = createApi({
       invalidatesTags: [{ type: 'Notifications', id: 'LIST' }, { type: 'Notifications', id: 'UNREAD_COUNT' }],
     }),
     // Admin only endpoints
-    createNotification: builder.mutation<Notification, { userId?: number; title: string; message: string; type?: string; data?: Record<string, any> }>({
+    createNotification: builder.mutation<Notification, { userId?: number; title: string; message: string; type?: string; data?: Record<string, unknown> }>({
       query: (data) => ({
         url: '/api/v1/notifications',
         method: 'POST',

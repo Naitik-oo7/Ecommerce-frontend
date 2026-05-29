@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGetAllSettingsQuery, useUpdateSettingMutation } from '@/services/api/settingsApi';
 import { useUploadImageMutation } from '@/services/api/uploadApi';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -175,21 +175,24 @@ export default function AdminSettingsPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [uploadingField, setUploadingField] = useState<string | null>(null);
 
-  // State per section
+  // State per section - with lazy initialization from settings
   const [hero, setHero] = useState<HeroSettings>(defaultHero);
   const [trustItems, setTrustItems] = useState<TrustItem[]>(defaultTrustItems);
   const [brandStory, setBrandStory] = useState<BrandStory>(defaultBrandStory);
   const [ourValues, setOurValues] = useState<Value[]>(defaultValues);
   const [general, setGeneral] = useState<GeneralSettings>(defaultGeneral);
 
-  // Hydrate from DB
+  // Hydrate from DB - use a ref flag to prevent cascading updates
+  const hasHydratedRef = useRef(false);
   useEffect(() => {
-    if (!settings) return;
+    if (!settings || hasHydratedRef.current) return;
+    hasHydratedRef.current = true;
     if (settings.hero)        setHero({ ...defaultHero, ...settings.hero });
     if (settings.trust_items && Array.isArray(settings.trust_items)) setTrustItems(settings.trust_items);
     if (settings.brand_story) setBrandStory({ ...defaultBrandStory, ...settings.brand_story });
     if (settings.our_values && Array.isArray(settings.our_values)) setOurValues(settings.our_values);
     if (settings.general)     setGeneral({ ...defaultGeneral, ...settings.general });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings]);
 
   // Auto-dismiss alerts
@@ -295,32 +298,32 @@ export default function AdminSettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Eyebrow Label</Label>
-                    <Input value={hero.eyebrow} onChange={(e) => setHero({ ...hero, eyebrow: e.target.value })} placeholder="e.g., New Collection 2026" />
+                    <Input value={hero.eyebrow} onChange={(e) => setHero((prev) => ({ ...prev, eyebrow: e.target.value }))} placeholder="e.g., New Collection 2026" />
                   </div>
                   <div className="space-y-2">
                     <Label>Headline Line 1</Label>
-                    <Input value={hero.headline[0]} onChange={(e) => setHero({ ...hero, headline: [e.target.value, hero.headline[1]] })} placeholder="e.g., Crafted For" />
+                    <Input value={hero.headline[0]} onChange={(e) => setHero((prev) => ({ ...prev, headline: [e.target.value, prev.headline[1]] }))} placeholder="e.g., Crafted For" />
                   </div>
                   <div className="space-y-2">
                     <Label>Headline Line 2 <span className="text-muted-foreground text-xs">(muted)</span></Label>
-                    <Input value={hero.headline[1]} onChange={(e) => setHero({ ...hero, headline: [hero.headline[0], e.target.value] })} placeholder="e.g., Modern Living" />
+                    <Input value={hero.headline[1]} onChange={(e) => setHero((prev) => ({ ...prev, headline: [prev.headline[0], e.target.value] }))} placeholder="e.g., Modern Living" />
                   </div>
                   <div className="space-y-2">
                     <Label>Primary CTA Label</Label>
-                    <Input value={hero.ctaPrimary.label} onChange={(e) => setHero({ ...hero, ctaPrimary: { ...hero.ctaPrimary, label: e.target.value } })} placeholder="Explore Collection" />
+                    <Input value={hero.ctaPrimary.label} onChange={(e) => setHero((prev) => ({ ...prev, ctaPrimary: { ...prev.ctaPrimary, label: e.target.value } }))} placeholder="Explore Collection" />
                   </div>
                   <div className="space-y-2">
                     <Label>Primary CTA URL</Label>
-                    <Input value={hero.ctaPrimary.href} onChange={(e) => setHero({ ...hero, ctaPrimary: { ...hero.ctaPrimary, href: e.target.value } })} placeholder="/products" />
+                    <Input value={hero.ctaPrimary.href} onChange={(e) => setHero((prev) => ({ ...prev, ctaPrimary: { ...prev.ctaPrimary, href: e.target.value } }))} placeholder="/products" />
                   </div>
                   <div className="space-y-2">
                     <Label>Secondary CTA Label</Label>
-                    <Input value={hero.ctaSecondary.label} onChange={(e) => setHero({ ...hero, ctaSecondary: { label: e.target.value } })} placeholder="Watch Lookbook" />
+                    <Input value={hero.ctaSecondary.label} onChange={(e) => setHero((prev) => ({ ...prev, ctaSecondary: { label: e.target.value } }))} placeholder="Watch Lookbook" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Subtext</Label>
-                  <Textarea value={hero.subtext} onChange={(e) => setHero({ ...hero, subtext: e.target.value })} rows={2} placeholder="Short description below the headline…" />
+                  <Textarea value={hero.subtext} onChange={(e) => setHero((prev) => ({ ...prev, subtext: e.target.value }))} rows={2} placeholder="Short description below the headline…" />
                 </div>
               </div>
 
@@ -331,27 +334,27 @@ export default function AdminSettingsPage() {
                   label="Hero Background"
                   value={hero.backgroundImage}
                   uploading={uploadingField === 'hero-bg'}
-                  onChange={(e) => handleImageUpload(e, 'hero-bg', (url) => setHero({ ...hero, backgroundImage: url }))}
-                  onRemove={() => setHero({ ...hero, backgroundImage: '' })}
+                  onChange={(e) => handleImageUpload(e, 'hero-bg', (url) => setHero((prev) => ({ ...prev, backgroundImage: url })))}
+                  onRemove={() => setHero((prev) => ({ ...prev, backgroundImage: '' }))}
                 />
                 <p className="text-xs text-muted-foreground">Or paste a URL directly:</p>
-                <Input value={hero.backgroundImage} onChange={(e) => setHero({ ...hero, backgroundImage: e.target.value })} placeholder="https://…" />
+                <Input value={hero.backgroundImage} onChange={(e) => setHero((prev) => ({ ...prev, backgroundImage: e.target.value }))} placeholder="https://…" />
               </div>
 
               {/* Stats */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold">Floating Stats</h3>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setHero({ ...hero, stats: [...hero.stats, { value: '', label: '' }] })} className="gap-1">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setHero((prev) => ({ ...prev, stats: [...prev.stats, { value: '', label: '' }] }))} className="gap-1">
                     <Plus className="h-4 w-4" /> Add Stat
                   </Button>
                 </div>
                 <div className="space-y-2">
                   {hero.stats.map((stat, i) => (
                     <div key={i} className="flex gap-2 items-center p-3 bg-muted/40 rounded-lg">
-                      <Input className="w-24" value={stat.value} onChange={(e) => { const s = [...hero.stats]; s[i] = { ...s[i], value: e.target.value }; setHero({ ...hero, stats: s }); }} placeholder="50K+" />
-                      <Input className="flex-1" value={stat.label} onChange={(e) => { const s = [...hero.stats]; s[i] = { ...s[i], label: e.target.value }; setHero({ ...hero, stats: s }); }} placeholder="Happy Customers" />
-                      <Button type="button" variant="ghost" size="icon" className="text-destructive shrink-0" onClick={() => setHero({ ...hero, stats: hero.stats.filter((_, idx) => idx !== i) })}>
+                      <Input className="w-24" value={stat.value} onChange={(e) => { const s = [...hero.stats]; s[i] = { ...s[i], value: e.target.value }; setHero((prev) => ({ ...prev, stats: s })); }} placeholder="50K+" />
+                      <Input className="flex-1" value={stat.label} onChange={(e) => { const s = [...hero.stats]; s[i] = { ...s[i], label: e.target.value }; setHero((prev) => ({ ...prev, stats: s })); }} placeholder="Happy Customers" />
+                      <Button type="button" variant="ghost" size="icon" className="text-destructive shrink-0" onClick={() => setHero((prev) => ({ ...prev, stats: prev.stats.filter((_, idx) => idx !== i) }))}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>

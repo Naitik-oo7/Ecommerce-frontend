@@ -83,7 +83,7 @@ export default function ProductDetailPage() {
   const product = extractData<Product>(productResponse);
 
   const { data: reviewsResponse } = useGetProductReviewsQuery(
-    { productId: product?.id },
+    { productId: product?.id ?? 0 },
     { skip: !product?.id }
   );
 
@@ -109,8 +109,8 @@ export default function ProductDetailPage() {
   } = useProductActions({ productId: product?.id || 0, slug: slug as string });
 
   useEffect(() => {
-    if (product?.variants?.length > 0 && !initializedRef.current) {
-      setSelectedVariant(product.variants[0]);
+    if ((product?.variants?.length ?? 0) > 0 && !initializedRef.current) {
+      setSelectedVariant(product?.variants[0] ?? null);
       initializedRef.current = true;
     }
   }, [product]);

@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 
 type StatusKey = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ComponentType<{ className?: string }> }> = {
   pending:    { label: 'Pending',    color: 'text-yellow-700', bg: 'bg-yellow-50 border-yellow-200',  icon: Clock },
   processing: { label: 'Processing', color: 'text-blue-700',   bg: 'bg-blue-50 border-blue-200',     icon: Package },
   shipped:    { label: 'Shipped',    color: 'text-indigo-700', bg: 'bg-indigo-50 border-indigo-200', icon: Truck },
@@ -36,8 +36,15 @@ export default function ProfileOrdersPage() {
     { skip: !isAuthenticated }
   );
 
-  const orders: any[] = (ordersResponse as any)?.data || [];
-  const pagination = (ordersResponse as any)?.pagination;
+  interface OrderItem { productImage?: string; productName?: string; variant?: { product?: { media?: { url?: string }[]; name?: string } } }
+  interface Order { id: number; status: string; createdAt: string; total: string; items?: OrderItem[]; orderItems?: OrderItem[] }
+  interface OrdersResponse {
+    data?: Order[];
+    pagination?: { total?: number; totalPages?: number };
+  }
+
+  const orders = (ordersResponse as OrdersResponse | undefined)?.data || [];
+  const pagination = (ordersResponse as OrdersResponse | undefined)?.pagination;
   const totalOrders = pagination?.total ?? orders.length;
 
   return (
@@ -101,7 +108,7 @@ export default function ProfileOrdersPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {orders.map((order: any, idx: number) => {
+          {orders.map((order, idx: number) => {
             const statusInfo = STATUS_CONFIG[order.status as StatusKey] || STATUS_CONFIG.pending;
             const StatusIcon = statusInfo.icon;
             const items = order.items || order.orderItems || [];
@@ -131,7 +138,7 @@ export default function ProfileOrdersPage() {
                     {/* Items thumbnails + total */}
                     <div className="flex items-center gap-3">
                       <div className="flex gap-1.5">
-                        {items.slice(0, 4).map((item: any, i: number) => {
+                        {items.slice(0, 4).map((item: { productImage?: string; productName?: string; variant?: { product?: { media?: { url?: string }[]; name?: string } } }, i: number) => {
                           const image = item.productImage || item.variant?.product?.media?.[0]?.url;
                           const name = item.productName || item.variant?.product?.name || '';
                           return (
@@ -165,7 +172,7 @@ export default function ProfileOrdersPage() {
           })}
 
           {/* Pagination */}
-          {pagination && pagination.totalPages > 1 && (
+          {pagination && (pagination.totalPages ?? 0) > 1 && (
             <div className="flex items-center justify-center gap-3 pt-2">
               <button
                 onClick={() => setPage(p => p - 1)}
@@ -177,7 +184,7 @@ export default function ProfileOrdersPage() {
               <span className="text-sm text-[#9B9B9B]">Page {page} of {pagination.totalPages}</span>
               <button
                 onClick={() => setPage(p => p + 1)}
-                disabled={page >= pagination.totalPages}
+                disabled={page >= (pagination.totalPages ?? 1)}
                 className="px-4 py-2 text-sm font-medium border border-[#E5E2DD] rounded-full hover:border-[#C7A27C] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Next →

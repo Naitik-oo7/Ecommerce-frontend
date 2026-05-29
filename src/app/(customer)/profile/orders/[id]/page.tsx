@@ -6,7 +6,7 @@ import { ArrowLeft, Package, CheckCircle, Clock, Truck, XCircle, MapPin, CreditC
 import Link from 'next/link';
 import { useState } from 'react';
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string; icon: any }> = {
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string; icon: React.ComponentType<{ className?: string }> }> = {
   pending:    { label: 'Pending',    color: 'text-yellow-700', bg: 'bg-yellow-50 border-yellow-200',  dot: 'bg-yellow-400', icon: Clock },
   processing: { label: 'Processing', color: 'text-blue-700',   bg: 'bg-blue-50 border-blue-200',     dot: 'bg-blue-400',   icon: Package },
   shipped:    { label: 'Shipped',    color: 'text-indigo-700', bg: 'bg-indigo-50 border-indigo-200', dot: 'bg-indigo-400', icon: Truck },
@@ -33,7 +33,33 @@ export default function ProfileOrderDetailPage() {
   const { data: orderResponse, isLoading, error } = useGetOrderByIdQuery(id as string);
   const [cancelOrder] = useCancelOrderMutation();
 
-  const order = (orderResponse as any)?.data || orderResponse;
+  interface OrderResponse {
+    data?: {
+      id?: number;
+      status?: string;
+      paymentStatus?: string;
+      createdAt?: string;
+      paymentMethod?: string;
+      total?: string;
+      subtotal?: string;
+      discount?: string;
+      address?: {
+        label?: string;
+        street?: string;
+        addressLine1?: string;
+        city?: string;
+        state?: string;
+        pincode?: string;
+        zipCode?: string;
+        country?: string;
+      };
+      shippingAddress?: unknown;
+      items?: { id?: number; productImage?: string; productName?: string; variant?: { product?: { slug?: string; name?: string } }; quantity?: number; size?: string; price?: string }[];
+      orderItems?: unknown[];
+    };
+  }
+
+  const order = (orderResponse as OrderResponse | undefined)?.data || orderResponse;
 
   const handleCancel = async () => {
     if (!confirm('Are you sure you want to cancel this order?')) return;
@@ -73,7 +99,12 @@ export default function ProfileOrderDetailPage() {
   const canCancel = order.status === 'pending';
   const shippingAddr = order.address || order.shippingAddress || {};
   const items = order.items || order.orderItems || [];
-  const subtotal = items.reduce((s: number, i: any) => s + parseFloat(i.price) * i.quantity, 0);
+  interface OrderItem {
+    price?: string;
+    quantity?: number;
+  }
+
+  const subtotal = items.reduce((s: number, i: unknown) => s + parseFloat((i as OrderItem).price || '0') * ((i as OrderItem).quantity || 0), 0);
 
   return (
     <div className="space-y-5">
@@ -222,7 +253,7 @@ export default function ProfileOrderDetailPage() {
           <h3 className="text-base font-semibold text-[#111111]">Order Items ({items.length})</h3>
         </div>
         <div className="divide-y divide-[#F0EDE8]">
-          {items.map((item: any) => (
+          {items.map((item: { id?: number; productImage?: string; productName?: string; variant?: { product?: { slug?: string; name?: string } }; quantity?: number; size?: string; price?: string }) => (
             <div key={item.id} className="flex items-center gap-4 px-6 py-4">
               <div className="w-16 h-16 rounded-xl bg-[#F6F3EE] overflow-hidden shrink-0 flex items-center justify-center border border-[#E5E2DD]">
                 {item.productImage ? (
@@ -242,8 +273,8 @@ export default function ProfileOrderDetailPage() {
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <p className="font-semibold text-[#111111]">₹{(parseFloat(item.price) * item.quantity).toLocaleString('en-IN')}</p>
-                <p className="text-xs text-[#9B9B9B]">₹{parseFloat(item.price).toLocaleString('en-IN')} each</p>
+                <p className="font-semibold text-[#111111]">₹{(parseFloat(item.price || '0') * (item.quantity || 0)).toLocaleString('en-IN')}</p>
+                <p className="text-xs text-[#9B9B9B]">₹{parseFloat(item.price || '0').toLocaleString('en-IN')} each</p>
               </div>
             </div>
           ))}

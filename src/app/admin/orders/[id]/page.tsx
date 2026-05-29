@@ -52,11 +52,11 @@ const itemVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+    transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
   },
 };
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any; bgColor: string }> = {
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string }>; bgColor: string }> = {
   pending: {
     label: 'Pending',
     color: 'text-yellow-700 dark:text-yellow-300',
@@ -109,7 +109,20 @@ export default function AdminOrderDetailPage() {
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
   const [updatePaymentStatus] = useUpdatePaymentStatusMutation();
 
-  const order = (orderResponse as any)?.data || orderResponse;
+  interface OrderResponse {
+    data?: {
+      id?: number;
+      status?: string;
+      paymentStatus?: string;
+      user?: { name?: string; email?: string };
+      address?: unknown;
+      shippingAddress?: unknown;
+      items?: unknown[];
+      orderItems?: unknown[];
+      total?: string;
+    };
+  }
+  const order = (orderResponse as OrderResponse | undefined)?.data || orderResponse;
 
   const handleCopyOrderId = () => {
     navigator.clipboard.writeText(`#${order.id}`);
@@ -175,7 +188,8 @@ export default function AdminOrderDetailPage() {
   const currentStep = ORDER_STEPS.indexOf(order.status);
   const shippingAddr = order.address || order.shippingAddress || {};
   const items = order.items || order.orderItems || [];
-  const subtotal = items.reduce((s: number, i: any) => s + parseFloat(i.price) * i.quantity, 0);
+  interface OrderItem { price?: string; quantity?: number; }
+  const subtotal = (items as OrderItem[]).reduce((s: number, i: OrderItem) => s + parseFloat(i.price || '0') * (i.quantity || 0), 0);
   const customer = order.user || {};
 
   return (
@@ -263,7 +277,7 @@ export default function AdminOrderDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                {items.map((item: any, index: number) => (
+                {(items as { id?: number; productImage?: string; productName?: string; price?: string; quantity?: number; size?: string; variant?: { size?: string; color?: string; product?: { slug?: string; name?: string } } }[]).map((item, index: number) => (
                   <motion.div key={item.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.05 }}
                     className="py-4 px-6 flex items-center gap-4 border-b last:border-b-0 hover:bg-muted/20 transition-colors">
                     <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden shrink-0 flex items-center justify-center border">
@@ -283,8 +297,8 @@ export default function AdminOrderDetailPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold">${(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
-                      <p className="text-xs text-muted-foreground">${parseFloat(item.price).toFixed(2)} each</p>
+                      <p className="font-semibold">${(parseFloat(item.price ?? '0') * (item.quantity ?? 0)).toFixed(2)}</p>
+                      <p className="text-xs text-muted-foreground">${parseFloat(item.price ?? '0').toFixed(2)} each</p>
                     </div>
                   </motion.div>
                 ))}

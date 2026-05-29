@@ -20,10 +20,22 @@ export const JournalSection = () => {
     return (
       <section className="py-20 md:py-32 bg-mono-cream">
         <div className="container-mono">
+          {/* Header skeleton */}
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12 md:mb-16">
+            <div className="space-y-3">
+              <div className="animate-pulse bg-gray-200 rounded h-3 w-24" />
+              <div className="animate-pulse bg-gray-200 rounded h-12 w-72" />
+              <div className="animate-pulse bg-gray-200 rounded h-4 w-80" />
+            </div>
+            <div className="animate-pulse bg-gray-200 rounded h-4 w-32" />
+          </div>
+          {/* Grid skeleton */}
           <div className="grid md:grid-cols-[1fr_420px] lg:grid-cols-[1fr_460px] gap-10 md:gap-14 lg:gap-20">
             <div className="animate-pulse bg-gray-200 rounded-2xl h-96" />
             <div className="space-y-6">
-              {[1, 2, 3].map((i) => <div key={i} className="animate-pulse bg-gray-200 rounded-xl h-24" />)}
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="animate-pulse bg-gray-200 rounded-xl h-24" />
+              ))}
             </div>
           </div>
         </div>
@@ -49,7 +61,8 @@ export const JournalSection = () => {
   return (
     <section className="py-20 md:py-32 bg-mono-cream">
       <div className="container-mono">
-        {/* Section Header */}
+
+        {/* ── Section Header ── */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -57,15 +70,21 @@ export const JournalSection = () => {
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12 md:mb-16"
         >
+          {/* Left: label + title + subtitle */}
           <div>
             <span className="text-xs font-semibold tracking-[0.2em] uppercase text-mono-terracotta mb-4 block">
               The Journal
             </span>
-            <h2 className="text-4xl md:text-5xl font-bold text-mono-charcoal leading-[1.1]">
-              Stories & Insights
+            <h2 className="text-4xl md:text-5xl font-bold text-mono-charcoal leading-[1.1] mb-3">
+              Stories &amp; Insights
             </h2>
+            <p className="text-sm text-mono-warm-gray leading-relaxed max-w-xs">
+              Thoughtful perspectives on style, sustainability,
+              <br className="hidden md:block" /> and the craft behind every collection.
+            </p>
           </div>
 
+          {/* Right: View All link */}
           <Link href="/journal">
             <motion.span
               className="inline-flex items-center gap-2 text-mono-charcoal font-medium hover:text-mono-terracotta transition-colors cursor-pointer group"
@@ -77,8 +96,9 @@ export const JournalSection = () => {
           </Link>
         </motion.div>
 
-        {/* Editorial Grid: featured left, compact list right */}
+        {/* ── Editorial Grid: featured left, compact list right ── */}
         <div className="grid md:grid-cols-[1fr_420px] lg:grid-cols-[1fr_460px] gap-10 md:gap-14 lg:gap-20 items-start">
+
           {/* Featured — left column */}
           <JournalCard {...featuredArticle} index={0} />
 
@@ -105,6 +125,7 @@ export const JournalSection = () => {
               ))}
             </div>
           </motion.div>
+
         </div>
       </div>
     </section>

@@ -68,7 +68,7 @@ export default function WishlistPage() {
             variant="ghost"
             size="sm"
             className="text-destructive hover:text-destructive"
-            onClick={() => clearWishlist().catch(() => {})}
+            onClick={() => clearWishlist(undefined).catch(() => {})}
           >
             Clear All
           </Button>

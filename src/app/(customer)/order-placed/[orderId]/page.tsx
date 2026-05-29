@@ -47,9 +47,9 @@ export default function OrderPlacedPage() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center px-4">
         <AlertCircle className="h-12 w-12 text-muted-foreground" />
         <p className="text-muted-foreground">Could not load order details.</p>
-        <Button asChild variant="outline">
-          <Link href="/profile/orders">View My Orders</Link>
-        </Button>
+        <Link href="/profile/orders">
+          <Button variant="outline">View My Orders</Button>
+        </Link>
       </div>
     );
   }
@@ -92,18 +92,18 @@ export default function OrderPlacedPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button asChild variant="outline" className="h-11 px-6">
-                <Link href={`/profile/orders/${orderId}`} className="inline-flex items-center justify-center gap-2">
+              <Link href={`/profile/orders/${orderId}`}>
+                <Button variant="outline" className="h-11 px-6 gap-2">
                   <Package className="h-4 w-4 shrink-0" />
                   <span>View Order</span>
-                </Link>
-              </Button>
-              <Button asChild className="h-11 px-6 bg-mono-charcoal hover:bg-mono-charcoal/90">
-                <Link href="/checkout" className="inline-flex items-center justify-center gap-2">
+                </Button>
+              </Link>
+              <Link href="/checkout">
+                <Button className="h-11 px-6 bg-mono-charcoal hover:bg-mono-charcoal/90 gap-2">
                   <ShoppingBag className="h-4 w-4 shrink-0" />
                   <span>Try Again</span>
-                </Link>
-              </Button>
+                </Button>
+              </Link>
             </div>
           </motion.div>
         )}
@@ -138,18 +138,18 @@ export default function OrderPlacedPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button asChild variant="outline" className="h-11 px-6">
-                <Link href="/profile/orders" className="inline-flex items-center justify-center gap-2">
+              <Link href="/profile/orders">
+                <Button variant="outline" className="h-11 px-6 gap-2">
                   <Package className="h-4 w-4 shrink-0" />
                   <span>My Orders</span>
-                </Link>
-              </Button>
-              <Button asChild className="h-11 px-6 bg-mono-charcoal hover:bg-mono-charcoal/90">
-                <Link href={`/profile/orders/${orderId}`} className="inline-flex items-center justify-center gap-2">
+                </Button>
+              </Link>
+              <Link href={`/profile/orders/${orderId}`}>
+                <Button className="h-11 px-6 bg-mono-charcoal hover:bg-mono-charcoal/90 gap-2">
                   <ArrowRight className="h-4 w-4 shrink-0" />
                   <span>View Order Details</span>
-                </Link>
-              </Button>
+                </Button>
+              </Link>
             </div>
           </motion.div>
         )}
@@ -276,18 +276,18 @@ export default function OrderPlacedPage() {
               transition={{ delay: 0.55 }}
               className="flex flex-col sm:flex-row gap-3"
             >
-              <Button asChild variant="outline" className="flex-1 h-11">
-                <Link href="/profile/orders" className="inline-flex items-center justify-center gap-2">
+              <Link href="/profile/orders" className="flex-1">
+                <Button variant="outline" className="w-full h-11 gap-2">
                   <Package className="h-4 w-4 shrink-0" />
                   <span>My Orders</span>
-                </Link>
-              </Button>
-              <Button asChild className="flex-1 h-11 bg-mono-charcoal hover:bg-mono-charcoal/90">
-                <Link href="/products" className="inline-flex items-center justify-center gap-2">
+                </Button>
+              </Link>
+              <Link href="/products" className="flex-1">
+                <Button className="w-full h-11 bg-mono-charcoal hover:bg-mono-charcoal/90 gap-2">
                   <ShoppingBag className="h-4 w-4 shrink-0" />
                   <span className="whitespace-nowrap">Continue Shopping</span>
-                </Link>
-              </Button>
+                </Button>
+              </Link>
             </motion.div>
 
             {/* View full details link */}

@@ -2,18 +2,24 @@
 
 import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
-import { useMouseParallax } from '@/hooks/useMouseParallax';
+import { ArrowRight, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import { useGetSettingQuery } from '@/services/api/settingsApi';
 import { useGetProductsQuery } from '@/services/api/productsApi';
+
+/* ── tiny hook: smooth mouse parallax ── */
+import { useMouseParallax } from '@/hooks/useMouseParallax';
 
 export const CinematicHero = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mousePosition = useMouseParallax({ intensity: 15, smoothing: 0.08 });
 
   const { data: heroSettings } = useGetSettingQuery('hero');
-  const { data: newestProductData } = useGetProductsQuery({ sortBy: 'createdAt', sortOrder: 'desc', limit: 1 });
+  const { data: newestProductData } = useGetProductsQuery({
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
+    limit: 1,
+  });
 
   const hero = heroSettings as any;
   const newestProduct = (newestProductData as any)?.data?.[0] || null;
@@ -23,35 +29,24 @@ export const CinematicHero = () => {
     offset: ['start start', 'end start'],
   });
 
-  const imageScale = useTransform(scrollYProgress, [0, 1], [1, 1.15]);
-  const textY = useTransform(scrollYProgress, [0, 1], [0, 100]);
-  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+  const textY = useTransform(scrollYProgress, [0, 1], [0, 60]);
 
+  /* ── animation variants ── */
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.12,
-        delayChildren: 0.3,
-      },
+      transition: { staggerChildren: 0.12, delayChildren: 0.3 },
     },
   };
 
   const textVariants = {
-    hidden: {
-      opacity: 0,
-      y: 60,
-      clipPath: 'inset(100% 0 0 0)',
-    },
+    hidden: { opacity: 0, y: 60, clipPath: 'inset(100% 0 0 0)' },
     visible: {
       opacity: 1,
       y: 0,
       clipPath: 'inset(0% 0 0 0)',
-      transition: {
-        duration: 0.9,
-        ease: [0.16, 1, 0.3, 1] as const,
-      },
+      transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] as const },
     },
   };
 
@@ -60,19 +55,17 @@ export const CinematicHero = () => {
     visible: {
       opacity: 1,
       y: 0,
-      transition: {
-        duration: 0.8,
-        ease: [0.16, 1, 0.3, 1] as const,
-      },
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const },
     },
   };
 
   return (
     <section
       ref={containerRef}
-      className="relative min-h-screen w-full overflow-hidden bg-[#F5F0E8]"
+      className="relative -mt-14 md:-mt-16 pt-14 md:pt-16 h-[calc(100dvh-3.5rem)] md:h-[calc(100dvh-4rem)] w-full overflow-hidden"
+      style={{ background: '#F0ECE4' }}
     >
-      {/* Subtle ambient light */}
+      {/* ── ambient glow ── */}
       <div className="absolute inset-0 pointer-events-none">
         <div
           className="absolute top-1/4 left-1/4 w-[600px] h-[600px] rounded-full opacity-20 blur-[140px]"
@@ -84,13 +77,13 @@ export const CinematicHero = () => {
         />
       </div>
 
-      {/* Split layout */}
-      <div className="relative z-10 min-h-screen flex flex-col lg:flex-row">
+      {/* ── split layout ── */}
+      <div className="relative z-10 h-full flex flex-col lg:flex-row">
 
-        {/* ── Left panel ── */}
+        {/* ── LEFT: text panel ── */}
         <motion.div
           className="flex-1 flex flex-col justify-center px-8 sm:px-12 lg:px-16 xl:px-24 py-24 lg:py-0 lg:pr-8"
-          style={{ y: textY, opacity }}
+          style={{ y: textY }}
         >
           <motion.div
             variants={containerVariants}
@@ -98,49 +91,50 @@ export const CinematicHero = () => {
             animate="visible"
             className="max-w-lg"
           >
-            {/* Eyebrow */}
+            {/* eyebrow */}
             <motion.div variants={fadeInVariants} className="mb-6">
-              <span className="text-xs font-semibold tracking-[0.2em] uppercase text-[#C7A27C]">
+              <span
+                className="text-xs font-semibold tracking-[0.2em] uppercase"
+                style={{ color: '#C8703A', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+              >
                 {hero?.eyebrow || 'New Season Collection'}
               </span>
             </motion.div>
 
-            {/* Headline — serif, mixed upright + italic */}
-            <motion.h1
-              variants={textVariants}
-              className="mb-8 font-playfair"
-            >
+            {/* headline */}
+            <motion.h1 variants={textVariants} className="mb-8" style={{ fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)' }}>
               <span
-                className="block text-[#111111] leading-[1.05]"
-                style={{ fontSize: 'clamp(2.8rem, 6vw, 5rem)', fontWeight: 700 }}
+                className="block leading-[1.05]"
+                style={{ fontSize: 'clamp(2.8rem, 5vw, 4.8rem)', fontWeight: 700, color: '#1A1A18' }}
               >
                 {hero?.headline?.[0] || 'Designed for'}
               </span>
               <span
-                className="block text-[#111111] leading-[1.05]"
-                style={{ fontSize: 'clamp(2.8rem, 6vw, 5rem)', fontWeight: 700 }}
+                className="block leading-[1.05]"
+                style={{ fontSize: 'clamp(2.8rem, 5vw, 4.8rem)', fontWeight: 700, color: '#1A1A18' }}
               >
                 {hero?.headline?.[1] || 'modern living.'}
               </span>
               <em
-                className="block text-[#111111] leading-[1.05]"
+                className="block leading-[1.05]"
                 style={{
-                  fontSize: 'clamp(2.8rem, 6vw, 5rem)',
+                  fontSize: 'clamp(2.8rem, 5vw, 4.8rem)',
                   fontWeight: 400,
                   fontStyle: 'italic',
+                  color: '#1A1A18',
                 }}
               >
                 {hero?.headline?.[2] || 'Crafted to last.'}
               </em>
             </motion.h1>
 
-            {/* Subtext */}
+            {/* subtext */}
             <motion.p
               variants={fadeInVariants}
-              className="text-base text-[#777777] leading-relaxed max-w-sm mb-10"
+              className="text-base leading-relaxed max-w-sm mb-10"
+              style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
             >
-              {hero?.subtext ||
-                'Timeless essentials with premium materials and meticulous craftsmanship.'}
+              {hero?.subtext || 'Timeless essentials with premium materials and meticulous craftsmanship.'}
             </motion.p>
 
             {/* CTAs */}
@@ -149,7 +143,12 @@ export const CinematicHero = () => {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
-                  className="inline-flex items-center gap-2 bg-[#111111] text-white text-sm font-medium px-7 h-12 rounded-md transition-colors hover:bg-[#2a2a2a]"
+                  className="inline-flex items-center gap-2 text-white text-sm font-medium px-7 h-12 transition-colors"
+                  style={{
+                    background: '#1A1A18',
+                    fontFamily: 'var(--font-body, Jost, sans-serif)',
+                    letterSpacing: '0.06em',
+                  }}
                 >
                   {hero?.ctaPrimary?.label || 'Shop Men'}
                   <ArrowRight className="h-4 w-4" />
@@ -158,9 +157,16 @@ export const CinematicHero = () => {
 
               <Link href={hero?.ctaSecondary?.href || '/products/women'}>
                 <motion.button
-                  whileHover={{ scale: 1.02 }}
+                  whileHover={{ scale: 1.02, backgroundColor: '#1A1A18', color: '#fff' }}
                   whileTap={{ scale: 0.97 }}
-                  className="inline-flex items-center gap-2 bg-transparent text-[#111111] text-sm font-medium px-7 h-12 rounded-md border border-[#111111] transition-colors hover:bg-[#111111]/5"
+                  className="inline-flex items-center gap-2 text-sm font-medium px-7 h-12 border transition-colors"
+                  style={{
+                    background: 'transparent',
+                    color: '#1A1A18',
+                    borderColor: '#1A1A18',
+                    fontFamily: 'var(--font-body, Jost, sans-serif)',
+                    letterSpacing: '0.06em',
+                  }}
                 >
                   {hero?.ctaSecondary?.label || 'Shop Women'}
                   <ArrowRight className="h-4 w-4" />
@@ -170,12 +176,9 @@ export const CinematicHero = () => {
           </motion.div>
         </motion.div>
 
-        {/* ── Right panel — image ── */}
-        <div className="flex-1 relative min-h-[55vh] lg:min-h-screen overflow-hidden">
-          <motion.div
-            className="absolute inset-0"
-            style={{ scale: imageScale }}
-          >
+        {/* ── RIGHT: image panel ── */}
+        <div className="flex-1 relative h-[55vh] lg:h-full overflow-hidden">
+          <motion.div className="absolute inset-0">
             <motion.div
               initial={{ scale: 1.2, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -191,44 +194,75 @@ export const CinematicHero = () => {
                   hero?.backgroundImage ||
                   'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80'
                 }
-                alt="Editorial lifestyle photography"
-                className="w-full h-full object-cover"
+                alt="Editorial lifestyle"
+                className="w-full h-full object-cover object-top"
               />
-              {/* Left-side fade so content bleeds into the image naturally */}
-              <div className="absolute inset-0 bg-gradient-to-r from-[#F5F0E8]/40 via-transparent to-transparent" />
+              {/* left-edge fade to match hero bg */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: 'linear-gradient(to right, rgba(240,236,228,0.45) 0%, transparent 35%)',
+                }}
+              />
             </motion.div>
           </motion.div>
 
-          {/* Floating product card */}
+          {/* ── Floating product card ── */}
           <motion.div
             initial={{ opacity: 0, x: 40, y: 20 }}
             animate={{ opacity: 1, x: 0, y: 0 }}
             transition={{ delay: 1, duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }}
             className="absolute bottom-10 right-8 z-20"
           >
-            <div className="relative bg-white/92 backdrop-blur-md rounded-2xl p-4 shadow-2xl w-[200px]">
-              {/* + button */}
-              <div className="absolute -top-3 -right-3 w-7 h-7 bg-[#111111] rounded-full flex items-center justify-center text-white text-base leading-none select-none">
+            <div
+              className="relative p-4 shadow-2xl"
+              style={{
+                background: 'rgba(255,255,255,0.95)',
+                backdropFilter: 'blur(12px)',
+                minWidth: '220px',
+              }}
+            >
+              {/* + pill */}
+              <div
+                className="absolute -top-3.5 -right-3.5 w-7 h-7 rounded-full flex items-center justify-center text-white text-lg leading-none select-none cursor-pointer"
+                style={{ background: '#1A1A18' }}
+              >
                 +
               </div>
 
               <div className="flex items-center gap-3 mb-3">
-                <img
-                  src={
-                    newestProduct?.images?.[0] ||
-                    'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=200&q=80'
-                  }
-                  alt={newestProduct?.name || 'Featured product'}
-                  className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-                />
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-[#111111] truncate">
+                <div
+                  className="w-14 h-16 flex-shrink-0 overflow-hidden flex items-center justify-center"
+                  style={{ background: '#E8E0D4' }}
+                >
+                  {newestProduct?.images?.[0] ? (
+                    <img
+                      src={newestProduct.images[0]}
+                      alt={newestProduct.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <ShoppingBag className="w-6 h-6 opacity-30" style={{ color: '#8A7E60' }} />
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p
+                    className="text-sm font-semibold truncate"
+                    style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                  >
                     {newestProduct?.name || 'Linen Overshirt'}
                   </p>
-                  <p className="text-xs text-[#999999] mt-0.5">
+                  <p
+                    className="text-xs mt-0.5"
+                    style={{ color: '#9E9890', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                  >
                     {newestProduct?.color || newestProduct?.variant || 'Natural Beige'}
                   </p>
-                  <p className="text-sm font-bold text-[#111111] mt-1">
+                  <p
+                    className="text-sm font-bold mt-1"
+                    style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                  >
                     {newestProduct?.price
                       ? new Intl.NumberFormat('en-IN', {
                           style: 'currency',
@@ -241,9 +275,11 @@ export const CinematicHero = () => {
               </div>
 
               <Link href={newestProduct?.slug ? `/products/${newestProduct.slug}` : '/products'}>
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-[#C7A27C] hover:text-[#111111] transition-colors cursor-pointer">
-                  Shop Now
-                  <ArrowRight className="h-3 w-3" />
+                <span
+                  className="inline-flex items-center gap-1 text-xs font-medium transition-colors cursor-pointer hover:opacity-70"
+                  style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)', letterSpacing: '0.04em' }}
+                >
+                  Shop Now <ArrowRight className="h-3 w-3" />
                 </span>
               </Link>
             </div>
@@ -251,28 +287,7 @@ export const CinematicHero = () => {
         </div>
       </div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 0.5 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 hidden lg:block"
-      >
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          className="flex flex-col items-center gap-2 text-[#999999]"
-        >
-          <span className="text-[10px] tracking-widest uppercase">Scroll</span>
-          <div className="w-px h-8 bg-[#111111]/20 relative overflow-hidden">
-            <motion.div
-              animate={{ y: ['-100%', '100%'] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute w-full h-1/2 bg-[#111111]"
-            />
-          </div>
-        </motion.div>
-      </motion.div>
+  
     </section>
   );
 };

@@ -52,8 +52,13 @@ export function useCheckout() {
   const cartItems = (cart as { items?: unknown[] })?.items || [];
   const addresses = (addressesResponse as unknown[]) || [];
 
+  interface CartItem {
+    product?: { price?: string | number };
+    quantity: number;
+  }
+
   const subtotal = cartItems.reduce(
-    (sum: number, item: any) => sum + parseFloat(item.product?.price || 0) * item.quantity,
+    (sum: number, item) => sum + parseFloat(String((item as CartItem).product?.price || 0)) * (item as CartItem).quantity,
     0
   );
   const shipping = subtotal >= 50 ? 0 : 5.99;
@@ -73,7 +78,22 @@ export function useCheckout() {
   const newFormValid = !!(newAddrForm.label && newAddrForm.street && newAddrForm.city && newAddrForm.state && newAddrForm.pincode && newAddrForm.country);
   const canContinue = showNewForm ? newFormValid : !!selectedAddressId;
 
-  const handleRazorpayPayment = async (orderId: number, paymentData: any) => {
+  interface PaymentData {
+    key?: string;
+    razorpayOrder?: {
+      amount?: number;
+      currency?: string;
+      id?: string;
+    };
+  }
+
+  interface RazorpayResponse {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }
+
+  const handleRazorpayPayment = async (orderId: number, paymentData: PaymentData) => {
     if (!window.Razorpay) {
       await new Promise<void>((resolve, reject) => {
         let elapsed = 0;
@@ -102,7 +122,7 @@ export function useCheckout() {
       name: 'MONO',
       description: `Order #${orderId}`,
       order_id: paymentData.razorpayOrder?.id,
-      handler: async (response: any) => {
+      handler: async (response: RazorpayResponse) => {
         try {
           await verifyPayment({
             razorpayOrderId: response.razorpay_order_id,
@@ -111,8 +131,9 @@ export function useCheckout() {
           }).unwrap();
           dispatch(cartApi.util.invalidateTags(['Cart']));
           router.push(`/order-placed/${orderId}?success=true&payment=success`);
-        } catch (err: any) {
-          setOrderError(err?.data?.message || 'Payment verification failed. Your payment may have been captured — please check your orders.');
+        } catch (err) {
+          const errorWithData = err as { data?: { message?: string } };
+          setOrderError(errorWithData?.data?.message || 'Payment verification failed. Your payment may have been captured — please check your orders.');
           setIsProcessing(false);
           router.push(`/order-placed/${orderId}?payment=failed`);
         }
@@ -142,7 +163,8 @@ export function useCheckout() {
 
       if (showNewForm) {
         const res = await createAddress(newAddrForm).unwrap();
-        addressId = (res as any)?.data?.id || (res as any)?.id;
+        const resWithData = res as { data?: { id?: number }; id?: number };
+        addressId = resWithData?.data?.id ?? resWithData?.id ?? null;
       }
 
       if (!addressId) {
@@ -151,12 +173,23 @@ export function useCheckout() {
         return;
       }
 
+      interface CartWithCoupon {
+        appliedCoupon?: { id?: number };
+      }
+
       const order = await createOrder({
         addressId,
         paymentMethod,
-        ...(coupon ? { couponId: (cart as any)?.appliedCoupon?.id } : {}),
+        ...(coupon ? { couponId: (cart as CartWithCoupon | undefined)?.appliedCoupon?.id } : {}),
       }).unwrap();
-      const orderId = (order as any)?.data?.id || (order as any)?.id;
+      const orderWithData = order as { data?: { id?: number }; id?: number };
+      const orderId = orderWithData?.data?.id ?? orderWithData?.id;
+
+      if (!orderId) {
+        setOrderError('Failed to create order. Please try again.');
+        setIsProcessing(false);
+        return;
+      }
 
       if (paymentMethod === 'cod') {
         dispatch(cartApi.util.invalidateTags(['Cart']));
@@ -165,13 +198,18 @@ export function useCheckout() {
         const payment = await createPayment({ orderId }).unwrap();
         await handleRazorpayPayment(orderId, payment);
       }
-    } catch (err: any) {
-      setOrderError(err?.data?.message || 'Failed to place order.');
+    } catch (err) {
+      const errorWithData = err as { data?: { message?: string } };
+      setOrderError(errorWithData?.data?.message || 'Failed to place order.');
       setIsProcessing(false);
     }
   };
 
-  const selectedAddress = addresses.find((a: any) => a.id === selectedAddressId);
+  interface Address {
+    id: number;
+  }
+
+  const selectedAddress = addresses.find((a) => (a as Address).id === selectedAddressId);
 
   return {
     step,
@@ -205,8 +243,16 @@ export function useCheckout() {
   };
 }
 
+interface RazorpayInstance {
+  open: () => void;
+}
+
+interface RazorpayConstructor {
+  new (options: unknown): RazorpayInstance;
+}
+
 declare global {
   interface Window {
-    Razorpay: any;
+    Razorpay: RazorpayConstructor;
   }
 }

@@ -23,8 +23,17 @@ export default function AdminOrdersPage() {
   });
   const [updateStatus] = useUpdateOrderStatusMutation();
 
-  const orders = (ordersResponse as any)?.data || [];
-  const pagination = (ordersResponse as any)?.pagination;
+  interface Order {
+    id: number;
+    status: string;
+    total?: string;
+    createdAt?: string;
+    paymentStatus?: string;
+    user?: { name?: string; email?: string };
+  }
+  interface OrdersResponse { data?: Order[]; pagination?: { total?: number; totalPages?: number }; }
+  const orders = (ordersResponse as OrdersResponse | undefined)?.data || [];
+  const pagination = (ordersResponse as OrdersResponse | undefined)?.pagination;
 
   const handleStatusChange = async (orderId: number, status: string) => {
     setUpdatingIds((prev) => new Set(prev).add(orderId));
@@ -35,7 +44,7 @@ export default function AdminOrdersPage() {
   };
 
   const filteredOrders = search
-    ? orders.filter((o: any) =>
+    ? orders.filter((o) =>
         String(o.id).includes(search) ||
         o.user?.name?.toLowerCase().includes(search.toLowerCase()) ||
         o.user?.email?.toLowerCase().includes(search.toLowerCase())
@@ -64,7 +73,7 @@ export default function AdminOrdersPage() {
             <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              className="border rounded-md px-3 py-2 text-sm bg-background"
+              className="border border-border rounded-md px-3 py-2 text-sm bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent"
             >
               <option value="">All Status</option>
               <option value="pending">Pending</option>
@@ -102,7 +111,7 @@ export default function AdminOrdersPage() {
                       </td>
                     </tr>
                   ) : (
-                    filteredOrders.map((order: any) => (
+                    filteredOrders.map((order) => (
                       <tr key={order.id} className="border-b hover:bg-muted/30 transition-colors">
                         <td className="p-3 font-medium text-sm">#{order.id}</td>
                         <td className="p-3">
@@ -110,16 +119,16 @@ export default function AdminOrdersPage() {
                           <p className="text-xs text-muted-foreground">{order.user?.email}</p>
                         </td>
                         <td className="p-3 text-sm text-muted-foreground">
-                          {new Date(order.createdAt).toLocaleDateString()}
+                          {new Date(order.createdAt ?? '').toLocaleDateString()}
                         </td>
-                        <td className="p-3 text-sm font-semibold">${parseFloat(order.total).toFixed(2)}</td>
+                        <td className="p-3 text-sm font-semibold">${parseFloat(order.total ?? '0').toFixed(2)}</td>
                         <td className="p-3">
                           <div className="flex items-center gap-1">
                             <select
                               value={order.status}
                               onChange={(e) => handleStatusChange(order.id, e.target.value)}
                               disabled={updatingIds.has(order.id)}
-                              className={`border rounded px-2 py-1 text-xs font-medium ${ORDER_STATUS_CONFIG[order.status]?.bg || ''} ${ORDER_STATUS_CONFIG[order.status]?.color || ''}`}
+                              className={`border rounded-md px-2 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-accent ${ORDER_STATUS_CONFIG[order.status]?.bg || 'bg-muted'} ${ORDER_STATUS_CONFIG[order.status]?.color || 'text-foreground'}`}
                             >
                               <option value="pending">Pending</option>
                               <option value="processing">Processing</option>
@@ -154,12 +163,12 @@ export default function AdminOrdersPage() {
             </div>
           )}
 
-          {pagination && pagination.totalPages > 1 && (
+          {pagination && (pagination.totalPages ?? 0) > 1 && (
             <div className="flex items-center justify-between mt-4 pt-4 border-t">
               <p className="text-sm text-muted-foreground">Page {page} of {pagination.totalPages}</p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1} className="cursor-pointer">Previous</Button>
-                <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page >= pagination.totalPages} className="cursor-pointer">Next</Button>
+                <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page >= (pagination.totalPages ?? 1)} className="cursor-pointer">Next</Button>
               </div>
             </div>
           )}

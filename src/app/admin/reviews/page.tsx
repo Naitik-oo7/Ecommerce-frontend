@@ -22,11 +22,21 @@ export default function AdminReviewsPage() {
   const [deleteReview] = useDeleteReviewMutation();
   const [verifyReview] = useVerifyReviewMutation();
 
-  const reviews = (reviewsResponse as any)?.data || [];
-  const pagination = (reviewsResponse as any)?.pagination;
+  interface Review {
+    id: number;
+    rating: number;
+    comment?: string;
+    isVerified?: boolean;
+    product?: { name?: string };
+    user?: { name?: string };
+    createdAt?: string;
+  }
+  interface ReviewsResponse { data?: Review[]; pagination?: { total?: number; totalPages?: number }; }
+  const reviews = (reviewsResponse as ReviewsResponse | undefined)?.data || [];
+  const pagination = (reviewsResponse as ReviewsResponse | undefined)?.pagination;
 
   const filteredReviews = search
-    ? reviews.filter((r: any) =>
+    ? reviews.filter((r) =>
         r.product?.name?.toLowerCase().includes(search.toLowerCase()) ||
         r.user?.name?.toLowerCase().includes(search.toLowerCase()) ||
         r.comment?.toLowerCase().includes(search.toLowerCase())
@@ -93,7 +103,7 @@ export default function AdminReviewsPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredReviews.map((review: any) => (
+              {filteredReviews.map((review) => (
                 <div key={review.id} className="p-4 border rounded-lg hover:bg-muted/20 transition-colors">
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex-1 min-w-0">
@@ -113,11 +123,11 @@ export default function AdminReviewsPage() {
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground mb-1">
-                        By <span className="font-medium">{review.user?.name}</span> · {new Date(review.createdAt).toLocaleDateString()}
+                        By <span className="font-medium">{review.user?.name}</span>{review.createdAt ? ` · ${new Date(review.createdAt).toLocaleDateString()}` : ''}
                       </p>
                       {review.comment && <p className="text-sm text-muted-foreground">{review.comment}</p>}
                     </div>
-                    <div className="flex gap-1 flex-shrink-0">
+                    <div className="flex gap-1 shrink-0">
                       {!review.isVerified && (
                         <Button
                           variant="ghost"
@@ -146,12 +156,12 @@ export default function AdminReviewsPage() {
             </div>
           )}
 
-          {pagination && pagination.totalPages > 1 && (
+          {pagination && pagination.totalPages && pagination.totalPages > 1 && (
             <div className="flex items-center justify-between mt-4 pt-4 border-t">
               <p className="text-sm text-muted-foreground">Page {page} of {pagination.totalPages}</p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1}>Previous</Button>
-                <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page >= pagination.totalPages}>Next</Button>
+                <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={!!pagination.totalPages && page >= pagination.totalPages}>Next</Button>
               </div>
             </div>
           )}

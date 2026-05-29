@@ -6,19 +6,39 @@ import { ArrowLeft, CheckCircle, MapPin, Package, Sparkles, Loader2 } from 'luci
 import Link from 'next/link';
 import type { PaymentMethod } from '../hooks/useCheckout';
 
+interface CartItem {
+  id: number;
+  product?: {
+    name?: string;
+    price?: string;
+    media?: { url?: string }[];
+  };
+  variant?: {
+    size?: string;
+  };
+  quantity: number;
+}
+
 interface ReviewStepProps {
   onBack: () => void;
   onPlaceOrder: () => void;
   isProcessing: boolean;
-  cartItems: any[];
-  selectedAddress: any;
+  cartItems: CartItem[];
+  selectedAddress: {
+    label: string;
+    street: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country: string;
+  } | null;
   paymentMethod: PaymentMethod;
   subtotal: number;
   shipping: number;
   discount: number;
   tax: number;
   total: number;
-  coupon: any;
+  coupon: { code?: string } | null;
 }
 
 export function ReviewStep({
@@ -62,13 +82,13 @@ export function ReviewStep({
             Order Items ({cartItems.length})
           </h3>
           <div className="divide-y">
-            {cartItems.map((item: any) => (
+            {(cartItems as CartItem[]).map((item) => (
               <div key={item.id} className="py-3 flex gap-3">
                 <div className="w-16 h-16 rounded-md bg-muted shrink-0">
                   {item.product?.media?.[0]?.url ? (
                     <img
                       src={item.product.media[0].url}
-                      alt={item.product.name}
+                      alt={item.product.name || ''}
                       className="w-full h-full object-cover rounded-md"
                     />
                   ) : (
@@ -83,7 +103,7 @@ export function ReviewStep({
                     Size: {item.variant?.size} • Qty: {item.quantity}
                   </p>
                   <p className="text-sm font-medium mt-1">
-                    ₹{(parseFloat(item.product?.price || 0) * item.quantity).toFixed(2)}
+                    ₹{(parseFloat(item.product?.price || '0') * item.quantity).toFixed(2)}
                   </p>
                 </div>
               </div>

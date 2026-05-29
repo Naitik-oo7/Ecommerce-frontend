@@ -11,7 +11,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
   --font-playfair: var(--font-playfair), 'Playfair Display', Georgia, serif;
   
@@ -214,29 +214,29 @@
   .container-mono {
     margin-left: auto;
     margin-right: auto;
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
     max-width: 1400px;
   }
-  
+
   @media (min-width: 640px) {
+    .container-mono {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container-mono {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
     .container-mono {
       padding-left: 1.5rem;
       padding-right: 1.5rem;
-    }
-  }
-  
-  @media (min-width: 1024px) {
-    .container-mono {
-      padding-left: 2rem;
-      padding-right: 2rem;
-    }
-  }
-  
-  @media (min-width: 1280px) {
-    .container-mono {
-      padding-left: 3rem;
-      padding-right: 3rem;
     }
   }
   
@@ -413,6 +413,16 @@
 
   .image-zoom:hover {
     transform: scale(1.05);
+  }
+
+  /* Hide scrollbar utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 
   /* Custom scrollbar */

@@ -123,8 +123,12 @@ export default function AdminCategoriesPage() {
   const [updateCategory, { isLoading: updating }] = useUpdateCategoryMutation();
   const [deleteCategory] = useDeleteCategoryMutation();
 
-  const categories: Category[] = (categoriesResponse as any)?.data || categoriesResponse || [];
-  const pagination = (categoriesResponse as any)?.pagination;
+  interface CategoriesResponse {
+    data?: Category[];
+    pagination?: { total?: number; totalPages?: number };
+  }
+  const categories = (categoriesResponse as CategoriesResponse | undefined)?.data || (categoriesResponse as Category[] | undefined) || [];
+  const pagination = (categoriesResponse as CategoriesResponse | undefined)?.pagination;
   const parentCategories = categories.filter((c) => !c.parentId);
 
   const filteredCategories = categories.filter((c) => {
@@ -158,9 +162,9 @@ export default function AdminCategoriesPage() {
       parentId: cat.parentId ? String(cat.parentId) : '',
       isActive: cat.isActive !== false,
       isFeatured: cat.isFeatured === true,
-      description: (cat as any).description || '',
-      metaTitle: (cat as any).metaTitle || '',
-      metaDescription: (cat as any).metaDescription || '',
+      description: (cat as { description?: string }).description || '',
+      metaTitle: (cat as { metaTitle?: string }).metaTitle || '',
+      metaDescription: (cat as { metaDescription?: string }).metaDescription || '',
     });
     setFormError('');
     setImagePreviewError(false);
@@ -197,8 +201,9 @@ export default function AdminCategoriesPage() {
         await createCategory(payload).unwrap();
       }
       setShowForm(false);
-    } catch (err: any) {
-      setFormError(err?.data?.message || 'Failed to save category');
+    } catch (err) {
+      const errorWithData = err as { data?: { message?: string } };
+      setFormError(errorWithData?.data?.message || 'Failed to save category');
     }
   };
 
@@ -267,8 +272,9 @@ export default function AdminCategoriesPage() {
       setForm({ ...form, imageUrl: result.url });
       setImagePreviewError(false);
       setFormError('');
-    } catch (err: any) {
-      setFormError(err?.data?.message || 'Failed to upload image. Please try again.');
+    } catch (err) {
+      const errorWithData = err as { data?: { message?: string } };
+      setFormError(errorWithData?.data?.message || 'Failed to upload image. Please try again.');
     }
   };
 
@@ -611,7 +617,7 @@ export default function AdminCategoriesPage() {
           )}
 
           {/* Pagination */}
-          {pagination && pagination.totalPages > 1 && (
+          {pagination && (pagination.totalPages ?? 0) > 1 && (
             <div className="flex items-center justify-between px-4 py-3 border-t">
               <p className="text-sm text-muted-foreground">
                 Page <span className="font-medium text-foreground">{page}</span> of <span className="font-medium text-foreground">{pagination.totalPages}</span>
@@ -621,9 +627,9 @@ export default function AdminCategoriesPage() {
                 <Button variant="outline" size="icon" className="h-8 w-8 cursor-pointer" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                  const pageNum = Math.max(1, Math.min(pagination.totalPages - 4, page - 2)) + i;
-                  return pageNum <= pagination.totalPages ? (
+                {Array.from({ length: Math.min(5, pagination.totalPages ?? 0) }, (_, i) => {
+                  const pageNum = Math.max(1, Math.min((pagination.totalPages ?? 0) - 4, page - 2)) + i;
+                  return pageNum <= (pagination.totalPages ?? 0) ? (
                     <Button
                       key={pageNum}
                       variant={pageNum === page ? 'default' : 'outline'}
@@ -635,7 +641,7 @@ export default function AdminCategoriesPage() {
                     </Button>
                   ) : null;
                 })}
-                <Button variant="outline" size="icon" className="h-8 w-8 cursor-pointer" onClick={() => setPage(p => p + 1)} disabled={page >= pagination.totalPages}>
+                <Button variant="outline" size="icon" className="h-8 w-8 cursor-pointer" onClick={() => setPage(p => p + 1)} disabled={page >= (pagination.totalPages ?? 1)}>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>

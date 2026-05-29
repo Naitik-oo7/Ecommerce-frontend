@@ -5,17 +5,7 @@ import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { ProductCard } from './ProductCard';
 import { CardSkeleton } from '@/components/common';
-
-interface Product {
-  id: number;
-  name: string;
-  slug: string;
-  price: string;
-  comparePrice?: string;
-  stock: number;
-  images?: string[];
-  category?: { name: string };
-}
+import type { Product } from '@/types';
 
 interface BestSellersProps {
   products: Product[];

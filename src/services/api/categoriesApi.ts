@@ -37,7 +37,7 @@ export const categoriesApi = createApi({
       invalidatesTags: ['Categories'],
     }),
     updateCategory: builder.mutation({
-      query: ({ id, ...data }: { id: number; [key: string]: any }) => ({
+      query: ({ id, ...data }: { id: number; [key: string]: unknown }) => ({
         url: `/api/v1/categories/${id}`,
         method: 'PATCH',
         data,

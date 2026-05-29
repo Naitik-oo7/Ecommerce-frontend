@@ -3,7 +3,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 export const playfair = Playfair_Display({
   subsets: ["latin"],
   weight: ["400", "700"],
@@ -22,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={playfair.variable}>
-      <body className={inter.className}>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${playfair.variable}`}>
+      <body>
         <Providers>{children}</Providers>
       </body>
     </html>

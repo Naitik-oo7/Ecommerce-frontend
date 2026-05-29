@@ -181,4 +181,176 @@ export default function AdminProductsPage() {
               >
                 <List className="h-4 w-4" />
               </button>
- 
+              <button
+                onClick={() => filters.setView('grid')}
+                className={`p-1.5 rounded-md transition-colors ${filters.view === 'grid' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Filter Panel */}
+          {filters.showFilters && (
+            <div className="pt-3 border-t flex flex-wrap items-center gap-3">
+              <select
+                value={filters.categoryId}
+                onChange={(e) => { filters.setCategoryId(e.target.value); filters.setPage(1); }}
+                className="h-9 px-3 rounded-md border bg-background text-sm"
+              >
+                <option value="">All Categories</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <select
+                value={filters.genderFilter}
+                onChange={(e) => { filters.setGenderFilter(e.target.value); filters.setPage(1); }}
+                className="h-9 px-3 rounded-md border bg-background text-sm"
+              >
+                <option value="">All Genders</option>
+                <option value="men">Men</option>
+                <option value="women">Women</option>
+                <option value="unisex">Unisex</option>
+              </select>
+              <select
+                value={filters.sortBy + ':' + filters.sortOrder}
+                onChange={(e) => {
+                  const [by, order] = e.target.value.split(':');
+                  filters.setSortBy(by);
+                  filters.setSortOrder(order);
+                  filters.setPage(1);
+                }}
+                className="h-9 px-3 rounded-md border bg-background text-sm"
+              >
+                <option value="createdAt:desc">Newest First</option>
+                <option value="createdAt:asc">Oldest First</option>
+                <option value="price:asc">Price: Low to High</option>
+                <option value="price:desc">Price: High to Low</option>
+                <option value="name:asc">Name: A-Z</option>
+                <option value="name:desc">Name: Z-A</option>
+              </select>
+              <Input
+                placeholder="Min price"
+                value={filters.minPrice}
+                onChange={(e) => { filters.setMinPrice(e.target.value); filters.setPage(1); }}
+                className="h-9 w-24"
+                type="number"
+              />
+              <Input
+                placeholder="Max price"
+                value={filters.maxPrice}
+                onChange={(e) => { filters.setMaxPrice(e.target.value); filters.setPage(1); }}
+                className="h-9 w-24"
+                type="number"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : products.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <Package className="h-10 w-10 text-muted-foreground/40 mb-3" />
+              <p className="text-muted-foreground font-medium">No products found</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">Try adjusting your filters</p>
+            </div>
+          ) : filters.view === 'table' ? (
+            <ProductTable
+              products={products}
+              isFetching={isFetching}
+              deletingIds={deletingIds}
+              togglingIds={togglingIds}
+              updatingStockIds={updatingStockIds}
+              onDelete={handleDelete}
+              onToggleActive={handleToggleActive}
+              onMarkOutOfStock={handleMarkOutOfStock}
+            />
+          ) : (
+            <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 transition-opacity ${isFetching ? 'opacity-60' : 'opacity-100'}`}>
+              {products.map((product) => {
+                const img = product.media?.find((m) => m.isPrimary)?.url || product.media?.[0]?.url;
+                const stock = product.variants?.reduce((sum, v) => sum + v.stock, 0) ?? 0;
+                return (
+                  <div key={product.id} className="border rounded-xl overflow-hidden hover:shadow-md transition-shadow group">
+                    <div className="aspect-square bg-muted relative">
+                      {img ? (
+                        <img src={img} alt={product.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center">
+                          <Package className="h-8 w-8 text-muted-foreground/30" />
+                        </div>
+                      )}
+                      <div className="absolute top-2 right-2 flex gap-1">
+                        {!product.isActive && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted-foreground/80 text-white font-medium">Inactive</span>
+                        )}
+                        {stock === 0 && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-destructive text-destructive-foreground font-medium">Out of stock</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="p-3">
+                      <p className="font-medium text-sm truncate">{product.name}</p>
+                      <p className="text-xs text-muted-foreground">{product.category?.name || 'Uncategorized'}</p>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="font-semibold text-sm">₹{parseFloat(product.price).toLocaleString()}</span>
+                        <span className="text-xs text-muted-foreground">{stock} in stock</span>
+                      </div>
+                      <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Link href={`/admin/products/${product.slug}/edit`} className="flex-1">
+                          <Button variant="outline" size="sm" className="w-full h-7 text-xs">Edit</Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDelete(product.id, product.name)}
+                          disabled={deletingIds.has(product.id)}
+                        >
+                          {deletingIds.has(product.id) ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Delete'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Page {pagination.page} of {pagination.totalPages}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pagination.page <= 1}
+              onClick={() => filters.setPage(pagination.page - 1)}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pagination.page >= pagination.totalPages}
+              onClick={() => filters.setPage(pagination.page + 1)}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

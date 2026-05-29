@@ -36,10 +36,8 @@ export function useWishlist(options: UseWishlistOptions = {}) {
   const serverIds = useMemo(() => {
     const items = extractWishlist(wishlistResponse);
     return new Set(
-      items
-        .map((item: { productId?: number; product?: { id?: number }; id?: number }) => 
-          item.productId ?? item.product?.id ?? item.id
-        )
+      (items as { productId?: number; product?: { id?: number }; id?: number }[])
+        .map((item) => item.productId ?? item.product?.id ?? item.id)
         .filter((id): id is number => typeof id === 'number')
     );
   }, [wishlistResponse]);
