@@ -75,6 +75,10 @@ const team = [
   },
 ];
 
+const EYEBROW = 'text-xs font-semibold tracking-[0.2em] uppercase mb-4 block';
+const EYEBROW_STYLE = { color: '#C8703A', fontFamily: 'var(--font-body, Jost, sans-serif)' };
+const BODY_STYLE = { color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' };
+
 export default function AboutPage() {
   const { data: storyData } = useGetSettingQuery('brand_story');
   const { data: valuesData } = useGetSettingQuery('our_values');
@@ -82,7 +86,7 @@ export default function AboutPage() {
   const dynamicValues = (valuesData as typeof values | undefined) || values;
 
   return (
-    <div className="min-h-screen bg-[#F6F3EE]">
+    <div className="min-h-screen" style={{ background: '#F6F3EE' }}>
 
       {/* ── Hero ── */}
       <section className="relative h-[60vh] md:h-[70vh] overflow-hidden">
@@ -94,7 +98,7 @@ export default function AboutPage() {
           animate={{ scale: 1 }}
           transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#111111]/75 via-[#111111]/30 to-transparent" />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(26,26,24,0.78) 0%, rgba(26,26,24,0.28) 55%, transparent 100%)' }} />
         <div className="absolute inset-0 flex items-end">
           <div className="container-mono pb-16 md:pb-20">
             <motion.div
@@ -102,13 +106,20 @@ export default function AboutPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             >
-              <span className="text-xs font-semibold tracking-[0.2em] uppercase text-[#C7A27C] mb-4 block">
+              <span className={EYEBROW} style={EYEBROW_STYLE}>
                 {s.eyebrow}
               </span>
-              <h1 className="text-5xl md:text-7xl font-bold text-white leading-[0.95] tracking-tight">
+              <h1
+                className="text-white leading-[1.05]"
+                style={{
+                  fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+                  fontSize: 'clamp(2.8rem, 6vw, 5rem)',
+                  fontWeight: 700,
+                }}
+              >
                 {s.headline}
                 <br />
-                <span className="text-white/60">{s.subheadline}</span>
+                <em className="font-normal italic" style={{ color: 'rgba(255,255,255,0.5)' }}>{s.subheadline}</em>
               </h1>
             </motion.div>
           </div>
@@ -116,7 +127,7 @@ export default function AboutPage() {
       </section>
 
       {/* ── Stats Bar ── */}
-      <section className="bg-[#111111] py-8">
+      <section className="py-8" style={{ background: '#1A1A18' }}>
         <div className="container-mono">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
@@ -132,8 +143,15 @@ export default function AboutPage() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1, duration: 0.6 }}
               >
-                <p className="text-3xl md:text-4xl font-bold text-white">{stat.value}</p>
-                <p className="text-sm text-white/50 mt-1">{stat.label}</p>
+                <p
+                  className="text-3xl md:text-4xl font-bold text-white mb-1"
+                  style={{ fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)' }}
+                >
+                  {stat.value}
+                </p>
+                <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-body, Jost, sans-serif)' }}>
+                  {stat.label}
+                </p>
               </motion.div>
             ))}
           </div>
@@ -150,13 +168,22 @@ export default function AboutPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             >
-              <span className="text-xs font-semibold tracking-[0.2em] uppercase text-[#C7A27C] mb-6 block">
+              <span className={EYEBROW} style={EYEBROW_STYLE}>
                 Our Story
               </span>
-              <h2 className="text-4xl md:text-5xl font-bold text-[#111111] leading-[1.1] mb-8">
-                Born from a belief that less is more.
+              <h2
+                className="leading-[1.05] mb-8"
+                style={{
+                  fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+                  fontSize: 'clamp(2rem, 3.5vw, 3rem)',
+                  fontWeight: 700,
+                  color: '#1A1A18',
+                }}
+              >
+                Born from a belief that<br />
+                <em className="font-normal italic" style={{ color: '#6B6560' }}>less is more.</em>
               </h2>
-              <div className="space-y-5 text-[#6B6B6B] leading-relaxed text-lg">
+              <div className="space-y-5 leading-relaxed text-base" style={BODY_STYLE}>
                 <p>{s.body1}</p>
                 <p>{s.body2}</p>
               </div>
@@ -175,9 +202,16 @@ export default function AboutPage() {
               <div className="absolute bottom-0 left-0 w-[55%] h-[50%] rounded-2xl overflow-hidden shadow-xl">
                 <img src={s.image2} alt="Materials" className="w-full h-full object-cover" />
               </div>
-              <div className="absolute top-1/2 left-[12%] -translate-y-1/2 bg-[#111111] text-white rounded-xl p-5 shadow-2xl z-10">
-                <p className="text-3xl font-bold">{s.stat.value}</p>
-                <p className="text-xs text-white/60 mt-1">{s.stat.label}</p>
+              <div className="absolute top-1/2 left-[12%] -translate-y-1/2 text-white p-5 shadow-2xl z-10" style={{ background: '#1A1A18' }}>
+                <p
+                  className="text-3xl font-bold"
+                  style={{ fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)' }}
+                >
+                  {s.stat.value}
+                </p>
+                <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--font-body, Jost, sans-serif)' }}>
+                  {s.stat.label}
+                </p>
               </div>
             </motion.div>
           </div>
@@ -185,7 +219,7 @@ export default function AboutPage() {
       </section>
 
       {/* ── Our Values ── */}
-      <section className="py-20 md:py-32 bg-[#F6F3EE]">
+      <section className="py-20 md:py-32" style={{ background: '#F6F3EE' }}>
         <div className="container-mono">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -194,15 +228,23 @@ export default function AboutPage() {
             transition={{ duration: 0.7 }}
             className="text-center max-w-2xl mx-auto mb-16"
           >
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-[#C7A27C] mb-4 block">
+            <span className={EYEBROW} style={EYEBROW_STYLE}>
               What We Stand For
             </span>
-            <h2 className="text-4xl md:text-5xl font-bold text-[#111111] leading-[1.1]">
+            <h2
+              className="leading-[1.05]"
+              style={{
+                fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+                fontSize: 'clamp(2rem, 3.5vw, 3rem)',
+                fontWeight: 700,
+                color: '#1A1A18',
+              }}
+            >
               Our Values
             </h2>
           </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {dynamicValues.map((v, i) => {
               const Icon = v.icon;
               return (
@@ -212,13 +254,20 @@ export default function AboutPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1, duration: 0.6 }}
-                  className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-md transition-shadow"
+                  className="bg-white rounded-2xl p-8 hover:shadow-md transition-shadow"
                 >
-                  <div className="w-12 h-12 bg-[#F6F3EE] rounded-xl flex items-center justify-center mb-6">
-                    <Icon className="h-6 w-6 text-[#C7A27C]" />
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6" style={{ background: '#F0ECE4' }}>
+                    <Icon className="h-6 w-6" style={{ color: '#C8703A' }} />
                   </div>
-                  <h3 className="text-lg font-bold text-[#111111] mb-3">{v.title}</h3>
-                  <p className="text-[#6B6B6B] text-sm leading-relaxed">{v.desc}</p>
+                  <h3
+                    className="text-base font-bold mb-3"
+                    style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                  >
+                    {v.title}
+                  </h3>
+                  <p className="text-sm leading-relaxed" style={BODY_STYLE}>
+                    {v.desc}
+                  </p>
                 </motion.div>
               );
             })}
@@ -236,10 +285,20 @@ export default function AboutPage() {
             transition={{ duration: 0.7 }}
             className="text-center mb-12"
           >
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-[#C7A27C] mb-4 block">
+            <span className={EYEBROW} style={EYEBROW_STYLE}>
               What We Use
             </span>
-            <h2 className="text-4xl font-bold text-[#111111]">Our Materials</h2>
+            <h2
+              className="leading-[1.05]"
+              style={{
+                fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+                fontSize: 'clamp(2rem, 3.5vw, 3rem)',
+                fontWeight: 700,
+                color: '#1A1A18',
+              }}
+            >
+              Our Materials
+            </h2>
           </motion.div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -250,10 +309,13 @@ export default function AboutPage() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08, duration: 0.5 }}
-                className="text-center p-6 border border-[#E8E0D5] rounded-2xl hover:border-[#C7A27C] transition-colors"
+                className="text-center p-6 rounded-2xl border transition-colors hover:border-[#C8703A]"
+                style={{ borderColor: '#E8E0D5' }}
               >
-                <p className="font-bold text-[#111111] mb-1">{m.label}</p>
-                <p className="text-sm text-[#6B6B6B]">{m.desc}</p>
+                <p className="font-bold mb-1" style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)' }}>
+                  {m.label}
+                </p>
+                <p className="text-sm" style={BODY_STYLE}>{m.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -261,7 +323,7 @@ export default function AboutPage() {
       </section>
 
       {/* ── Timeline ── */}
-      <section className="py-20 md:py-32 bg-[#F6F3EE]">
+      <section className="py-20 md:py-32" style={{ background: '#F6F3EE' }}>
         <div className="container-mono max-w-3xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -270,16 +332,24 @@ export default function AboutPage() {
             transition={{ duration: 0.7 }}
             className="text-center mb-16"
           >
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-[#C7A27C] mb-4 block">
+            <span className={EYEBROW} style={EYEBROW_STYLE}>
               How We Got Here
             </span>
-            <h2 className="text-4xl md:text-5xl font-bold text-[#111111]">Our Journey</h2>
+            <h2
+              className="leading-[1.05]"
+              style={{
+                fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+                fontSize: 'clamp(2rem, 3.5vw, 3rem)',
+                fontWeight: 700,
+                color: '#1A1A18',
+              }}
+            >
+              Our Journey
+            </h2>
           </motion.div>
 
           <div className="relative">
-            {/* Vertical line */}
-            <div className="absolute left-[60px] top-0 bottom-0 w-px bg-[#E2D9CE] md:left-1/2" />
-
+            <div className="absolute left-[60px] top-0 bottom-0 w-px md:left-1/2" style={{ background: '#E2D9CE' }} />
             <div className="space-y-10">
               {milestones.map((m, i) => (
                 <motion.div
@@ -290,18 +360,18 @@ export default function AboutPage() {
                   transition={{ delay: i * 0.1, duration: 0.6 }}
                   className={`flex items-start gap-8 md:gap-0 ${i % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}
                 >
-                  {/* Content */}
                   <div className={`flex-1 pb-2 pl-20 md:pl-0 ${i % 2 === 0 ? 'md:pr-12 md:text-right' : 'md:pl-12'}`}>
-                    <span className="text-xs font-bold tracking-widest text-[#C7A27C] uppercase">{m.year}</span>
-                    <p className="text-[#444444] mt-1 leading-relaxed">{m.event}</p>
+                    <span
+                      className="text-xs font-bold tracking-widest uppercase"
+                      style={{ color: '#C8703A', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                    >
+                      {m.year}
+                    </span>
+                    <p className="mt-1 leading-relaxed text-sm" style={BODY_STYLE}>{m.event}</p>
                   </div>
-
-                  {/* Dot */}
                   <div className="absolute left-[52px] mt-1 md:static md:flex-shrink-0 md:flex md:items-start md:justify-center md:w-8">
-                    <div className="w-4 h-4 rounded-full bg-[#C7A27C] border-4 border-[#F6F3EE] shadow-sm mt-1" />
+                    <div className="w-4 h-4 rounded-full border-4 border-[#F6F3EE] shadow-sm mt-1" style={{ background: '#C8703A' }} />
                   </div>
-
-                  {/* Spacer for alternating layout */}
                   <div className="hidden md:block flex-1" />
                 </motion.div>
               ))}
@@ -320,10 +390,20 @@ export default function AboutPage() {
             transition={{ duration: 0.7 }}
             className="text-center mb-16"
           >
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-[#C7A27C] mb-4 block">
+            <span className={EYEBROW} style={EYEBROW_STYLE}>
               The People Behind MONO
             </span>
-            <h2 className="text-4xl md:text-5xl font-bold text-[#111111]">Meet the Team</h2>
+            <h2
+              className="leading-[1.05]"
+              style={{
+                fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+                fontSize: 'clamp(2rem, 3.5vw, 3rem)',
+                fontWeight: 700,
+                color: '#1A1A18',
+              }}
+            >
+              Meet the Team
+            </h2>
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-10">
@@ -342,11 +422,21 @@ export default function AboutPage() {
                     alt={member.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-[#111111]/0 group-hover:bg-[#111111]/20 transition-colors duration-300" />
+                  <div className="absolute inset-0 bg-[#1A1A18]/0 group-hover:bg-[#1A1A18]/15 transition-colors duration-300" />
                 </div>
-                <h3 className="text-lg font-bold text-[#111111]">{member.name}</h3>
-                <p className="text-sm text-[#C7A27C] font-medium mt-1 mb-3">{member.role}</p>
-                <p className="text-sm text-[#6B6B6B] italic">&ldquo;{member.quote}&rdquo;</p>
+                <h3
+                  className="text-lg font-bold mb-1"
+                  style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                >
+                  {member.name}
+                </h3>
+                <p
+                  className="text-sm font-medium mb-3"
+                  style={{ color: '#C8703A', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                >
+                  {member.role}
+                </p>
+                <p className="text-sm italic" style={BODY_STYLE}>&ldquo;{member.quote}&rdquo;</p>
               </motion.div>
             ))}
           </div>
@@ -354,7 +444,7 @@ export default function AboutPage() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="py-20 md:py-28 bg-[#111111]">
+      <section className="py-20 md:py-28" style={{ background: '#1A1A18' }}>
         <div className="container-mono text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -362,23 +452,36 @@ export default function AboutPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-[#C7A27C] mb-6 block">
+            <span className={EYEBROW} style={EYEBROW_STYLE}>
               Join the Movement
             </span>
-            <h2 className="text-4xl md:text-5xl font-bold text-white leading-[1.1] mb-6">
+            <h2
+              className="leading-[1.05] text-white mb-6"
+              style={{
+                fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+                fontSize: 'clamp(2rem, 4vw, 3.5rem)',
+                fontWeight: 700,
+              }}
+            >
               Wear What You Believe In.
             </h2>
-            <p className="text-white/50 text-lg max-w-lg mx-auto mb-10">
+            <p className="text-lg max-w-lg mx-auto mb-10" style={{ color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-body, Jost, sans-serif)' }}>
               Explore our latest collection of thoughtfully crafted essentials.
             </p>
             <Link href="/products">
               <motion.span
-                whileHover={{ scale: 1.03 }}
+                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center gap-2 px-10 py-4 bg-[#C7A27C] hover:bg-[#b08d68] text-[#111111] font-semibold rounded-full transition-colors cursor-pointer text-base"
+                className="inline-flex items-center gap-2 px-10 py-4 text-sm font-medium cursor-pointer transition-opacity hover:opacity-80"
+                style={{
+                  background: '#F6F3EE',
+                  color: '#1A1A18',
+                  fontFamily: 'var(--font-body, Jost, sans-serif)',
+                  letterSpacing: '0.06em',
+                }}
               >
                 Shop the Collection
-                <ArrowRight className="h-5 w-5" />
+                <ArrowRight className="h-4 w-4" />
               </motion.span>
             </Link>
           </motion.div>

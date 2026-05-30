@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { SlidersHorizontal, Search, X, ChevronRight, Home } from 'lucide-react';
+import { SlidersHorizontal, Search, X, ChevronRight, Home, ArrowUpDown } from 'lucide-react';
 import Link from 'next/link';
 
 import { useGetProductsQuery } from '@/services/api/productsApi';
@@ -15,6 +15,7 @@ import {
   MobileFilterDrawer,
   ActiveFilterChips,
   ProductGrid,
+  SORT_OPTIONS,
   type ShopFilters,
   type ActiveFilter,
 } from '@/components/shop';
@@ -200,60 +201,111 @@ function ShopPageInner() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="min-h-screen bg-[#FAFAF8]"
+      className="min-h-screen"
+      style={{ background: '#F6F3EE' }}
     >
       {/* ── Page Header ─────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-[#E5E2DD]">
-        <div className="container-mono py-4 md:py-6">
+      <div style={{ background: '#F0ECE4', borderBottom: '1px solid #E2D9CE' }}>
+        <div className="container-mono pt-8 pb-6 md:pt-10 md:pb-8">
           {/* Breadcrumbs */}
-          <nav className="flex items-center gap-1.5 text-xs text-[#9B9B9B] mb-4">
-            <Link href="/" className="flex items-center gap-1 hover:text-[#111111] transition-colors">
+          <nav className="flex items-center gap-1.5 mb-5" style={{ fontSize: '11px', color: '#C8C0B8', fontFamily: 'var(--font-body, Jost, sans-serif)' }}>
+            <Link href="/" className="flex items-center gap-1 hover:text-mono-charcoal transition-colors">
               <Home className="h-3 w-3" />
               Home
             </Link>
             <ChevronRight className="h-3 w-3" />
-            <span className="text-[#111111] font-medium">
+            <span style={{ color: '#1A1A18', fontWeight: 600 }}>
               {filters.categoryId
                 ? (categories.find((c) => c.id === filters.categoryId)?.name ?? 'Products')
                 : 'All Products'}
             </span>
           </nav>
 
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-            <div>
-              <span className="text-xs font-semibold tracking-[0.2em] uppercase text-[#C7A27C] mb-2 block">
-                Collections
-              </span>
-              <h1 className="text-2xl md:text-3xl font-bold text-[#111111] leading-tight">
-                {filters.categoryId
-                  ? (categories.find((c) => c.id === filters.categoryId)?.name ?? 'Shop All')
-                  : 'Shop All Products'}
-              </h1>
-            </div>
+          {/* Title block */}
+          <div className="mb-6">
+            <span
+              className="text-xs font-semibold tracking-[0.2em] uppercase mb-2 block"
+              style={{ color: '#C8703A', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
+              Collections
+            </span>
+            <h1
+              className="leading-tight"
+              style={{
+                fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+                fontSize: 'clamp(1.6rem, 2.8vw, 2.2rem)',
+                fontWeight: 700,
+                color: '#1A1A18',
+              }}
+            >
+              {filters.categoryId
+                ? (categories.find((c) => c.id === filters.categoryId)?.name ?? 'Shop All')
+                : (
+                  <>
+                    Shop{' '}
+                    <em className="font-normal italic" style={{ color: '#6B6560' }}>
+                      all products
+                    </em>
+                  </>
+                )}
+            </h1>
+          </div>
+
+          {/* Category pills */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+            <button
+              onClick={() => updateFilters({ ...filters, categoryId: undefined })}
+              className="shrink-0 px-4 py-1.5 text-xs font-medium rounded-full border transition-all duration-200"
+              style={{
+                fontFamily: 'var(--font-body, Jost, sans-serif)',
+                letterSpacing: '0.04em',
+                ...(filters.categoryId === undefined
+                  ? { background: '#1A1A18', color: '#F6F3EE', borderColor: '#1A1A18' }
+                  : { background: 'transparent', color: '#6B6560', borderColor: '#D4CCC4' }),
+              }}
+            >
+              All
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => updateFilters({ ...filters, categoryId: cat.id })}
+                className="shrink-0 px-4 py-1.5 text-xs font-medium rounded-full border transition-all duration-200"
+                style={{
+                  fontFamily: 'var(--font-body, Jost, sans-serif)',
+                  letterSpacing: '0.04em',
+                  ...(filters.categoryId === cat.id
+                    ? { background: '#1A1A18', color: '#F6F3EE', borderColor: '#1A1A18' }
+                    : { background: 'transparent', color: '#6B6560', borderColor: '#D4CCC4' }),
+                }}
+              >
+                {cat.name}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
       {/* ── Sticky Toolbar ──────────────────────────────────────────────── */}
-      <div className="sticky top-16 z-20 bg-white/95 backdrop-blur-sm border-b border-[#E5E2DD] shadow-sm">
+      <div className="sticky top-16 z-20 backdrop-blur-sm border-b border-[#E5E2DD]" style={{ background: 'rgba(246,243,238,0.96)' }}>
         <div className="container-mono py-2.5">
           <div className="flex items-center gap-3">
             {/* Mobile filter trigger */}
             <button
               onClick={() => setMobileDrawerOpen(true)}
-              className="lg:hidden flex-shrink-0 flex items-center gap-2 px-3.5 py-2 bg-[#F6F3EE] border border-[#E5E2DD] rounded-full text-xs font-medium text-[#111111] hover:border-[#C7A27C] transition-colors"
+              className="lg:hidden shrink-0 flex items-center gap-2 px-3.5 py-2 bg-mono-cream border border-[#E5E2DD] rounded-full text-xs font-medium text-mono-charcoal hover:border-mono-terracotta transition-colors"
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
               Filters
               {activeFilters.length > 0 && (
-                <span className="w-4 h-4 bg-[#C7A27C] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                <span className="w-4 h-4 bg-mono-terracotta text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                   {activeFilters.length}
                 </span>
               )}
             </button>
 
             {/* Product count — desktop */}
-            <span className="hidden lg:block text-xs text-[#9B9B9B] shrink-0">
+            <span className="hidden lg:block text-xs shrink-0" style={{ color: '#C8C0B8', fontFamily: 'var(--font-body, Jost, sans-serif)' }}>
               {totalCount !== undefined && !isLoading
                 ? `${allProducts.length} / ${totalCount} products`
                 : '...'}
@@ -275,8 +327,8 @@ function ShopPageInner() {
             </div>
 
             {/* Search */}
-            <div className="relative flex-shrink-0 w-44 md:w-56">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#6B6B6B] pointer-events-none" />
+            <div className="relative shrink-0 w-36 md:w-48">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-mono-stone pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search..."
@@ -286,16 +338,47 @@ function ShopPageInner() {
                   if (e.key === 'Enter') handleSearch(searchInput);
                   if (e.key === 'Escape') { setSearchInput(''); handleSearch(''); }
                 }}
-                className="w-full pl-8 pr-8 py-2 bg-[#F6F3EE] rounded-full text-xs text-[#111111] placeholder:text-[#9B9B9B] focus:outline-none focus:ring-2 focus:ring-[#C7A27C]/20 transition-shadow"
+                className="w-full pl-8 pr-8 py-2 bg-mono-cream rounded-full text-xs text-mono-charcoal placeholder:text-[#C8C0B8] focus:outline-none focus:ring-2 focus:ring-mono-terracotta/20 transition-shadow"
               />
               {searchInput && (
                 <button
                   onClick={() => { setSearchInput(''); handleSearch(''); }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B6B6B] hover:text-[#111111] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-mono-stone hover:text-mono-charcoal transition-colors"
                 >
                   <X className="h-3 w-3" />
                 </button>
               )}
+            </div>
+
+            {/* Sort dropdown — desktop only */}
+            <div className="hidden lg:flex items-center gap-1.5 shrink-0">
+              <ArrowUpDown className="h-3.5 w-3.5 shrink-0" style={{ color: '#6B6560' }} />
+              <select
+                value={
+                  SORT_OPTIONS.findIndex(
+                    (o) =>
+                      (o.value === 'relevance' && !filters.sortBy) ||
+                      (o.value === filters.sortBy && o.order === filters.sortOrder)
+                  ).toString()
+                }
+                onChange={(e) => {
+                  const idx = Number(e.target.value);
+                  const opt = SORT_OPTIONS[idx];
+                  updateFilters({
+                    ...filters,
+                    sortBy: opt.value === 'relevance' ? undefined : opt.value,
+                    sortOrder: opt.value === 'relevance' ? undefined : opt.order,
+                  });
+                }}
+                className="text-xs border-0 bg-transparent focus:outline-none cursor-pointer"
+                style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+              >
+                {SORT_OPTIONS.map((opt, i) => (
+                  <option key={i} value={i}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
@@ -332,28 +415,59 @@ function ShopPageInner() {
 
       {/* ── Editorial / Discovery Sections ─────────────────────────── */}
       {!isLoading && (
-        <div className="border-t border-[#E5E2DD] bg-white mt-2">
+        <div className="border-t mt-2" style={{ borderColor: '#E8E4DE', background: '#F0ECE4' }}>
           <div className="container-mono py-12 md:py-16">
             <div className="text-center mb-10">
-              <span className="text-xs font-semibold tracking-[0.2em] uppercase text-[#C7A27C] mb-2 block">Curated For You</span>
-              <h2 className="text-xl md:text-2xl font-bold text-[#111111]">Explore Collections</h2>
+              <span
+                className="text-xs font-semibold tracking-[0.2em] uppercase mb-3 block"
+                style={{ color: '#C8703A', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+              >
+                Curated For You
+              </span>
+              <h2
+                className="leading-[1.05]"
+                style={{
+                  fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+                  fontSize: 'clamp(1.6rem, 2.5vw, 2.2rem)',
+                  fontWeight: 700,
+                  color: '#1A1A18',
+                }}
+              >
+                Explore Collections
+              </h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { title: 'Summer Essentials', desc: 'Light, airy picks for the season', icon: '☀️', href: '/products?categoryId=&sortBy=createdAt&sortOrder=desc' },
-                { title: 'Minimal Collection', desc: 'Clean lines, timeless design', icon: '◻️', href: '/products?sortBy=avgRating&sortOrder=desc' },
-                { title: 'Trending This Week', desc: 'What everyone is wearing now', icon: '🔥', href: '/products?sortBy=totalSold&sortOrder=desc' },
-                { title: 'Best Value', desc: 'Premium quality at great prices', icon: '✦', href: '/products?onSale=true' },
-              ].map((card) => (
+                { title: 'Summer Essentials', desc: 'Light, airy picks for the season', href: '/products?sortBy=createdAt&sortOrder=desc' },
+                { title: 'Minimal Collection', desc: 'Clean lines, timeless design', href: '/products?sortBy=avgRating&sortOrder=desc' },
+                { title: 'Trending This Week', desc: 'What everyone is wearing now', href: '/products?sortBy=totalSold&sortOrder=desc' },
+                { title: 'Best Value', desc: 'Premium quality at great prices', href: '/products?onSale=true' },
+              ].map((card, i) => (
                 <Link
                   key={card.title}
                   href={card.href}
-                  className="group relative bg-[#FAFAF8] border border-[#E5E2DD] rounded-2xl p-6 hover:border-[#C7A27C] hover:bg-[#F6F3EE] transition-all duration-300 hover:shadow-md"
+                  className="group relative p-6 border rounded-2xl transition-all duration-300 hover:shadow-md hover:border-mono-terracotta"
+                  style={{ background: '#F6F3EE', borderColor: '#E2D9CE' }}
                 >
-                  <span className="text-2xl mb-3 block">{card.icon}</span>
-                  <h3 className="font-semibold text-[#111111] text-sm mb-1 group-hover:text-[#C7A27C] transition-colors">{card.title}</h3>
-                  <p className="text-xs text-[#6B6B6B]">{card.desc}</p>
-                  <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#C8C8C8] group-hover:text-[#C7A27C] group-hover:translate-x-0.5 transition-all" />
+                  <span
+                    className="text-xs font-bold tracking-widest uppercase mb-3 block"
+                    style={{ color: '#C8703A', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                  >
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <h3
+                    className="font-semibold text-sm mb-1"
+                    style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                  >
+                    {card.title}
+                  </h3>
+                  <p className="text-xs" style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}>
+                    {card.desc}
+                  </p>
+                  <ChevronRight
+                    className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                    style={{ color: '#C8C0B8' }}
+                  />
                 </Link>
               ))}
             </div>
@@ -378,8 +492,8 @@ function ShopPageInner() {
 export default function ShopPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#111111]/20 border-t-[#111111] rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#F6F3EE' }}>
+        <div className="w-8 h-8 border-2 border-mono-charcoal/20 border-t-mono-charcoal rounded-full animate-spin" />
       </div>
     }>
       <ShopPageInner />

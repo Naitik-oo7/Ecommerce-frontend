@@ -58,8 +58,8 @@ export function PriceRangeSlider({ min, max, value, onChange }: PriceRangeSlider
     >
       {/* Price Labels */}
       <div className="flex justify-between mb-3">
-        <span className="text-sm font-medium text-[#111111]">₹{value[0].toLocaleString()}</span>
-        <span className="text-sm font-medium text-[#111111]">₹{value[1].toLocaleString()}</span>
+        <span className="text-sm font-medium text-mono-charcoal">₹{value[0].toLocaleString()}</span>
+        <span className="text-sm font-medium text-mono-charcoal">₹{value[1].toLocaleString()}</span>
       </div>
 
       {/* Track */}
@@ -82,20 +82,20 @@ export function PriceRangeSlider({ min, max, value, onChange }: PriceRangeSlider
       >
         {/* Active range fill */}
         <div
-          className="absolute top-0 h-full bg-[#111111] rounded-full"
+          className="absolute top-0 h-full bg-mono-terracotta rounded-full"
           style={{ left: `${leftPercent}%`, width: `${rightPercent - leftPercent}%` }}
         />
 
         {/* Min thumb */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-white border-2 border-[#111111] rounded-full cursor-grab active:cursor-grabbing shadow-md hover:scale-110 transition-transform"
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-white border-2 border-mono-terracotta rounded-full cursor-grab active:cursor-grabbing shadow-md hover:scale-110 transition-transform"
           style={{ left: `${leftPercent}%` }}
           onMouseDown={(e) => { e.preventDefault(); setDragging('min'); }}
         />
 
         {/* Max thumb */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-white border-2 border-[#111111] rounded-full cursor-grab active:cursor-grabbing shadow-md hover:scale-110 transition-transform"
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-white border-2 border-mono-terracotta rounded-full cursor-grab active:cursor-grabbing shadow-md hover:scale-110 transition-transform"
           style={{ left: `${rightPercent}%` }}
           onMouseDown={(e) => { e.preventDefault(); setDragging('max'); }}
         />
@@ -103,8 +103,8 @@ export function PriceRangeSlider({ min, max, value, onChange }: PriceRangeSlider
 
       {/* Range labels */}
       <div className="flex justify-between mt-2">
-        <span className="text-[10px] text-[#6B6B6B]">₹{min.toLocaleString()}</span>
-        <span className="text-[10px] text-[#6B6B6B]">₹{max.toLocaleString()}</span>
+        <span className="text-[10px] text-mono-stone">₹{min.toLocaleString()}</span>
+        <span className="text-[10px] text-mono-stone">₹{max.toLocaleString()}</span>
       </div>
     </div>
   );

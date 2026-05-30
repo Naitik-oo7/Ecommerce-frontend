@@ -2,10 +2,8 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Heart, Eye } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Heart, Star, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
-
 import type { Product } from '@/types';
 
 interface ProductCardProps {
@@ -22,205 +20,191 @@ export const ProductCard = ({
   product,
   index = 0,
   isInWishlist = false,
-  isAddingToCart = false,
-  onAddToCart,
   onToggleWishlist,
-  onQuickView,
 }: ProductCardProps) => {
-  const [isHovered, setIsHovered] = useState(false);
+  const [imgError, setImgError] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
-  const hasSecondaryImage = product.images && product.images.length > 1;
+  const primaryImage = product.images?.[0];
+  const secondaryImage = product.images?.[1];
+  const isOutOfStock = (product.stock ?? 0) === 0;
+  const isLowStock = !isOutOfStock && (product.stock ?? 99) < 10;
 
-  const salePercent = product.comparePrice && product.comparePrice > product.price
-    ? Math.round((1 - product.price / product.comparePrice) * 100)
-    : null;
+  const salePercent =
+    product.comparePrice && Number(product.comparePrice) > Number(product.price)
+      ? Math.round((1 - Number(product.price) / Number(product.comparePrice)) * 100)
+      : null;
+
+  const formatINR = (n: number) =>
+    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
+
+  const category = (product as any).category?.name as string | undefined;
+  const avgRating = (product as any).avgRating as string | number | undefined;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-50px' }}
-      transition={{ 
-        duration: 0.6, 
-        delay: index * 0.08,
-        ease: [0.16, 1, 0.3, 1] as const 
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.5, delay: (index % 6) * 0.055, ease: [0.16, 1, 0.3, 1] }}
       className="group"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
-      <Link href={`/products/${product.slug}`} className="block">
-        <motion.div
-          whileHover={{ y: -8 }}
-          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] as const }}
-          className="relative bg-white rounded-2xl overflow-hidden border border-[#E5E2DD] shadow-sm hover:shadow-xl transition-shadow duration-500"
-        >
-          {/* Image Container */}
-          <div className="relative aspect-[3/4] overflow-hidden bg-[#F6F3EE]">
-            {/* Primary Image */}
-            {product.images?.[0] ? (
-              <>
-                <motion.img
-                  src={product.images[0]}
-                  alt={product.name}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  initial={{ scale: 1 }}
-                  animate={{ scale: isHovered ? 1.08 : 1 }}
-                  transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const }}
-                />
-                
-                {/* Secondary Image Crossfade */}
-                <AnimatePresence>
-                  {isHovered && hasSecondaryImage && (
-                    <motion.img
-                      src={product.images[1]}
-                      alt={`${product.name} - alternate view`}
-                      className="absolute inset-0 w-full h-full object-cover"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.5 }}
-                    />
-                  )}
-                </AnimatePresence>
-              </>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-[#6B6B6B]">
-                <span className="text-sm">No image</span>
-              </div>
-            )}
-
-            {/* Badges */}
-            <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-              {product.stock === 0 && (
-                <span className="px-2.5 py-1 bg-[#111111]/80 backdrop-blur-sm text-white text-[9px] font-semibold tracking-wider uppercase rounded-full">
-                  Sold Out
-                </span>
-              )}
-              {product.stock > 0 && product.stock < 10 && (
-                <span className="px-2.5 py-1 bg-[#B54A4A]/90 backdrop-blur-sm text-white text-[9px] font-semibold tracking-wider uppercase rounded-full">
-                  Low Stock
-                </span>
-              )}
-              {salePercent && (
-                <span className="px-2.5 py-1 bg-[#C7A27C]/90 backdrop-blur-sm text-white text-[9px] font-semibold tracking-wider rounded-full">
-                  -{salePercent}%
-                </span>
-              )}
-            </div>
-
-            {/* Wishlist Button */}
-            {onToggleWishlist && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ 
-                  opacity: isHovered ? 1 : 0, 
-                  scale: isHovered ? 1 : 0.8 
-                }}
-                transition={{ duration: 0.2 }}
-                onClick={onToggleWishlist}
-                className={`absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
-                  isInWishlist
-                    ? 'bg-[#B54A4A] text-white'
-                    : 'bg-white/90 backdrop-blur-sm text-[#111111] hover:bg-white'
-                }`}
-              >
-                <Heart className={`h-4 w-4 ${isInWishlist ? 'fill-current' : ''}`} />
-              </motion.button>
-            )}
-
-            {/* Quick View Button */}
-            {onQuickView && (
-              <motion.button
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ 
-                  opacity: isHovered ? 1 : 0, 
-                  y: isHovered ? 0 : -10 
-                }}
-                transition={{ duration: 0.2, delay: 0.05 }}
-                onClick={onQuickView}
-                className="absolute top-4 right-16 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm text-[#111111] hover:bg-white flex items-center justify-center transition-all duration-200"
-              >
-                <Eye className="h-4 w-4" />
-              </motion.button>
-            )}
-
-            {/* Add to Cart - Slides Up */}
-            {onAddToCart && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ 
-                  opacity: isHovered ? 1 : 0, 
-                  y: isHovered ? 0 : 20 
-                }}
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] as const }}
-                className="absolute bottom-0 left-0 right-0 p-4"
-              >
-                <Button
-                  onClick={onAddToCart}
-                  disabled={product.stock === 0 || isAddingToCart}
-                  className="w-full bg-[#111111] hover:bg-[#1a1a1a] text-white shadow-lg rounded-full h-12 font-medium"
-                >
-                  {isAddingToCart ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                      className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
-                    />
-                  ) : (
-                    <>
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      {product.stock === 0 ? 'Sold Out' : 'Add to Cart'}
-                    </>
-                  )}
-                </Button>
-              </motion.div>
-            )}
-          </div>
-
-          {/* Product Info */}
-          <div className="px-4 py-3.5">
-            {/* Category */}
-            <p className="text-[9px] font-semibold tracking-[0.18em] uppercase text-[#9B9B9B] mb-1">
-              {product.category?.name || 'Uncategorized'}
-            </p>
-            {/* Name */}
-            <h3 className="font-semibold text-[14px] text-[#111111] truncate group-hover:text-[#C7A27C] transition-colors leading-snug mb-2">
-              {product.name}
-            </h3>
-            {/* Price row */}
-            <div className="flex items-baseline gap-2">
-              <span className="font-bold text-[15px] text-[#111111]">
-                ₹{product.price.toLocaleString('en-IN')}
-              </span>
-              {product.comparePrice && product.comparePrice > product.price && (
-                <span className="text-xs text-[#9B9B9B] line-through">
-                  ₹{product.comparePrice.toLocaleString('en-IN')}
-                </span>
-              )}
-            </div>
-            {/* Rating */}
-            {product.avgRating !== undefined && Number(product.avgRating) > 0 && (
-              <div className="flex items-center gap-1 mt-1.5">
-                <div className="flex">
-                  {[1,2,3,4,5].map((s) => (
-                    <svg key={s} className={`w-2.5 h-2.5 ${
-                      s <= Math.round(Number(product.avgRating)) ? 'text-[#C7A27C]' : 'text-[#E5E2DD]'
-                    }`} fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-                {product.reviewCount !== undefined && (
-                  <span className="text-[9px] text-[#9B9B9B]">({product.reviewCount})</span>
+      {/* ── Image ── */}
+      <div
+        className="relative aspect-3/4 overflow-hidden rounded-xl mb-3"
+        style={{ background: '#E8E4DE' }}
+      >
+        <Link href={`/products/${product.slug}`} className="block w-full h-full">
+          {primaryImage && !imgError ? (
+            <>
+              <img
+                src={primaryImage}
+                alt={product.name}
+                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+                onError={() => setImgError(true)}
+              />
+              <AnimatePresence>
+                {hovered && secondaryImage && (
+                  <motion.img
+                    key="secondary"
+                    src={secondaryImage}
+                    alt={`${product.name} – alternate`}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.45 }}
+                  />
                 )}
-              </div>
+              </AnimatePresence>
+            </>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <ShoppingBag className="h-10 w-10" style={{ color: '#C8C0B8' }} />
+            </div>
+          )}
+        </Link>
+
+        {/* Badges — top-left */}
+        <div className="absolute top-3 left-3 flex flex-col gap-1.5 pointer-events-none">
+          {isOutOfStock && (
+            <span
+              className="px-2.5 py-1 text-[9px] font-semibold tracking-[0.12em] uppercase"
+              style={{ background: '#1A1A18', color: '#F6F3EE', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
+              Sold Out
+            </span>
+          )}
+          {!isOutOfStock && isLowStock && (
+            <span
+              className="px-2.5 py-1 text-[9px] font-semibold tracking-[0.12em] uppercase"
+              style={{ background: 'rgba(181,74,74,0.92)', color: '#fff', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
+              Only {product.stock} left
+            </span>
+          )}
+          {salePercent && (
+            <span
+              className="px-2.5 py-1 text-[9px] font-semibold tracking-[0.12em] uppercase"
+              style={{ background: '#C8703A', color: '#fff', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
+              −{salePercent}%
+            </span>
+          )}
+        </div>
+
+        {/* Wishlist button — top-right, fades in on hover */}
+        <motion.button
+          onClick={onToggleWishlist}
+          initial={false}
+          animate={{ opacity: hovered ? 1 : 0 }}
+          transition={{ duration: 0.2 }}
+          className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center"
+          style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(4px)' }}
+          aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+        >
+          <Heart
+            className="h-3.5 w-3.5 transition-colors duration-200"
+            style={{
+              fill: isInWishlist ? '#B54A4A' : 'transparent',
+              color: isInWishlist ? '#B54A4A' : '#1A1A18',
+            }}
+          />
+        </motion.button>
+
+        {/* Select Size CTA — slides up from bottom on hover */}
+        {!isOutOfStock && (
+          <Link href={`/products/${product.slug}`} tabIndex={-1} aria-hidden>
+            <motion.div
+              initial={false}
+              animate={{ y: hovered ? 0 : '100%' }}
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute inset-x-0 bottom-0 py-3 px-4 text-center"
+              style={{ background: 'rgba(26,26,24,0.92)', backdropFilter: 'blur(4px)' }}
+            >
+              <span
+                className="text-[10px] font-semibold tracking-[0.16em] uppercase"
+                style={{ color: '#F6F3EE', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+              >
+                Select Size
+              </span>
+            </motion.div>
+          </Link>
+        )}
+      </div>
+
+      {/* ── Info ── */}
+      <div className="space-y-0.5">
+        {category && (
+          <p
+            className="text-[10px] uppercase tracking-[0.12em] font-medium"
+            style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+          >
+            {category}
+          </p>
+        )}
+
+        <Link href={`/products/${product.slug}`}>
+          <p
+            className="text-sm font-semibold leading-snug line-clamp-2 hover:opacity-70 transition-opacity"
+            style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+          >
+            {product.name}
+          </p>
+        </Link>
+
+        <div className="flex items-center justify-between pt-0.5">
+          <div className="flex items-center gap-2">
+            <span
+              className="text-sm font-bold"
+              style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
+              {formatINR(Number(product.price))}
+            </span>
+            {product.comparePrice && Number(product.comparePrice) > Number(product.price) && (
+              <span
+                className="text-xs line-through"
+                style={{ color: '#C8C0B8', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+              >
+                {formatINR(Number(product.comparePrice))}
+              </span>
             )}
           </div>
-        </motion.div>
-      </Link>
+          {avgRating && (
+            <div className="flex items-center gap-1">
+              <Star className="h-3 w-3 fill-[#C8703A] text-[#C8703A]" />
+              <span
+                className="text-xs"
+                style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+              >
+                {parseFloat(String(avgRating)).toFixed(1)}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
     </motion.div>
   );
 };
-
-export default ProductCard;

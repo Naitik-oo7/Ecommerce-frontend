@@ -2,14 +2,12 @@
 
 import { useGetWishlistQuery, useRemoveFromWishlistMutation, useClearWishlistMutation } from '@/services/api/wishlistApi';
 import { useAppSelector } from '@/lib/redux/hooks';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Heart, Trash2, ShoppingCart, Star, Loader2 } from 'lucide-react';
+import { Heart, Trash2, ShoppingBag, Star, Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { EmptyState } from '@/components/common';
 import { extractWishlist } from '@/lib/api-utils';
+import { motion } from 'framer-motion';
 
 export default function WishlistPage() {
   const router = useRouter();
@@ -21,21 +19,48 @@ export default function WishlistPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="container mx-auto px-4 py-16">
-        <EmptyState
-          icon={Heart}
-          title="Sign in to view your wishlist"
-          action={{ label: 'Login', href: '/login' }}
-        />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#F6F3EE' }}>
+        <div className="text-center px-6">
+          <Heart className="h-14 w-14 mx-auto mb-6" style={{ color: '#C8C0B8' }} />
+          <h2
+            className="text-2xl font-bold mb-3"
+            style={{ fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)', color: '#1A1A18' }}
+          >
+            Sign in to view your wishlist
+          </h2>
+          <p className="text-sm mb-8" style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}>
+            Save pieces you love and find them here.
+          </p>
+          <Link href="/login">
+            <motion.span
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="inline-flex items-center gap-2 px-8 py-3 text-sm font-medium cursor-pointer"
+              style={{ background: '#1A1A18', color: '#F6F3EE', fontFamily: 'var(--font-body, Jost, sans-serif)', letterSpacing: '0.06em' }}
+            >
+              Login to Continue <ArrowRight className="h-4 w-4" />
+            </motion.span>
+          </Link>
+        </div>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => <Card key={i} className="h-80 animate-pulse" />)}
+      <div className="min-h-screen" style={{ background: '#F6F3EE' }}>
+        <div className="container-mono py-12 md:py-16">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="aspect-3/4 rounded-xl mb-3" style={{ background: '#E2D9CE' }} />
+                <div className="space-y-2">
+                  <div className="h-4 rounded w-3/4" style={{ background: '#E2D9CE' }} />
+                  <div className="h-3 rounded w-1/2" style={{ background: '#E2D9CE' }} />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -43,7 +68,6 @@ export default function WishlistPage() {
 
   const wishlistItems = extractWishlist(wishlistResponse);
 
-  // Updated: Wishlist items need size selection - redirect to product page
   const handleAddToCart = (productSlug: string) => {
     router.push(`/products/${productSlug}`);
   };
@@ -53,111 +77,207 @@ export default function WishlistPage() {
     try {
       await removeFromWishlist(productId).unwrap();
     } catch {}
-    setRemoveLoadingIds((prev) => { const n = new Set(prev); n.delete(productId); return n; });
+    setRemoveLoadingIds((prev) => {
+      const n = new Set(prev);
+      n.delete(productId);
+      return n;
+    });
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">My Wishlist</h1>
-          <p className="text-muted-foreground mt-1">{wishlistItems.length} saved item{wishlistItems.length !== 1 ? 's' : ''}</p>
+    <div className="min-h-screen" style={{ background: '#F6F3EE' }}>
+
+      {/* ── Page Header ── */}
+      <div className="border-b" style={{ background: '#F0ECE4', borderColor: '#E2D9CE' }}>
+        <div className="container-mono py-8 md:py-10">
+          <div className="flex items-end justify-between">
+            <div>
+              <span
+                className="text-xs font-semibold tracking-[0.2em] uppercase mb-3 block"
+                style={{ color: '#C8703A', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+              >
+                My Account
+              </span>
+              <h1
+                className="leading-[1.05]"
+                style={{
+                  fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+                  fontSize: 'clamp(1.8rem, 3vw, 2.5rem)',
+                  fontWeight: 700,
+                  color: '#1A1A18',
+                }}
+              >
+                Wishlist
+              </h1>
+              {wishlistItems.length > 0 && (
+                <p
+                  className="text-sm mt-1"
+                  style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                >
+                  {wishlistItems.length} saved {wishlistItems.length === 1 ? 'item' : 'items'}
+                </p>
+              )}
+            </div>
+            {wishlistItems.length > 0 && (
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => clearWishlist(undefined).catch(() => {})}
+                className="flex items-center gap-1.5 text-xs font-medium transition-colors hover:opacity-70"
+                style={{ color: '#B54A4A', fontFamily: 'var(--font-body, Jost, sans-serif)', letterSpacing: '0.04em' }}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Clear All
+              </motion.button>
+            )}
+          </div>
         </div>
-        {wishlistItems.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive"
-            onClick={() => clearWishlist(undefined).catch(() => {})}
-          >
-            Clear All
-          </Button>
-        )}
       </div>
 
-      {wishlistItems.length === 0 ? (
-        <EmptyState
-          icon={Heart}
-          title="Your wishlist is empty"
-          description="Save products you love for later"
-          action={{ label: 'Browse Products', href: '/' }}
-        />
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {wishlistItems.map((item: any) => (
-            <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-all duration-200 group">
-              <CardHeader className="p-0 relative">
-                <Link href={`/products/${item.product.slug}`}>
-                  <div className="aspect-square bg-muted overflow-hidden">
-                    {(() => {
-                      const media = item.product.media || [];
-                      const primaryImage = media.find((m: any) => m.isPrimary)?.url || media[0]?.url;
-                      return primaryImage ? (
+      {/* ── Content ── */}
+      <div className="container-mono py-10 md:py-14">
+        {wishlistItems.length === 0 ? (
+          <div className="text-center py-24">
+            <Heart className="h-14 w-14 mx-auto mb-6" style={{ color: '#C8C0B8' }} />
+            <h2
+              className="text-2xl font-bold mb-3"
+              style={{ fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)', color: '#1A1A18' }}
+            >
+              Your wishlist is empty
+            </h2>
+            <p
+              className="text-sm mb-8"
+              style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
+              Save pieces you love — they&apos;ll be waiting here for you.
+            </p>
+            <Link href="/products">
+              <motion.span
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex items-center gap-2 px-8 py-3 text-sm font-medium cursor-pointer"
+                style={{ background: '#1A1A18', color: '#F6F3EE', fontFamily: 'var(--font-body, Jost, sans-serif)', letterSpacing: '0.06em' }}
+              >
+                Browse Collection <ArrowRight className="h-4 w-4" />
+              </motion.span>
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            {wishlistItems.map((item: any, index: number) => {
+              const product = item.product;
+              const media = product.media || [];
+              const primaryImage = media.find((m: any) => m.isPrimary)?.url || media[0]?.url || product.images?.[0];
+              const totalStock = product.variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) || 0;
+              const isOutOfStock = totalStock === 0;
+              const isRemoving = removeLoadingIds.has(product.id);
+
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.05, ease: [0.16, 1, 0.3, 1] }}
+                  className="group"
+                >
+                  {/* Image */}
+                  <div className="relative aspect-3/4 overflow-hidden rounded-xl mb-3" style={{ background: '#E8E4DE' }}>
+                    <Link href={`/products/${product.slug}`}>
+                      {primaryImage ? (
                         <img
                           src={primaryImage}
-                          alt={item.product.name}
-                          className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-600"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">No Image</div>
-                      );
-                    })()}
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ShoppingBag className="h-10 w-10" style={{ color: '#C8C0B8' }} />
+                        </div>
+                      )}
+                    </Link>
+
+                    {isOutOfStock && (
+                      <div
+                        className="absolute top-3 left-3 px-2 py-1 text-[10px] font-semibold tracking-wide uppercase"
+                        style={{ background: '#1A1A18', color: '#F6F3EE', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                      >
+                        Out of Stock
+                      </div>
+                    )}
+
+                    {/* Remove button */}
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => handleRemove(product.id)}
+                      disabled={isRemoving}
+                      className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(4px)' }}
+                    >
+                      {isRemoving ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: '#1A1A18' }} />
+                      ) : (
+                        <Heart className="h-3.5 w-3.5 fill-mono-rose text-mono-rose" />
+                      )}
+                    </motion.button>
                   </div>
-                </Link>
-                {(() => {
-                  const totalStock = item.product.variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) || 0;
-                  return totalStock === 0 ? (
-                    <div className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded">Out of Stock</div>
-                  ) : null;
-                })()}
-              </CardHeader>
 
-              <CardContent className="p-4">
-                <Link href={`/products/${item.product.slug}`}>
-                  <h3 className="font-semibold mb-1 hover:text-primary line-clamp-2 text-sm">{item.product.name}</h3>
-                </Link>
-                <p className="text-xs text-muted-foreground mb-2">{item.product.category?.name}</p>
-                <div className="flex items-center justify-between">
-                  <p className="text-xl font-bold">${parseFloat(item.product.price).toFixed(2)}</p>
-                  {item.product.avgRating && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
-                      {parseFloat(item.product.avgRating).toFixed(1)}
+                  {/* Info */}
+                  <div className="space-y-1">
+                    <Link href={`/products/${product.slug}`}>
+                      <p
+                        className="text-sm font-semibold leading-snug line-clamp-2 hover:opacity-70 transition-opacity"
+                        style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                      >
+                        {product.name}
+                      </p>
+                    </Link>
+                    <p
+                      className="text-xs"
+                      style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                    >
+                      {product.category?.name}
+                    </p>
+                    <div className="flex items-center justify-between pt-0.5">
+                      <p
+                        className="text-sm font-bold"
+                        style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                      >
+                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(product.price))}
+                      </p>
+                      {product.avgRating && (
+                        <div className="flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-[#C8703A] text-[#C8703A]" />
+                          <span className="text-xs" style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}>
+                            {parseFloat(product.avgRating).toFixed(1)}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </CardContent>
+                  </div>
 
-              <CardFooter className="p-4 pt-0 flex gap-2">
-                <Button
-                  className="flex-1"
-                  size="sm"
-                  onClick={() => handleAddToCart(item.product.slug)}
-                  disabled={(() => {
-                    const totalStock = item.product.variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) || 0;
-                    return totalStock === 0;
-                  })()}
-                >
-                  <><ShoppingCart className="h-4 w-4 mr-1" /> Select Size</>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleRemove(item.product.id)}
-                  disabled={removeLoadingIds.has(item.product.id)}
-                  className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
-                >
-                  {removeLoadingIds.has(item.product.id) ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      )}
+                  {/* CTA */}
+                  <motion.button
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handleAddToCart(product.slug)}
+                    disabled={isOutOfStock}
+                    className="w-full mt-3 py-2.5 text-xs font-medium transition-colors disabled:opacity-40"
+                    style={{
+                      background: isOutOfStock ? '#E2D9CE' : '#1A1A18',
+                      color: isOutOfStock ? '#6B6560' : '#F6F3EE',
+                      fontFamily: 'var(--font-body, Jost, sans-serif)',
+                      letterSpacing: '0.06em',
+                    }}
+                  >
+                    {isOutOfStock ? 'Out of Stock' : 'Select Size'}
+                  </motion.button>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

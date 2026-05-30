@@ -133,10 +133,18 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
             <div>
               <h4 className="label-caps text-mono-stone mb-4">Shop</h4>
               <ul className="space-y-3 text-sm">
-                <li><Link href="/" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">All Products</Link></li>
+                <li><Link href="/products" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">All Products</Link></li>
                 <li><Link href="/cart" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">Shopping Cart</Link></li>
                 <li><Link href="/profile/orders" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">Order History</Link></li>
                 <li><Link href="/wishlist" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">Wishlist</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="label-caps text-mono-stone mb-4">Company</h4>
+              <ul className="space-y-3 text-sm">
+                <li><Link href="/about" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">About MONO</Link></li>
+                <li><Link href="/journal" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">The Journal</Link></li>
+                <li><Link href="/contact" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">Contact Us</Link></li>
               </ul>
             </div>
             <div>
@@ -148,22 +156,11 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
                 <li><Link href="/profile/settings" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">Settings</Link></li>
               </ul>
             </div>
-            <div>
-              <h4 className="label-caps text-mono-stone mb-4">Help</h4>
-              <ul className="space-y-3 text-sm">
-                <li><span className="text-mono-cream/80 cursor-default">FAQ</span></li>
-                <li><span className="text-mono-cream/80 cursor-default">Shipping Info</span></li>
-                <li><span className="text-mono-cream/80 cursor-default">Returns</span></li>
-                <li><Link href="/contact" className="text-mono-cream/80 hover:text-mono-cream transition-colors link-underline">Contact Us</Link></li>
-              </ul>
-            </div>
           </div>
           <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-mono-stone">&copy; {new Date().getFullYear()} MONO. All rights reserved.</p>
             <div className="flex gap-6 text-sm text-mono-stone">
               <Link href="/privacy" className="hover:text-mono-cream transition-colors">Privacy</Link>
-              <span className="hover:text-mono-cream cursor-default transition-colors">Terms</span>
-              <span className="hover:text-mono-cream cursor-default transition-colors">Cookies</span>
             </div>
           </div>
         </div>

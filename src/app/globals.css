@@ -16,11 +16,11 @@
   --font-playfair: var(--font-playfair), 'Playfair Display', Georgia, serif;
   
   /* MONO Premium Brand Colors */
-  --color-mono-charcoal: #111111;
+  --color-mono-charcoal: #1A1A18;
   --color-mono-cream: #F6F3EE;
-  --color-mono-terracotta: #C7A27C;
+  --color-mono-terracotta: #C8703A;
   --color-mono-sand: #E8E4DE;
-  --color-mono-stone: #6B6B6B;
+  --color-mono-stone: #6B6560;
   --color-mono-sage: #4A7C59;
   --color-mono-rose: #B54A4A;
   --color-mono-dark: #0F0F0F;
@@ -191,15 +191,15 @@
 
 @layer utilities {
   /* Brand color utilities */
-  .bg-mono-charcoal { background-color: #1A1A1A; }
-  .bg-mono-cream { background-color: #F5F2ED; }
-  .bg-mono-terracotta { background-color: #C4A484; }
+  .bg-mono-charcoal { background-color: #1A1A18; }
+  .bg-mono-cream { background-color: #F6F3EE; }
+  .bg-mono-terracotta { background-color: #C8703A; }
   .bg-mono-sand { background-color: #E8E4DE; }
   
   .text-mono-charcoal { color: #1A1A18; }
   .text-mono-cream { color: #F5F2ED; }
   .text-mono-terracotta { color: #C8703A; }
-  .text-mono-stone { color: #8A8A8A; }
+  .text-mono-stone { color: #6B6560; }
   .text-mono-warm-gray { color: #6B6560; }
   
   /* Animation timing utilities */

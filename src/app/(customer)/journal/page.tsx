@@ -2,40 +2,19 @@
 
 import { useState, useMemo } from 'react';
 import { useGetBlogPostsQuery } from '@/services/api/blogApi';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Search, 
-  Calendar, 
-  Clock, 
-  ArrowRight, 
-  Loader2, 
-  BookOpen,
-  ChevronLeft,
-  ChevronRight,
-  Filter,
-  X
-} from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
+import { Search, BookOpen, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { JournalCard } from '@/components/journal/JournalCard';
 
-const categories = [
-  { value: '', label: 'All Categories' },
-  { value: 'Fashion', label: 'Fashion' },
-  { value: 'Lifestyle', label: 'Lifestyle' },
-  { value: 'Sustainability', label: 'Sustainability' },
-  { value: 'Trends', label: 'Trends' },
-  { value: 'Styling', label: 'Styling' },
-];
+const formatDate = (dateStr: string) =>
+  new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+const CATEGORIES = ['All', 'Fashion', 'Lifestyle', 'Sustainability', 'Trends', 'Styling'];
 
 export default function JournalPage() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [page, setPage] = useState(1);
-  const [showFilters, setShowFilters] = useState(false);
 
   const { data: postsResponse, isLoading } = useGetBlogPostsQuery({
     page,
@@ -43,9 +22,10 @@ export default function JournalPage() {
     category: category || undefined,
   });
 
-  const pagination = postsResponse ? { total: postsResponse.total, totalPages: postsResponse.totalPages } : undefined;
+  const pagination = postsResponse
+    ? { total: postsResponse.total, totalPages: postsResponse.totalPages }
+    : undefined;
 
-  // Filter posts by search term
   const filteredPosts = useMemo(() => {
     const posts = postsResponse?.data || [];
     if (!search) return posts;
@@ -58,247 +38,240 @@ export default function JournalPage() {
     );
   }, [postsResponse, search]);
 
-  const clearFilters = () => {
-    setSearch('');
-    setCategory('');
-    setPage(1);
-  };
-
-  const hasActiveFilters = search || category;
-
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <div className="bg-muted/30 border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+    <div className="min-h-screen" style={{ background: '#F6F3EE' }}>
+
+      {/* ── Hero ── */}
+      <section className="py-20 md:py-28" style={{ background: '#1A1A18' }}>
+        <div className="container-mono text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-              <BookOpen className="h-4 w-4" />
-              <span>Our Journal</span>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              Stories, Insights & Inspiration
+            <span
+              className="text-xs font-semibold tracking-[0.2em] uppercase mb-4 block"
+              style={{ color: '#C8703A', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
+              The Journal
+            </span>
+            <h1
+              className="leading-[1.05] text-white mb-6"
+              style={{
+                fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+                fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
+                fontWeight: 700,
+              }}
+            >
+              Stories &amp; Insights
+              <br />
+              <em className="font-normal italic" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                for the conscious wardrobe.
+              </em>
             </h1>
-            <p className="text-muted-foreground text-lg max-w-2xl">
-              Explore the latest trends, styling tips, and behind-the-scenes stories from our world.
+            <p
+              className="text-lg max-w-md mx-auto"
+              style={{ color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
+              Style, sustainability, and the craft behind every collection.
             </p>
           </motion.div>
         </div>
+      </section>
+
+      {/* ── Sticky Filter Bar ── */}
+      <div
+        className="sticky z-20 border-b"
+        style={{
+          top: '3.5rem',
+          background: 'rgba(246,243,238,0.96)',
+          backdropFilter: 'blur(8px)',
+          borderColor: '#E2D9CE',
+        }}
+      >
+        <div className="container-mono py-3 flex flex-col sm:flex-row sm:items-center gap-3">
+          {/* Category pills */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide flex-1">
+            {CATEGORIES.map((cat) => {
+              const isActive = cat === 'All' ? !category : category === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => { setCategory(cat === 'All' ? '' : cat); setPage(1); }}
+                  className="flex-shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-200"
+                  style={{
+                    fontFamily: 'var(--font-body, Jost, sans-serif)',
+                    letterSpacing: '0.04em',
+                    background: isActive ? '#1A1A18' : 'transparent',
+                    color: isActive ? '#F6F3EE' : '#6B6560',
+                    border: `1px solid ${isActive ? '#1A1A18' : '#C8C0B8'}`,
+                  }}
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Search */}
+          <div className="relative flex-shrink-0 w-full sm:w-52">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none"
+              style={{ color: '#9B9B9B' }}
+            />
+            <input
+              type="text"
+              placeholder="Search articles…"
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              className="w-full pl-8 pr-8 py-2 text-xs rounded-full focus:outline-none transition-all"
+              style={{
+                background: '#EDE9E3',
+                color: '#1A1A18',
+                fontFamily: 'var(--font-body, Jost, sans-serif)',
+                border: '1px solid #DDD8D0',
+              }}
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2"
+                style={{ color: '#9B9B9B' }}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Filters */}
-        <Card className="mb-8">
-          <CardContent className="p-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search articles..."
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setPage(1);
-                  }}
-                  className="pl-10"
-                />
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-                className="gap-2"
-              >
-                <Filter className="h-4 w-4" />
-                Filter
-                {category && (
-                  <Badge variant="secondary" className="ml-1">
-                    1
-                  </Badge>
-                )}
-              </Button>
-
-              {hasActiveFilters && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearFilters}
-                  className="text-muted-foreground"
-                >
-                  <X className="h-4 w-4 mr-1" /> Clear
-                </Button>
-              )}
-            </div>
-
-            {showFilters && (
-              <div className="mt-4 pt-4 border-t">
-                <div className="flex flex-wrap gap-2">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat.value}
-                      onClick={() => {
-                        setCategory(cat.value);
-                        setPage(1);
-                      }}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                        category === cat.value
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                      }`}
-                    >
-                      {cat.label}
-                    </button>
-                  ))}
+      {/* ── Articles ── */}
+      <div className="container-mono py-12 md:py-16">
+        {isLoading ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10 lg:gap-14">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="aspect-[16/10] rounded-2xl mb-5" style={{ background: '#E2D9CE' }} />
+                <div className="space-y-3">
+                  <div className="h-3 rounded w-16" style={{ background: '#E2D9CE' }} />
+                  <div className="h-6 rounded w-3/4" style={{ background: '#E2D9CE' }} />
+                  <div className="h-4 rounded w-full" style={{ background: '#E2D9CE' }} />
                 </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Results Count */}
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-muted-foreground">
-            {isLoading ? (
-              'Loading articles...'
-            ) : (
-              <>
-                Showing <span className="font-medium text-foreground">{filteredPosts.length}</span> of{' '}
-                <span className="font-medium text-foreground">{pagination?.total || 0}</span> articles
-              </>
-            )}
-          </p>
-        </div>
-
-        {/* Articles Grid */}
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Loading articles...</p>
+            ))}
           </div>
         ) : filteredPosts.length === 0 ? (
-          <div className="text-center py-20">
-            <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No articles found</h3>
-            <p className="text-muted-foreground mb-6">
-              {hasActiveFilters
-                ? 'Try adjusting your search or filters'
-                : 'Check back soon for new content'}
+          <div className="text-center py-24">
+            <BookOpen className="h-12 w-12 mx-auto mb-4" style={{ color: '#C8C0B8' }} />
+            <h3
+              className="text-xl font-semibold mb-2"
+              style={{
+                color: '#1A1A18',
+                fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+              }}
+            >
+              No articles found
+            </h3>
+            <p
+              className="mb-6 text-sm"
+              style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
+              {search || category ? 'Try adjusting your filters' : 'Check back soon for new content'}
             </p>
-            {hasActiveFilters && (
-              <Button onClick={clearFilters}>Clear filters</Button>
+            {(search || category) && (
+              <button
+                onClick={() => { setSearch(''); setCategory(''); setPage(1); }}
+                className="px-6 py-2.5 text-sm font-medium rounded-full transition-colors hover:opacity-80"
+                style={{
+                  background: '#1A1A18',
+                  color: '#F6F3EE',
+                  fontFamily: 'var(--font-body, Jost, sans-serif)',
+                }}
+              >
+                Clear filters
+              </button>
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPosts.map((post, index) => (
-              <motion.article
-                key={post.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
-              >
-                <Link href={`/journal/${post.slug}`} className="group block">
-                  <Card className="overflow-hidden h-full hover:shadow-lg transition-shadow">
-                    <div className="relative aspect-[16/10] overflow-hidden">
-                      <Image
-                        src={post.image}
-                        alt={post.title}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      />
-                      {post.isFeatured && (
-                        <div className="absolute top-3 left-3">
-                          <Badge className="bg-primary/90 text-primary-foreground">
-                            Featured
-                          </Badge>
-                        </div>
-                      )}
-                      <div className="absolute top-3 right-3">
-                        <Badge variant="secondary">{post.category}</Badge>
-                      </div>
-                    </div>
-                    <CardContent className="p-5">
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {new Date(post.publishedAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {post.readTime}
-                        </span>
-                      </div>
-                      <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors line-clamp-2">
-                        {post.title}
-                      </h3>
-                      <p className="text-muted-foreground text-sm line-clamp-3 mb-4">
-                        {post.excerpt}
-                      </p>
-                      <div className="flex items-center text-sm font-medium text-primary">
-                        Read article
-                        <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </motion.article>
-            ))}
-          </div>
+          <>
+            <p
+              className="text-sm mb-10"
+              style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
+              <span className="font-medium" style={{ color: '#1A1A18' }}>{filteredPosts.length}</span>
+              {' '}of{' '}
+              <span className="font-medium" style={{ color: '#1A1A18' }}>{pagination?.total || 0}</span>
+              {' '}articles
+            </p>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10 lg:gap-14">
+              {filteredPosts.map((post, index) => (
+                <JournalCard
+                  key={post.id}
+                  title={post.title}
+                  category={post.category}
+                  excerpt={post.excerpt}
+                  image={post.image}
+                  date={formatDate(post.publishedAt)}
+                  readTime={post.readTime}
+                  href={`/journal/${post.slug}`}
+                  index={index}
+                />
+              ))}
+            </div>
+          </>
         )}
 
-        {/* Pagination */}
+        {/* ── Pagination ── */}
         {pagination && pagination.totalPages > 1 && !search && (
-          <div className="flex items-center justify-center gap-2 mt-12">
-            <Button
-              variant="outline"
-              size="sm"
+          <div className="flex items-center justify-center gap-3 mt-16">
+            <button
               onClick={() => setPage((p) => p - 1)}
               disabled={page === 1 || isLoading}
-              className="gap-1"
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-full border transition-colors disabled:opacity-40 hover:border-[#1A1A18]"
+              style={{
+                color: '#1A1A18',
+                borderColor: '#C8C0B8',
+                fontFamily: 'var(--font-body, Jost, sans-serif)',
+              }}
             >
-              <ChevronLeft className="h-4 w-4" /> Previous
-            </Button>
+              <ChevronLeft className="h-3.5 w-3.5" /> Previous
+            </button>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                const pageNum = Math.max(
-                  1,
-                  Math.min(pagination.totalPages - 4, page - 2)
-                ) + i;
+                const pageNum =
+                  Math.max(1, Math.min(pagination.totalPages - 4, page - 2)) + i;
                 return pageNum <= pagination.totalPages ? (
-                  <Button
+                  <button
                     key={pageNum}
-                    variant={pageNum === page ? 'default' : 'outline'}
-                    size="sm"
                     onClick={() => setPage(pageNum)}
-                    className="w-9"
+                    className="w-9 h-9 text-xs font-medium rounded-full transition-all hover:opacity-80"
+                    style={{
+                      background: pageNum === page ? '#1A1A18' : 'transparent',
+                      color: pageNum === page ? '#F6F3EE' : '#6B6560',
+                      border: `1px solid ${pageNum === page ? '#1A1A18' : '#C8C0B8'}`,
+                      fontFamily: 'var(--font-body, Jost, sans-serif)',
+                    }}
                   >
                     {pageNum}
-                  </Button>
+                  </button>
                 ) : null;
               })}
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={() => setPage((p) => p + 1)}
               disabled={page >= pagination.totalPages || isLoading}
-              className="gap-1"
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-full border transition-colors disabled:opacity-40 hover:border-[#1A1A18]"
+              style={{
+                color: '#1A1A18',
+                borderColor: '#C8C0B8',
+                fontFamily: 'var(--font-body, Jost, sans-serif)',
+              }}
             >
-              Next <ChevronRight className="h-4 w-4" />
-            </Button>
+              Next <ChevronRight className="h-3.5 w-3.5" />
+            </button>
           </div>
         )}
       </div>

@@ -73,9 +73,9 @@ export function ProductGrid({
     <div>
       {/* Count */}
       {totalCount !== undefined && currentCount !== undefined && (
-        <p className="text-sm text-[#6B6B6B] mb-5">
-          Showing <span className="font-medium text-[#111111]">{currentCount}</span> of{' '}
-          <span className="font-medium text-[#111111]">{totalCount}</span> products
+        <p className="text-sm text-mono-stone mb-5">
+          Showing <span className="font-medium text-mono-charcoal">{currentCount}</span> of{' '}
+          <span className="font-medium text-mono-charcoal">{totalCount}</span> products
         </p>
       )}
 
@@ -112,7 +112,7 @@ export function ProductGrid({
         >
           <div className="inline-flex items-center gap-3">
             <div className="h-px w-16 bg-[#E5E2DD]" />
-            <span className="text-xs text-[#6B6B6B] tracking-widest uppercase">End of results</span>
+            <span className="text-xs text-mono-stone tracking-widest uppercase">End of results</span>
             <div className="h-px w-16 bg-[#E5E2DD]" />
           </div>
         </motion.div>

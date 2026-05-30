@@ -30,10 +30,10 @@ export default function ContactPage() {
       href: 'https://maps.google.com',
     },
   ];
+
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
-
   const [submitContact, { isLoading }] = useSubmitContactMutation();
 
   const validate = () => {
@@ -54,7 +54,6 @@ export default function ContactPage() {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
-
     try {
       await submitContact(form).unwrap();
       setSubmitted(true);
@@ -75,25 +74,43 @@ export default function ContactPage() {
     'Other',
   ];
 
+  const INPUT_STYLE = { background: '#F6F3EE', color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)' };
+  const LABEL_STYLE = { color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' };
+  const INPUT_BASE = 'w-full px-4 py-3 border text-sm focus:outline-none focus:ring-2 focus:ring-[#C8703A]/30 transition-all';
+
   return (
-    <div className="min-h-screen bg-[#F6F3EE]">
+    <div className="min-h-screen" style={{ background: '#F6F3EE' }}>
 
       {/* ── Hero ── */}
-      <section className="bg-[#111111] py-20 md:py-28">
+      <section className="py-20 md:py-28" style={{ background: '#1A1A18' }}>
         <div className="container-mono text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-[#C7A27C] mb-4 block">
+            <span
+              className="text-xs font-semibold tracking-[0.2em] uppercase mb-4 block"
+              style={{ color: '#C8703A', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
               Get in Touch
             </span>
-            <h1 className="text-5xl md:text-6xl font-bold text-white leading-[0.95] tracking-tight mb-6">
-              We&apos;d love to<br />
-              <span className="text-white/50">hear from you.</span>
+            <h1
+              className="text-white leading-[1.05] mb-6"
+              style={{
+                fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+                fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
+                fontWeight: 700,
+              }}
+            >
+              We&apos;d love to
+              <br />
+              <em className="font-normal italic" style={{ color: 'rgba(255,255,255,0.4)' }}>hear from you.</em>
             </h1>
-            <p className="text-white/50 text-lg max-w-md mx-auto">
+            <p
+              className="text-lg max-w-md mx-auto"
+              style={{ color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
               Whether you have a question about an order, our products, or just want to say hello — we&apos;re here.
             </p>
           </motion.div>
@@ -116,13 +133,24 @@ export default function ContactPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1, duration: 0.6 }}
-                  className="group flex flex-col items-center text-center p-8 border border-[#E8E0D5] rounded-2xl hover:border-[#C7A27C] hover:shadow-md transition-all duration-300"
+                  className="group flex flex-col items-center text-center p-8 border rounded-2xl hover:shadow-md transition-all duration-300"
+                  style={{ borderColor: '#E8E0D5' }}
                 >
-                  <div className="w-12 h-12 bg-[#F6F3EE] rounded-xl flex items-center justify-center mb-5 group-hover:bg-[#C7A27C]/10 transition-colors">
-                    <Icon className="h-5 w-5 text-[#C7A27C]" />
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 transition-colors"
+                    style={{ background: '#F0ECE4' }}
+                  >
+                    <Icon className="h-5 w-5" style={{ color: '#C8703A' }} />
                   </div>
-                  <p className="text-xs font-semibold tracking-[0.15em] uppercase text-[#C7A27C] mb-2">{item.label}</p>
-                  <p className="text-sm text-[#444444] leading-relaxed">{item.value}</p>
+                  <p
+                    className="text-xs font-semibold tracking-[0.15em] uppercase mb-2"
+                    style={{ color: '#C8703A', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                  >
+                    {item.label}
+                  </p>
+                  <p className="text-sm leading-relaxed" style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}>
+                    {item.value}
+                  </p>
                 </motion.a>
               );
             })}
@@ -131,7 +159,7 @@ export default function ContactPage() {
       </section>
 
       {/* ── Contact Form ── */}
-      <section className="py-16 md:py-24 bg-[#F6F3EE]">
+      <section className="py-16 md:py-24" style={{ background: '#F6F3EE' }}>
         <div className="container-mono max-w-2xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -140,10 +168,23 @@ export default function ContactPage() {
             transition={{ duration: 0.7 }}
             className="text-center mb-12"
           >
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-[#C7A27C] mb-4 block">
+            <span
+              className="text-xs font-semibold tracking-[0.2em] uppercase mb-4 block"
+              style={{ color: '#C8703A', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
               Send a Message
             </span>
-            <h2 className="text-4xl font-bold text-[#111111]">Contact Form</h2>
+            <h2
+              className="leading-[1.05]"
+              style={{
+                fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+                fontSize: 'clamp(2rem, 3.5vw, 3rem)',
+                fontWeight: 700,
+                color: '#1A1A18',
+              }}
+            >
+              Contact Form
+            </h2>
           </motion.div>
 
           <motion.div
@@ -160,31 +201,44 @@ export default function ContactPage() {
                 transition={{ duration: 0.5 }}
                 className="flex flex-col items-center text-center py-10"
               >
-                <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-6">
-                  <CheckCircle className="h-8 w-8 text-green-500" />
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6" style={{ background: '#F0ECE4' }}>
+                  <CheckCircle className="h-8 w-8" style={{ color: '#C8703A' }} />
                 </div>
-                <h3 className="text-2xl font-bold text-[#111111] mb-3">Message Received!</h3>
-                <p className="text-[#6B6B6B] max-w-sm mb-8">
+                <h3
+                  className="text-2xl font-bold mb-3"
+                  style={{ color: '#1A1A18', fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)' }}
+                >
+                  Message Received!
+                </h3>
+                <p className="max-w-sm mb-8 text-sm" style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}>
                   Thank you for reaching out. We&apos;ll get back to you within 1–2 business days.
                 </p>
-                <button
+                <motion.button
                   onClick={() => setSubmitted(false)}
-                  className="px-8 py-3 bg-[#111111] hover:bg-[#222222] text-white font-medium rounded-full transition-colors text-sm"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="px-8 py-3 text-sm font-medium transition-opacity hover:opacity-80"
+                  style={{
+                    background: '#1A1A18',
+                    color: '#F6F3EE',
+                    fontFamily: 'var(--font-body, Jost, sans-serif)',
+                    letterSpacing: '0.06em',
+                  }}
                 >
                   Send Another Message
-                </button>
+                </motion.button>
               </motion.div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                 {errors.form && (
-                  <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
+                  <div className="p-4 rounded-xl text-sm" style={{ background: '#FEF2F2', color: '#B91C1C', border: '1px solid #FECACA' }}>
                     {errors.form}
                   </div>
                 )}
 
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-semibold tracking-[0.1em] uppercase text-[#6B6B6B] mb-2">
+                    <label className="block text-xs font-semibold tracking-[0.1em] uppercase mb-2" style={LABEL_STYLE}>
                       Full Name
                     </label>
                     <input
@@ -193,13 +247,14 @@ export default function ContactPage() {
                       value={form.name}
                       onChange={handleChange}
                       placeholder="Aryan Mehta"
-                      className={`w-full px-4 py-3 rounded-xl border bg-[#F6F3EE] text-[#111111] placeholder:text-[#AAAAAA] text-sm focus:outline-none focus:ring-2 focus:ring-[#C7A27C]/40 transition-all ${errors.name ? 'border-red-400' : 'border-[#E8E0D5]'}`}
+                      className={`${INPUT_BASE} ${errors.name ? 'border-red-400' : 'border-[#E8E0D5]'}`}
+                      style={INPUT_STYLE}
                     />
                     {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold tracking-[0.1em] uppercase text-[#6B6B6B] mb-2">
+                    <label className="block text-xs font-semibold tracking-[0.1em] uppercase mb-2" style={LABEL_STYLE}>
                       Email Address
                     </label>
                     <input
@@ -208,21 +263,23 @@ export default function ContactPage() {
                       value={form.email}
                       onChange={handleChange}
                       placeholder="aryan@example.com"
-                      className={`w-full px-4 py-3 rounded-xl border bg-[#F6F3EE] text-[#111111] placeholder:text-[#AAAAAA] text-sm focus:outline-none focus:ring-2 focus:ring-[#C7A27C]/40 transition-all ${errors.email ? 'border-red-400' : 'border-[#E8E0D5]'}`}
+                      className={`${INPUT_BASE} ${errors.email ? 'border-red-400' : 'border-[#E8E0D5]'}`}
+                      style={INPUT_STYLE}
                     />
                     {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold tracking-[0.1em] uppercase text-[#6B6B6B] mb-2">
+                  <label className="block text-xs font-semibold tracking-[0.1em] uppercase mb-2" style={LABEL_STYLE}>
                     Subject
                   </label>
                   <select
                     name="subject"
                     value={form.subject}
                     onChange={handleChange}
-                    className={`w-full px-4 py-3 rounded-xl border bg-[#F6F3EE] text-[#111111] text-sm focus:outline-none focus:ring-2 focus:ring-[#C7A27C]/40 transition-all ${errors.subject ? 'border-red-400' : 'border-[#E8E0D5]'}`}
+                    className={`${INPUT_BASE} ${errors.subject ? 'border-red-400' : 'border-[#E8E0D5]'}`}
+                    style={INPUT_STYLE}
                   >
                     <option value="">Select a subject…</option>
                     {subjects.map((s) => (
@@ -233,7 +290,7 @@ export default function ContactPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold tracking-[0.1em] uppercase text-[#6B6B6B] mb-2">
+                  <label className="block text-xs font-semibold tracking-[0.1em] uppercase mb-2" style={LABEL_STYLE}>
                     Message
                   </label>
                   <textarea
@@ -242,7 +299,8 @@ export default function ContactPage() {
                     onChange={handleChange}
                     rows={6}
                     placeholder="Tell us how we can help…"
-                    className={`w-full px-4 py-3 rounded-xl border bg-[#F6F3EE] text-[#111111] placeholder:text-[#AAAAAA] text-sm focus:outline-none focus:ring-2 focus:ring-[#C7A27C]/40 transition-all resize-none ${errors.message ? 'border-red-400' : 'border-[#E8E0D5]'}`}
+                    className={`${INPUT_BASE} resize-none ${errors.message ? 'border-red-400' : 'border-[#E8E0D5]'}`}
+                    style={INPUT_STYLE}
                   />
                   {errors.message && <p className="text-xs text-red-500 mt-1">{errors.message}</p>}
                 </div>
@@ -250,9 +308,15 @@ export default function ContactPage() {
                 <motion.button
                   type="submit"
                   disabled={isLoading}
-                  whileHover={{ scale: isLoading ? 1 : 1.02 }}
+                  whileHover={{ scale: isLoading ? 1 : 1.01 }}
                   whileTap={{ scale: isLoading ? 1 : 0.98 }}
-                  className="w-full flex items-center justify-center gap-2 py-4 bg-[#111111] hover:bg-[#222222] disabled:bg-[#888888] text-white font-semibold rounded-full transition-colors text-sm cursor-pointer disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 py-4 text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                  style={{
+                    background: '#1A1A18',
+                    color: '#F6F3EE',
+                    fontFamily: 'var(--font-body, Jost, sans-serif)',
+                    letterSpacing: '0.06em',
+                  }}
                 >
                   {isLoading ? (
                     <>

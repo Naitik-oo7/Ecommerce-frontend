@@ -22,12 +22,13 @@ interface FilterSidebarProps {
   filters: ShopFilters;
   onChange: (filters: ShopFilters) => void;
   productCount?: number;
+  hideSort?: boolean;
 }
 
 const PRICE_MIN = 0;
 const PRICE_MAX = 50000;
 
-const SORT_OPTIONS = [
+export const SORT_OPTIONS = [
   { label: 'Relevance', value: 'relevance', order: 'desc' as const },
   { label: 'Price: Low to High', value: 'price', order: 'asc' as const },
   { label: 'Price: High to Low', value: 'price', order: 'desc' as const },
@@ -51,13 +52,17 @@ function AccordionSection({
     <div className="border-b border-[#E5E2DD] last:border-0">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center justify-between w-full py-3 text-left group"
+        className="flex items-center justify-between w-full py-3.5 text-left"
       >
-        <span className="text-xs font-semibold text-[#111111] tracking-[0.1em] uppercase">
+        <span
+          className="text-[10px] font-semibold tracking-[0.14em] uppercase"
+          style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+        >
           {title}
         </span>
         <ChevronDown
-          className={`h-3.5 w-3.5 text-[#9B9B9B] transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
+          className={`h-3.5 w-3.5 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
+          style={{ color: '#C8C0B8' }}
         />
       </button>
       <AnimatePresence initial={false}>
@@ -69,7 +74,7 @@ function AccordionSection({
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
-            <div className="pb-3">{children}</div>
+            <div className="pb-4">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -77,7 +82,7 @@ function AccordionSection({
   );
 }
 
-function FilterSidebarContent({ filters, onChange }: FilterSidebarProps) {
+function FilterSidebarContent({ filters, onChange, hideSort }: FilterSidebarProps) {
   const { data: categoriesResponse } = useGetCategoriesQuery({});
   const categories: { id: number; name: string }[] = Array.isArray(categoriesResponse)
     ? (categoriesResponse as { id: number; name: string }[])
@@ -88,48 +93,48 @@ function FilterSidebarContent({ filters, onChange }: FilterSidebarProps) {
     filters.maxPrice ?? PRICE_MAX,
   ];
 
+  const activeClass = 'bg-[#FDF8F4] text-[#1A1A18] font-semibold border-l-[#C8703A]';
+  const inactiveClass = 'text-[#6B6560] hover:bg-[#F6F3EE] hover:text-[#1A1A18] border-l-transparent';
+  const rowBase = 'w-full text-left px-3 py-2 text-[13px] transition-all duration-150 border-l-2';
+
   return (
     <div className="space-y-0">
-      {/* Sort */}
-      <AccordionSection title="Sort By">
-        <div className="space-y-0.5">
-          {SORT_OPTIONS.map((opt) => {
-            const isActive =
-              (filters.sortBy === opt.value && filters.sortOrder === opt.order) ||
-              (!filters.sortBy && opt.value === 'relevance');
-            return (
-              <button
-                key={`${opt.value}-${opt.order}`}
-                onClick={() =>
-                  onChange({
-                    ...filters,
-                    sortBy: opt.value === 'relevance' ? undefined : opt.value,
-                    sortOrder: opt.value === 'relevance' ? undefined : opt.order,
-                  })
-                }
-                className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-all duration-150 border-l-2 ${
-                  isActive
-                    ? 'bg-[#F6F3EE] text-[#111111] font-semibold border-l-[#C7A27C]'
-                    : 'text-[#6B6B6B] hover:bg-[#F6F3EE]/60 hover:text-[#111111] border-l-transparent'
-                }`}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
-        </div>
-      </AccordionSection>
+      {/* Sort — hidden on desktop sidebar, visible in mobile drawer */}
+      {!hideSort && (
+        <AccordionSection title="Sort By">
+          <div className="space-y-0.5">
+            {SORT_OPTIONS.map((opt) => {
+              const isActive =
+                (filters.sortBy === opt.value && filters.sortOrder === opt.order) ||
+                (!filters.sortBy && opt.value === 'relevance');
+              return (
+                <button
+                  key={`${opt.value}-${opt.order}`}
+                  onClick={() =>
+                    onChange({
+                      ...filters,
+                      sortBy: opt.value === 'relevance' ? undefined : opt.value,
+                      sortOrder: opt.value === 'relevance' ? undefined : opt.order,
+                    })
+                  }
+                  className={`${rowBase} ${isActive ? activeClass : inactiveClass}`}
+                  style={{ fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        </AccordionSection>
+      )}
 
       {/* Category */}
       <AccordionSection title="Category">
         <div className="space-y-0.5">
           <button
             onClick={() => onChange({ ...filters, categoryId: undefined })}
-            className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-all duration-150 border-l-2 ${
-              !filters.categoryId
-                ? 'bg-[#F6F3EE] text-[#111111] font-semibold border-l-[#C7A27C]'
-                : 'text-[#6B6B6B] hover:bg-[#F6F3EE]/60 hover:text-[#111111] border-l-transparent'
-            }`}
+            className={`${rowBase} ${!filters.categoryId ? activeClass : inactiveClass}`}
+            style={{ fontFamily: 'var(--font-body, Jost, sans-serif)' }}
           >
             All Categories
           </button>
@@ -137,11 +142,8 @@ function FilterSidebarContent({ filters, onChange }: FilterSidebarProps) {
             <button
               key={cat.id}
               onClick={() => onChange({ ...filters, categoryId: cat.id })}
-              className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-all duration-150 border-l-2 ${
-                filters.categoryId === cat.id
-                  ? 'bg-[#F6F3EE] text-[#111111] font-semibold border-l-[#C7A27C]'
-                  : 'text-[#6B6B6B] hover:bg-[#F6F3EE]/60 hover:text-[#111111] border-l-transparent'
-              }`}
+              className={`${rowBase} ${filters.categoryId === cat.id ? activeClass : inactiveClass}`}
+              style={{ fontFamily: 'var(--font-body, Jost, sans-serif)' }}
             >
               {cat.name}
             </button>
@@ -165,7 +167,7 @@ function FilterSidebarContent({ filters, onChange }: FilterSidebarProps) {
         />
       </AccordionSection>
 
-      {/* Min Rating */}
+      {/* Rating */}
       <AccordionSection title="Rating" defaultOpen={false}>
         <div className="space-y-0.5">
           {[0, 1, 2, 3, 4].map((stars) => {
@@ -176,20 +178,14 @@ function FilterSidebarContent({ filters, onChange }: FilterSidebarProps) {
               <button
                 key={stars}
                 onClick={() => onChange({ ...filters, minRating: val })}
-                className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-all duration-150 flex items-center gap-2 border-l-2 ${
-                  isActive
-                    ? 'bg-[#F6F3EE] text-[#111111] font-semibold border-l-[#C7A27C]'
-                    : 'text-[#6B6B6B] hover:bg-[#F6F3EE]/60 hover:text-[#111111] border-l-transparent'
-                }`}
+                className={`${rowBase} flex items-center gap-2 ${isActive ? activeClass : inactiveClass}`}
+                style={{ fontFamily: 'var(--font-body, Jost, sans-serif)' }}
               >
                 {val ? (
                   <>
                     <span className="flex">
                       {[...Array(val)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className="h-3 w-3 fill-[#C7A27C] text-[#C7A27C]"
-                        />
+                        <Star key={i} className="h-3 w-3 fill-[#C8703A] text-[#C8703A]" />
                       ))}
                     </span>
                     <span>{label}</span>
@@ -203,9 +199,9 @@ function FilterSidebarContent({ filters, onChange }: FilterSidebarProps) {
         </div>
       </AccordionSection>
 
-      {/* Quick Toggles */}
+      {/* Quick Filters */}
       <AccordionSection title="Quick Filters" defaultOpen={false}>
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {[
             { key: 'inStock', label: 'In Stock Only', value: filters.inStock },
             { key: 'onSale', label: 'On Sale', value: filters.onSale },
@@ -216,16 +212,17 @@ function FilterSidebarContent({ filters, onChange }: FilterSidebarProps) {
               onClick={() =>
                 onChange({ ...filters, [item.key]: item.value ? undefined : true })
               }
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all duration-150 border ${
+              className={`w-full flex items-center justify-between px-3 py-2.5 text-[13px] transition-all duration-150 border rounded-md ${
                 item.value
-                  ? 'bg-[#F6F3EE] text-[#111111] border-[#C7A27C] font-semibold'
-                  : 'border-[#E5E2DD] text-[#6B6B6B] hover:border-[#C7A27C]/60 hover:text-[#111111]'
+                  ? 'bg-[#FDF8F4] text-[#1A1A18] border-[#C8703A] font-semibold'
+                  : 'border-[#E5E2DD] text-[#6B6560] hover:border-[#C8703A]/50 hover:text-[#1A1A18]'
               }`}
+              style={{ fontFamily: 'var(--font-body, Jost, sans-serif)' }}
             >
               <span>{item.label}</span>
               <div
                 className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-colors shrink-0 ${
-                  item.value ? 'bg-[#C7A27C] border-[#C7A27C]' : 'border-[#C8C8C8]'
+                  item.value ? 'bg-[#C8703A] border-[#C8703A]' : 'border-[#C8C0B8]'
                 }`}
               >
                 {item.value && (
@@ -246,19 +243,29 @@ function FilterSidebarContent({ filters, onChange }: FilterSidebarProps) {
 
 export function FilterSidebar(props: FilterSidebarProps) {
   return (
-    <aside className="hidden lg:block w-56 shrink-0">
+    <aside className="hidden lg:block w-64 shrink-0">
       <div className="sticky top-24">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-1.5">
-            <SlidersHorizontal className="h-3.5 w-3.5 text-[#6B6B6B]" />
-            <h2 className="text-xs font-semibold text-[#6B6B6B] uppercase tracking-[0.12em]">Filters</h2>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="h-3.5 w-3.5" style={{ color: '#6B6560' }} />
+            <span
+              className="text-[10px] font-semibold tracking-[0.16em] uppercase"
+              style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
+              Filters
+            </span>
           </div>
           {props.productCount !== undefined && (
-            <span className="text-[11px] text-[#9B9B9B]">{props.productCount} items</span>
+            <span
+              className="text-[11px]"
+              style={{ color: '#C8C0B8', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+            >
+              {props.productCount} items
+            </span>
           )}
         </div>
-        <div className="bg-white rounded-xl border border-[#E5E2DD] px-4 py-2 shadow-sm">
-          <FilterSidebarContent {...props} />
+        <div className="bg-white rounded-2xl border border-[#E8E4DE] px-4 py-1 shadow-sm">
+          <FilterSidebarContent {...props} hideSort />
         </div>
       </div>
     </aside>
@@ -283,7 +290,7 @@ export function MobileFilterDrawer({ isOpen, onClose, ...props }: MobileFilterDr
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/40 z-40 lg:hidden"
             onClick={onClose}
           />
 
@@ -293,36 +300,49 @@ export function MobileFilterDrawer({ isOpen, onClose, ...props }: MobileFilterDr
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed left-0 right-0 bottom-0 bg-white z-50 lg:hidden flex flex-col shadow-2xl rounded-t-2xl max-h-[85vh]"
+            className="fixed left-0 right-0 bottom-0 bg-white z-50 lg:hidden flex flex-col shadow-2xl rounded-t-2xl max-h-[88vh]"
           >
             {/* Drag handle */}
             <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 bg-[#E5E2DD] rounded-full" />
+              <div className="w-10 h-1 rounded-full" style={{ background: '#E8E4DE' }} />
             </div>
+
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#E5E2DD]">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#E8E4DE]">
               <div className="flex items-center gap-2">
-                <SlidersHorizontal className="h-4 w-4 text-[#111111]" />
-                <h2 className="text-sm font-semibold text-[#111111] uppercase tracking-wider">Filters</h2>
+                <SlidersHorizontal className="h-4 w-4" style={{ color: '#1A1A18' }} />
+                <span
+                  className="text-sm font-semibold tracking-wider uppercase"
+                  style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                >
+                  Filters & Sort
+                </span>
               </div>
               <button
                 onClick={onClose}
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#F6F3EE] transition-colors"
               >
-                <X className="h-4 w-4 text-[#111111]" />
+                <X className="h-4 w-4" style={{ color: '#1A1A18' }} />
               </button>
             </div>
 
-            {/* Scrollable content */}
+            {/* Scrollable content — Sort is visible in mobile */}
             <div className="flex-1 overflow-y-auto px-5 py-2">
               <FilterSidebarContent {...props} />
             </div>
 
             {/* Apply button */}
-            <div className="px-5 py-4 border-t border-[#E5E2DD]">
+            <div className="px-5 py-4 border-t border-[#E8E4DE]">
               <button
                 onClick={onClose}
-                className="w-full bg-[#111111] text-white py-3 rounded-full font-medium text-sm hover:bg-[#1a1a1a] transition-colors"
+                className="w-full py-3.5 text-sm font-medium transition-opacity hover:opacity-80"
+                style={{
+                  background: '#1A1A18',
+                  color: '#F6F3EE',
+                  fontFamily: 'var(--font-body, Jost, sans-serif)',
+                  letterSpacing: '0.06em',
+                  borderRadius: '0.5rem',
+                }}
               >
                 Show {props.productCount ?? ''} Products
               </button>
