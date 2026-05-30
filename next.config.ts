@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://accounts.google.com",
               "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://lh3.googleusercontent.com https://*.googleusercontent.com",
               "font-src 'self' data:",
-              "connect-src 'self' https://accounts.google.com http://localhost:5555 https://api.razorpay.com https://lumberjack.razorpay.com",
+              `connect-src 'self' https://accounts.google.com http://localhost:5555 ${process.env.NEXT_PUBLIC_API_URL ?? ''} https://api.razorpay.com https://lumberjack.razorpay.com`,
               "frame-src https://accounts.google.com https://api.razorpay.com https://checkout.razorpay.com",
             ].join('; '),
           },
