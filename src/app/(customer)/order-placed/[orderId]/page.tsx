@@ -3,7 +3,7 @@
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useGetOrderByIdQuery } from '@/services/api/ordersApi';
 import { motion } from 'framer-motion';
-import { CheckCircle, XCircle, Clock, Package, ArrowRight, ShoppingBag, Loader2, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Package, ArrowRight, ShoppingBag, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
@@ -92,16 +92,10 @@ export default function OrderPlacedPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href={`/profile/orders/${orderId}`}>
-                <Button variant="outline" className="h-11 px-6 gap-2">
-                  <Package className="h-4 w-4 shrink-0" />
-                  <span>View Order</span>
-                </Button>
-              </Link>
-              <Link href="/checkout">
+              <Link href={`/profile/orders/${orderId}?payment=failed`}>
                 <Button className="h-11 px-6 bg-mono-charcoal hover:bg-mono-charcoal/90 gap-2">
-                  <ShoppingBag className="h-4 w-4 shrink-0" />
-                  <span>Try Again</span>
+                  <Package className="h-4 w-4 shrink-0" />
+                  <span>View Order & Retry Payment</span>
                 </Button>
               </Link>
             </div>

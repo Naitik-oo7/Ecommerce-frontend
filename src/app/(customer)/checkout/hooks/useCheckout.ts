@@ -129,13 +129,12 @@ export function useCheckout() {
             razorpayPaymentId: response.razorpay_payment_id,
             razorpaySignature: response.razorpay_signature,
           }).unwrap();
-          dispatch(cartApi.util.invalidateTags(['Cart']));
           router.push(`/order-placed/${orderId}?success=true&payment=success`);
         } catch (err) {
           const errorWithData = err as { data?: { message?: string } };
           setOrderError(errorWithData?.data?.message || 'Payment verification failed. Your payment may have been captured — please check your orders.');
           setIsProcessing(false);
-          router.push(`/order-placed/${orderId}?payment=failed`);
+          router.push(`/profile/orders/${orderId}?payment=failed`);
         }
       },
       prefill: {
@@ -146,7 +145,7 @@ export function useCheckout() {
       modal: {
         ondismiss: () => {
           setIsProcessing(false);
-          router.push(`/order-placed/${orderId}?payment=pending`);
+          router.push(`/profile/orders/${orderId}?payment=pending`);
         },
       },
     };
@@ -191,8 +190,10 @@ export function useCheckout() {
         return;
       }
 
+      // Cart is cleared server-side at order creation — invalidate the client cache now
+      dispatch(cartApi.util.invalidateTags(['Cart']));
+
       if (paymentMethod === 'cod') {
-        dispatch(cartApi.util.invalidateTags(['Cart']));
         router.push(`/order-placed/${orderId}?success=true`);
       } else {
         const payment = await createPayment({ orderId }).unwrap();

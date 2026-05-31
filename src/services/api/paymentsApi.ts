@@ -35,6 +35,7 @@ export interface Payment {
   status: 'created' | 'authorized' | 'captured' | 'refunded' | 'failed';
   razorpayOrderId: string;
   razorpayPaymentId?: string;
+  method?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -81,7 +82,7 @@ export const paymentsApi = createApi({
         method: 'POST',
         data: amount ? { amount } : {},
       }),
-      invalidatesTags: ['Payments'],
+      invalidatesTags: (result, error, { orderId }) => ['Payments', { type: 'Payments', id: orderId }],
     }),
   }),
 });

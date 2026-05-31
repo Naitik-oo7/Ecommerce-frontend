@@ -1,10 +1,17 @@
 'use client';
 
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useGetOrderByIdQuery, useCancelOrderMutation } from '@/services/api/ordersApi';
-import { ArrowLeft, Package, CheckCircle, Clock, Truck, XCircle, MapPin, CreditCard, AlertCircle, ImageOff, Loader2 } from 'lucide-react';
+import { useCreatePaymentMutation, useVerifyPaymentMutation } from '@/services/api/paymentsApi';
+import { ArrowLeft, Package, CheckCircle, Clock, Truck, XCircle, MapPin, CreditCard, AlertCircle, ImageOff, Loader2, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+
+declare global {
+  interface Window {
+    Razorpay: new (options: unknown) => { open: () => void };
+  }
+}
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string; icon: React.ComponentType<{ className?: string }> }> = {
   pending:    { label: 'Pending',    color: 'text-yellow-700', bg: 'bg-yellow-50 border-yellow-200',  dot: 'bg-yellow-400', icon: Clock },
@@ -26,20 +33,25 @@ const ORDER_STEPS = ['pending', 'processing', 'shipped', 'delivered'];
 export default function ProfileOrderDetailPage() {
   const { id } = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const isSuccess = searchParams.get('success') === 'true';
   const paymentParam = searchParams.get('payment');
   const [cancelling, setCancelling] = useState(false);
+  const [retryState, setRetryState] = useState<'idle' | 'loading' | 'processing'>('idle');
+  const [retryBanner, setRetryBanner] = useState<'success' | 'failed' | 'pending' | null>(null);
 
-  const { data: orderResponse, isLoading, error } = useGetOrderByIdQuery(id as string);
+  const { data: orderResponse, isLoading, error, refetch } = useGetOrderByIdQuery(id as string);
   const [cancelOrder] = useCancelOrderMutation();
+  const [createPayment] = useCreatePaymentMutation();
+  const [verifyPayment] = useVerifyPaymentMutation();
 
   interface OrderResponse {
     data?: {
       id?: number;
       status?: string;
       paymentStatus?: string;
-      createdAt?: string;
       paymentMethod?: string;
+      createdAt?: string;
       total?: string;
       subtotal?: string;
       discount?: string;
@@ -66,6 +78,65 @@ export default function ProfileOrderDetailPage() {
     setCancelling(true);
     try { await cancelOrder(id as string).unwrap(); } catch {}
     setCancelling(false);
+  };
+
+  const handleRetryPayment = async () => {
+    setRetryState('loading');
+    setRetryBanner(null);
+    try {
+      const paymentData = await createPayment({ orderId: Number(id) }).unwrap();
+
+      // Ensure Razorpay SDK is loaded
+      if (!window.Razorpay) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Razorpay SDK failed to load'));
+          document.body.appendChild(script);
+        });
+      }
+
+      setRetryState('processing');
+
+      const rzp = new window.Razorpay({
+        key: paymentData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '',
+        amount: paymentData.razorpayOrder?.amount,
+        currency: paymentData.razorpayOrder?.currency || 'INR',
+        name: 'MONO',
+        description: `Order #${id}`,
+        order_id: paymentData.razorpayOrder?.id,
+        handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
+          try {
+            await verifyPayment({
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+            }).unwrap();
+            setRetryState('idle');
+            setRetryBanner('success');
+            refetch();
+          } catch {
+            setRetryState('idle');
+            setRetryBanner('failed');
+          }
+        },
+        theme: { color: '#C4A484' },
+        modal: {
+          ondismiss: () => {
+            setRetryState('idle');
+            setRetryBanner('pending');
+          },
+        },
+      });
+
+      rzp.open();
+    } catch (err: unknown) {
+      const e = err as { data?: { message?: string } };
+      console.error('Retry payment error:', e?.data?.message || err);
+      setRetryState('idle');
+      setRetryBanner('failed');
+    }
   };
 
   if (isLoading) {
@@ -97,6 +168,10 @@ export default function ProfileOrderDetailPage() {
   const paymentInfo = PAYMENT_STATUS_CONFIG[order.paymentStatus] || PAYMENT_STATUS_CONFIG.pending;
   const currentStep = ORDER_STEPS.indexOf(order.status);
   const canCancel = order.status === 'pending';
+  const canRetryPayment =
+    order.paymentMethod === 'online' &&
+    order.paymentStatus === 'pending' &&
+    order.status === 'pending';
   const shippingAddr = order.address || order.shippingAddress || {};
   const items = order.items || order.orderItems || [];
   interface OrderItem {
@@ -113,8 +188,8 @@ export default function ProfileOrderDetailPage() {
         <ArrowLeft className="h-4 w-4" /> Back to Orders
       </Link>
 
-      {/* Banners */}
-      {isSuccess && (
+      {/* Banners — from navigation params */}
+      {isSuccess && !retryBanner && (
         <div className="p-4 bg-green-50 border border-green-200 rounded-2xl flex items-start gap-3">
           <CheckCircle className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
           <div>
@@ -123,22 +198,79 @@ export default function ProfileOrderDetailPage() {
           </div>
         </div>
       )}
-      {paymentParam === 'pending' && !isSuccess && (
+      {paymentParam === 'pending' && !isSuccess && !retryBanner && (
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-2xl flex items-start gap-3">
           <AlertCircle className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
           <div>
-            <p className="font-semibold text-yellow-800 text-sm">Payment Pending</p>
-            <p className="text-xs text-yellow-700 mt-0.5">You closed the payment window. Retry payment from your orders page.</p>
+            <p className="font-semibold text-yellow-800 text-sm">Payment Not Completed</p>
+            <p className="text-xs text-yellow-700 mt-0.5">You closed the payment window. Use the button below to complete your payment.</p>
           </div>
         </div>
       )}
-      {paymentParam === 'failed' && (
+      {paymentParam === 'failed' && !retryBanner && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3">
           <XCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
           <div>
-            <p className="font-semibold text-red-800 text-sm">Payment Verification Failed</p>
-            <p className="text-xs text-red-700 mt-0.5">If payment was deducted, it will be auto-refunded within 5–7 business days.</p>
+            <p className="font-semibold text-red-800 text-sm">Payment Failed</p>
+            <p className="text-xs text-red-700 mt-0.5">Your payment could not be processed. Use the button below to try again.</p>
           </div>
+        </div>
+      )}
+
+      {/* Banners — from inline retry */}
+      {retryBanner === 'success' && (
+        <div className="p-4 bg-green-50 border border-green-200 rounded-2xl flex items-start gap-3">
+          <CheckCircle className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-green-800 text-sm">Payment Successful!</p>
+            <p className="text-xs text-green-700 mt-0.5">Your order has been confirmed and is now being processed.</p>
+          </div>
+        </div>
+      )}
+      {retryBanner === 'failed' && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3">
+          <XCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-red-800 text-sm">Payment Failed</p>
+            <p className="text-xs text-red-700 mt-0.5">Your payment could not be processed. Please try again or use a different payment method.</p>
+          </div>
+        </div>
+      )}
+      {retryBanner === 'pending' && (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-2xl flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-yellow-800 text-sm">Payment Not Completed</p>
+            <p className="text-xs text-yellow-700 mt-0.5">You closed the payment window. Your order is saved — complete payment anytime before it expires.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Retry Payment CTA — shown when order is unpaid online order */}
+      {canRetryPayment && (
+        <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-amber-800 text-sm">Payment Pending</p>
+              <p className="text-xs text-amber-700 mt-0.5">
+                This order will be automatically cancelled if payment is not completed within 24 hours of placing it.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleRetryPayment}
+            disabled={retryState !== 'idle'}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#111111] text-white text-sm font-medium rounded-full hover:bg-[#333] transition-colors disabled:opacity-60 shrink-0"
+          >
+            {retryState === 'loading' ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> Loading…</>
+            ) : retryState === 'processing' ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> Processing…</>
+            ) : (
+              <><RefreshCw className="h-4 w-4" /> Complete Payment</>
+            )}
+          </button>
         </div>
       )}
 
@@ -157,7 +289,7 @@ export default function ProfileOrderDetailPage() {
               <StatusIcon className="h-3.5 w-3.5" />
               {statusInfo.label}
             </span>
-            {canCancel && (
+            {canCancel && !canRetryPayment && (
               <button
                 onClick={handleCancel}
                 disabled={cancelling}
