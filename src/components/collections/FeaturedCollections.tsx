@@ -152,7 +152,7 @@ const CollectionsGrid = ({ collections }: { collections: (CollectionItem & { sub
     className="grid gap-3"
     style={{
       gridTemplateColumns: 'repeat(3, 1fr)',
-      gridTemplateRows: '290px 290px',
+      gridTemplateRows: 'clamp(180px, 22vw, 290px) clamp(180px, 22vw, 290px)',
     }}
   >
     {collections.slice(0, 4).map((col, i) => (
@@ -166,7 +166,7 @@ const SkeletonGrid = () => (
     className="grid gap-3"
     style={{
       gridTemplateColumns: 'repeat(3, 1fr)',
-      gridTemplateRows: '290px 290px',
+      gridTemplateRows: 'clamp(180px, 22vw, 290px) clamp(180px, 22vw, 290px)',
     }}
   >
     {GRID_STYLES.map((style, i) => (

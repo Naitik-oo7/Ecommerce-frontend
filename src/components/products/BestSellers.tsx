@@ -22,7 +22,7 @@ export const BestSellers = ({
 }: BestSellersProps) => {
   if (isLoading) {
     return (
-      <section className="py-20 md:py-32 bg-white">
+      <section className="py-10 md:py-16 lg:py-24 bg-white">
         <div className="container-mono">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             <CardSkeleton count={8} />
@@ -43,7 +43,7 @@ export const BestSellers = ({
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }}
-          className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12 md:mb-16"
+          className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8 md:mb-10 lg:mb-14"
         >
           <div>
             <span

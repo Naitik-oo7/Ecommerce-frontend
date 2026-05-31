@@ -62,7 +62,7 @@ export const CinematicHero = () => {
   return (
     <section
       ref={containerRef}
-      className="relative -mt-14 md:-mt-16 pt-14 md:pt-16 h-[calc(100dvh-3.5rem)] md:h-[calc(100dvh-4rem)] w-full overflow-hidden"
+      className="relative -mt-14 md:-mt-16 pt-14 md:pt-16 min-h-[calc(100svh-3.5rem)] md:min-h-[calc(100svh-4rem)] lg:h-[calc(100dvh-4rem)] w-full overflow-hidden flex flex-col"
       style={{ background: '#F0ECE4' }}
     >
       {/* ── ambient glow ── */}
@@ -78,11 +78,11 @@ export const CinematicHero = () => {
       </div>
 
       {/* ── split layout ── */}
-      <div className="relative z-10 h-full flex flex-col lg:flex-row">
+      <div className="relative z-10 flex-1 flex flex-col lg:flex-row">
 
         {/* ── LEFT: text panel ── */}
         <motion.div
-          className="flex-1 flex flex-col justify-center px-8 sm:px-12 lg:px-16 xl:px-24 py-24 lg:py-0 lg:pr-8"
+          className="flex-1 flex flex-col justify-center px-8 sm:px-12 lg:px-16 xl:px-24 py-12 md:py-16 lg:py-0 lg:pr-8"
           style={{ y: textY }}
         >
           <motion.div
@@ -177,7 +177,7 @@ export const CinematicHero = () => {
         </motion.div>
 
         {/* ── RIGHT: image panel ── */}
-        <div className="flex-1 relative h-[55vh] lg:h-full overflow-hidden">
+        <div className="flex-1 relative h-[45vh] lg:h-auto overflow-hidden">
           <motion.div className="absolute inset-0">
             <motion.div
               initial={{ scale: 1.2, opacity: 0 }}

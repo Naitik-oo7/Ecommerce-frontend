@@ -14,7 +14,7 @@ export const SocialProof = () => {
   const products: any[] = (productsData as any)?.data || [];
 
   return (
-    <section className="py-20 md:py-32 bg-white">
+    <section className="py-10 md:py-16 lg:py-24 bg-white">
       <div className="container-mono">
         {/* Section Header */}
         <motion.div
@@ -22,7 +22,7 @@ export const SocialProof = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }}
-          className="text-center mb-12 md:mb-16"
+          className="text-center mb-8 md:mb-10 lg:mb-14"
         >
           <span
             className="text-xs font-semibold tracking-[0.2em] uppercase mb-4 block"

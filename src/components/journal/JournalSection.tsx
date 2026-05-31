@@ -18,7 +18,7 @@ export const JournalSection = () => {
 
   if (isLoading) {
     return (
-      <section className="py-20 md:py-32" style={{ background: '#F6F3EE' }}>
+      <section className="py-10 md:py-16 lg:py-24" style={{ background: '#F6F3EE' }}>
         <div className="container-mono">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12 md:mb-16">
             <div className="space-y-3">
@@ -66,7 +66,7 @@ export const JournalSection = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12 md:mb-16"
+          className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8 md:mb-10 lg:mb-14"
         >
           <div>
             <span

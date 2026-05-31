@@ -27,7 +27,7 @@ export const BrandStory = () => {
   const s = (storyData as typeof defaultStory | undefined) || defaultStory;
 
   return (
-    <section className="py-20 md:py-32 overflow-hidden" style={{ background: '#F0ECE4' }}>
+    <section className="py-10 md:py-16 lg:py-24 overflow-hidden" style={{ background: '#F0ECE4' }}>
       <div className="container-mono">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Left Column - Content */}
@@ -79,7 +79,7 @@ export const BrandStory = () => {
           </motion.div>
 
           {/* Right Column - Images */}
-          <div className="relative h-[500px] lg:h-[600px]">
+          <div className="relative h-[360px] md:h-[460px] lg:h-[560px]">
             {/* Main Image */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -143,7 +143,7 @@ export const BrandStory = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] as const }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-20 pt-12"
+          className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-10 md:mt-16 pt-8 md:pt-10"
           style={{ borderTop: '1px solid rgba(26,26,24,0.12)' }}
         >
           {s.materials.map((item) => (

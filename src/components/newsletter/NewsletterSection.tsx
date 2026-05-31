@@ -36,7 +36,7 @@ export const NewsletterSection = () => {
   };
 
   return (
-    <section className="relative py-24 md:py-32 overflow-hidden" style={{ background: '#0F0F0F' }}>
+    <section className="relative py-12 md:py-18 lg:py-24 overflow-hidden" style={{ background: '#0F0F0F' }}>
       {/* Background gradient */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full blur-[120px]" style={{ background: 'rgba(200,112,58,0.08)' }} />

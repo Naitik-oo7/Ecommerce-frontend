@@ -108,7 +108,7 @@ export const HorizontalGallery = () => {
   return (
     <section ref={sectionRef} className="overflow-hidden" style={{ background: '#1A1A18' }}>
       {/* Section Header */}
-      <div className="container-mono py-16 md:py-24">
+      <div className="container-mono py-10 md:py-14">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
