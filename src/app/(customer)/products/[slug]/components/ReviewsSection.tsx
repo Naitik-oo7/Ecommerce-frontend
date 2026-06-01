@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Star, ThumbsUp, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { fadeInUp } from '@/lib/animations';
 
 interface Review {
   id: number;
@@ -26,18 +25,15 @@ interface ReviewsSectionProps {
   inline?: boolean;
 }
 
-function StarRow({ rating, filled = false }: { rating: number; filled?: boolean }) {
+function StarRow({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'md' }) {
+  const cls = size === 'md' ? 'h-4 w-4' : 'h-3.5 w-3.5';
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map((i) => (
         <Star
           key={i}
-          className={`h-3.5 w-3.5 ${
-            i <= rating
-              ? filled
-                ? 'text-amber-400 fill-amber-400'
-                : 'text-mono-terracotta fill-mono-terracotta'
-              : 'text-muted-foreground/30'
+          className={`${cls} ${
+            i <= rating ? 'text-amber-400 fill-amber-400' : 'text-mono-sand'
           }`}
         />
       ))}
@@ -45,118 +41,121 @@ function StarRow({ rating, filled = false }: { rating: number; filled?: boolean 
   );
 }
 
-export function ReviewsSection({ reviews, stats }: ReviewsSectionProps) {
-  const [visibleCount, setVisibleCount] = useState(6);
+export function ReviewsSection({ reviews, stats, inline = false }: ReviewsSectionProps) {
+  const [visibleCount, setVisibleCount] = useState(inline ? 4 : 6);
 
   if (!reviews?.length) return null;
 
   const visibleReviews = reviews.slice(0, visibleCount);
   const hasMore = visibleCount < reviews.length;
 
-  return (
-    <section className="container-mono py-16 border-t border-border">
-      <motion.div
-        variants={fadeInUp}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-      >
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
-          <div>
-            <h2 className="text-2xl font-bold text-mono-charcoal mb-1">Customer Reviews</h2>
-            {stats && (
-              <p className="text-sm text-muted-foreground">
-                Based on {stats.total} verified {stats.total === 1 ? 'review' : 'reviews'}
-              </p>
+  const content = (
+    <>
+      <div className={`flex flex-col lg:flex-row gap-8 ${inline ? 'mb-8' : 'mb-10'}`}>
+        {stats && (
+          <div className="lg:w-64 shrink-0 flex flex-col items-center lg:items-start p-6 rounded-2xl bg-mono-cream/80 border border-border/30">
+            <p className="text-5xl font-bold text-mono-charcoal leading-none tabular-nums">
+              {stats.average.toFixed(1)}
+            </p>
+            <StarRow rating={Math.round(stats.average)} size="md" />
+            <p className="text-sm text-mono-stone mt-2">
+              {stats.total} {stats.total === 1 ? 'review' : 'reviews'}
+            </p>
+            {stats.distribution && Object.keys(stats.distribution).length > 0 && (
+              <div className="w-full mt-6 space-y-2">
+                {[5, 4, 3, 2, 1].map((star) => {
+                  const count = stats.distribution[star] || 0;
+                  const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
+                  return (
+                    <div key={star} className="flex items-center gap-2">
+                      <span className="text-xs text-mono-stone w-3 tabular-nums">{star}</span>
+                      <div className="flex-1 h-2 bg-mono-sand/60 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          whileInView={{ width: `${pct}%` }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 0.5, delay: (5 - star) * 0.05 }}
+                          className="h-full bg-amber-400 rounded-full"
+                        />
+                      </div>
+                      <span className="text-xs text-mono-stone w-8 text-right tabular-nums">{pct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
-          {stats && (
-            <div className="flex items-center gap-3 bg-mono-cream/60 rounded-2xl px-5 py-4 border border-border/40">
-              <div className="text-center">
-                <p className="text-4xl font-bold text-mono-charcoal leading-none">{stats.average.toFixed(1)}</p>
-                <StarRow rating={Math.round(stats.average)} filled />
-                <p className="text-xs text-muted-foreground mt-1">{stats.total} reviews</p>
-              </div>
-              {stats.distribution && Object.keys(stats.distribution).length > 0 && (
-                <div className="space-y-1.5 ml-4 min-w-[140px]">
-                  {[5, 4, 3, 2, 1].map((star) => {
-                    const count = stats.distribution[star] || 0;
-                    const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
-                    return (
-                      <div key={star} className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground w-3">{star}</span>
-                        <Star className="h-3 w-3 text-amber-400 fill-amber-400 shrink-0" />
-                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            whileInView={{ width: `${pct}%` }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.6, delay: (5 - star) * 0.06 }}
-                            className="h-full bg-amber-400 rounded-full"
-                          />
-                        </div>
-                        <span className="text-xs text-muted-foreground w-7 text-right">{pct}%</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        )}
 
-        {/* Review Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="flex-1 grid sm:grid-cols-2 gap-4">
           {visibleReviews.map((review, idx) => (
-            <motion.div
+            <motion.article
               key={review.id}
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.3, delay: idx * 0.05 }}
-              className="bg-mono-cream/40 border border-border/40 rounded-2xl p-5 hover:shadow-sm transition-shadow"
+              transition={{ duration: 0.25, delay: idx * 0.04 }}
+              className="bg-white border border-border/40 rounded-2xl p-5 hover:border-border transition-colors"
             >
-              <div className="flex items-start justify-between mb-3">
+              <div className="flex items-start justify-between gap-2 mb-3">
                 <StarRow rating={review.rating} />
-                <span className="text-xs text-muted-foreground">
-                  {new Date(review.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                </span>
+                <time
+                  dateTime={review.createdAt}
+                  className="text-xs text-mono-stone shrink-0"
+                >
+                  {new Date(review.createdAt).toLocaleDateString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </time>
               </div>
-              <p className="text-mono-stone text-sm leading-relaxed mb-4 line-clamp-4">
-                &ldquo;{review.comment}&rdquo;
+              <p className="text-mono-charcoal/90 text-sm leading-relaxed mb-4 line-clamp-5">
+                {review.comment}
               </p>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between pt-2 border-t border-border/30">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-mono-charcoal/10 flex items-center justify-center">
-                    <User className="h-3.5 w-3.5 text-mono-charcoal/60" />
+                  <div className="w-8 h-8 rounded-full bg-mono-sand flex items-center justify-center">
+                    <User className="h-4 w-4 text-mono-stone" />
                   </div>
                   <span className="text-sm font-medium text-mono-charcoal">
-                    {review.user?.name || 'Anonymous'}
+                    {review.user?.name || 'Verified buyer'}
                   </span>
                 </div>
-                <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-mono-charcoal transition-colors">
-                  <ThumbsUp className="h-3 w-3" />
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-xs text-mono-stone hover:text-mono-charcoal transition-colors"
+                >
+                  <ThumbsUp className="h-3.5 w-3.5" />
                   Helpful
                 </button>
               </div>
-            </motion.div>
+            </motion.article>
           ))}
         </div>
+      </div>
 
-        {/* Load More */}
-        {hasMore && (
-          <div className="text-center mt-8">
-            <Button
-              variant="outline"
-              onClick={() => setVisibleCount((c) => c + 6)}
-              className="border-mono-charcoal/30 text-mono-charcoal hover:bg-mono-charcoal hover:text-white rounded-xl px-8"
-            >
-              Load more reviews ({reviews.length - visibleCount} remaining)
-            </Button>
-          </div>
-        )}
-      </motion.div>
+      {hasMore && (
+        <div className="text-center">
+          <Button
+            variant="outline"
+            onClick={() => setVisibleCount((c) => c + (inline ? 4 : 6))}
+            className="rounded-full px-8 border-border hover:bg-mono-charcoal hover:text-white hover:border-mono-charcoal"
+          >
+            Show more reviews ({reviews.length - visibleCount} left)
+          </Button>
+        </div>
+      )}
+    </>
+  );
+
+  if (inline) return <div>{content}</div>;
+
+  return (
+    <section className="container-mono py-16 border-t border-border">
+      <h2 className="text-2xl font-bold text-mono-charcoal mb-2">Customer reviews</h2>
+      <p className="text-sm text-mono-stone mb-10">What shoppers are saying</p>
+      {content}
     </section>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 interface Variant {
   id: number;
@@ -19,13 +19,6 @@ interface VariantSelectorProps {
   onSelect: (variant: Variant) => void;
 }
 
-function StockBadge({ stock }: { stock: number }) {
-  if (stock === 0) return <span className="text-xs text-red-500 font-medium flex items-center gap-1"><XCircle className="h-3 w-3" /> Sold out</span>;
-  if (stock <= 3) return <span className="text-xs text-orange-500 font-medium flex items-center gap-1"><AlertCircle className="h-3 w-3" /> Only {stock} left!</span>;
-  if (stock <= 10) return <span className="text-xs text-amber-600 font-medium flex items-center gap-1"><AlertCircle className="h-3 w-3" /> Low stock</span>;
-  return <span className="text-xs text-green-600 font-medium flex items-center gap-1"><CheckCircle className="h-3 w-3" /> In stock</span>;
-}
-
 export function VariantSelector({ variants, selectedVariant, onSelect }: VariantSelectorProps) {
   if (!variants?.length) return null;
 
@@ -34,125 +27,116 @@ export function VariantSelector({ variants, selectedVariant, onSelect }: Variant
   const selectedColor = selectedVariant?.color;
 
   const sizesForColor = hasColors
-    ? (selectedColor ? variants.filter((v) => v.color === selectedColor) : [])
+    ? selectedColor
+      ? variants.filter((v) => v.color === selectedColor)
+      : []
     : variants;
+
+  const stockLabel =
+    !selectedVariant
+      ? null
+      : selectedVariant.stock === 0
+        ? { text: 'Out of stock', className: 'text-mono-rose' }
+        : selectedVariant.stock <= 5
+          ? { text: `Only ${selectedVariant.stock} left`, className: 'text-mono-terracotta' }
+          : { text: 'In stock', className: 'text-mono-sage' };
 
   return (
     <div className="space-y-5">
-      {/* Color Selection */}
       {colors.length > 0 && (
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <label className="text-sm font-semibold text-mono-charcoal">Color</label>
-            {selectedColor && (
-              <span className="text-sm text-muted-foreground capitalize">{selectedColor}</span>
-            )}
-          </div>
-          <div className="flex gap-3 flex-wrap">
+          <p className="text-sm text-mono-stone mb-3">
+            Color:{' '}
+            <span className="text-mono-charcoal font-medium capitalize">{selectedColor || '—'}</span>
+          </p>
+          <div className="flex flex-wrap gap-2">
             {colors.map((color) => {
               const variant = variants.find((v) => v.color === color);
               const isSelected = selectedVariant?.color === color;
               const hasStock = variants.some((v) => v.color === color && v.stock > 0);
               return (
-                <motion.button
+                <button
                   key={color}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                  type="button"
                   onClick={() => {
-                    const first = variants.find((v) => v.color === color && v.stock > 0)
-                      || variants.find((v) => v.color === color);
+                    const first =
+                      variants.find((v) => v.color === color && v.stock > 0) ||
+                      variants.find((v) => v.color === color);
                     if (first) onSelect(first);
                   }}
-                  className={`relative w-9 h-9 rounded-full transition-all duration-200 ${
-                    isSelected
-                      ? 'ring-2 ring-offset-2 ring-mono-terracotta'
-                      : 'ring-1 ring-transparent hover:ring-mono-stone/40 hover:ring-offset-1'
+                  className={`relative w-11 h-11 rounded-full transition-all ${
+                    isSelected ? 'ring-2 ring-mono-charcoal ring-offset-2' : 'ring-1 ring-border'
                   } ${!hasStock ? 'opacity-40' : ''}`}
-                  style={{ backgroundColor: variant?.colorHex || '#ccc' }}
+                  style={{ backgroundColor: variant?.colorHex || '#CFC7BD' }}
                   title={color}
-                  aria-label={`Select color ${color}`}
+                  aria-label={`Color ${color}`}
+                  aria-pressed={isSelected}
                 >
                   {isSelected && (
-                    <span className="absolute inset-0 flex items-center justify-center">
-                      <span className="w-2 h-2 rounded-full bg-white/80" />
-                    </span>
+                    <Check className="absolute inset-0 m-auto h-4 w-4 text-white drop-shadow" strokeWidth={3} />
                   )}
-                  {!hasStock && (
-                    <span className="absolute inset-0 flex items-center justify-center">
-                      <span className="w-full h-[1px] bg-white/70 rotate-45" />
-                    </span>
-                  )}
-                </motion.button>
+                </button>
               );
             })}
           </div>
         </div>
       )}
 
-      {/* Size Selection */}
       {sizesForColor.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <label className="text-sm font-semibold text-mono-charcoal">Size</label>
-            {selectedVariant?.size && (
-              <span className="text-sm text-muted-foreground">Selected: <strong>{selectedVariant.size}</strong></span>
-            )}
+            <p className="text-sm text-mono-stone">
+              Size:{' '}
+              <span className="text-mono-charcoal font-medium">{selectedVariant?.size || '—'}</span>
+            </p>
+            <button
+              type="button"
+              className="text-sm text-mono-terracotta hover:underline underline-offset-2"
+              onClick={() =>
+                document.getElementById('pdp-shipping')?.scrollIntoView({ behavior: 'smooth' })
+              }
+            >
+              Size guide
+            </button>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex flex-wrap gap-2">
             {sizesForColor.map((variant) => {
               const isSelected = selectedVariant?.id === variant.id;
               const isOutOfStock = variant.stock === 0;
-              const isLowStock = variant.stock > 0 && variant.stock <= 5;
-
               return (
-                <motion.button
+                <button
                   key={variant.id}
-                  whileHover={!isOutOfStock ? { y: -1 } : {}}
-                  whileTap={!isOutOfStock ? { scale: 0.96 } : {}}
+                  type="button"
                   onClick={() => !isOutOfStock && onSelect(variant)}
                   disabled={isOutOfStock}
-                  title={isLowStock ? `Only ${variant.stock} left` : undefined}
-                  className={`relative min-w-[52px] h-11 px-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${
+                  className={`min-w-[3rem] h-11 px-3 text-sm font-medium rounded-lg border transition-colors ${
                     isSelected
-                      ? 'bg-mono-charcoal text-white border-mono-charcoal shadow-md'
+                      ? 'bg-mono-charcoal text-white border-mono-charcoal'
                       : isOutOfStock
-                      ? 'bg-muted/50 text-muted-foreground/50 border-muted cursor-not-allowed'
-                      : 'bg-white text-mono-charcoal border-border hover:border-mono-charcoal hover:shadow-sm'
+                        ? 'bg-mono-sand/30 text-mono-stone/50 border-transparent line-through cursor-not-allowed'
+                        : 'bg-white text-mono-charcoal border-border hover:border-mono-charcoal'
                   }`}
+                  aria-pressed={isSelected}
                 >
                   {variant.size}
-                  {isLowStock && !isOutOfStock && (
-                    <span className="absolute -top-1.5 -right-1.5 w-2.5 h-2.5 bg-orange-400 rounded-full border border-white" />
-                  )}
-                  {isOutOfStock && (
-                    <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <span className="absolute w-full h-[1.5px] bg-muted-foreground/30 rotate-[20deg]" />
-                    </span>
-                  )}
-                </motion.button>
+                </button>
               );
             })}
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            <span className="inline-flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-orange-400 inline-block" /> = Low stock
-            </span>
-          </p>
         </div>
       )}
 
-      {/* Stock Status for selected variant */}
       <AnimatePresence mode="wait">
-        {selectedVariant && (
-          <motion.div
-            key={selectedVariant.id}
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 4 }}
-            transition={{ duration: 0.18 }}
+        {stockLabel && (
+          <motion.p
+            key={selectedVariant?.id}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className={`text-sm font-medium ${stockLabel.className}`}
           >
-            <StockBadge stock={selectedVariant.stock} />
-          </motion.div>
+            {stockLabel.text}
+          </motion.p>
         )}
       </AnimatePresence>
     </div>

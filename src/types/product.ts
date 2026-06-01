@@ -8,6 +8,8 @@ export interface Product {
   stock: number;
   isActive: boolean;
   isBestseller?: boolean;
+  material?: string;
+  gender?: string;
   avgRating?: number;
   reviewCount?: number;
   media: ProductMedia[];
@@ -24,6 +26,7 @@ export interface ProductMedia {
   isPrimary?: boolean;
   type?: 'image' | 'video';
   alt?: string;
+  sortOrder?: number;
 }
 
 export interface ProductCategory {

@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Zap, Check, Minus, Plus } from 'lucide-react';
+import { ShoppingBag, Check, Minus, Plus } from 'lucide-react';
 
 interface Variant {
   id: number;
   size?: string;
+  color?: string;
   stock: number;
 }
 
@@ -20,7 +21,8 @@ interface ProductActionsProps {
   cartLoading: boolean;
   buyNowLoading: boolean;
   addedToCart: boolean;
-  productName?: string;
+  price: number;
+  comparePrice?: number | null;
 }
 
 function Spinner({ light }: { light?: boolean }) {
@@ -44,7 +46,8 @@ export function ProductActions({
   cartLoading,
   buyNowLoading,
   addedToCart,
-  productName,
+  price,
+  comparePrice,
 }: ProductActionsProps) {
   const isOutOfStock = !selectedVariant || selectedVariant.stock === 0;
   const maxQuantity = selectedVariant?.stock || 0;
@@ -54,126 +57,103 @@ export function ProductActions({
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => setShowStickyBar(!entry.isIntersecting),
-      { threshold: 0, rootMargin: '0px 0px -60px 0px' }
+      { threshold: 0, rootMargin: '0px 0px -80px 0px' }
     );
     if (actionsRef.current) observer.observe(actionsRef.current);
     return () => observer.disconnect();
   }, []);
 
-  const urgency =
-    !isOutOfStock && selectedVariant && selectedVariant.stock <= 5
-      ? `Only ${selectedVariant.stock} left — order soon!`
-      : null;
+  const variantLabel = [selectedVariant?.color, selectedVariant?.size].filter(Boolean).join(' · ');
 
   return (
     <>
-      <div ref={actionsRef} className="space-y-4">
-        {/* Quantity Selector */}
+      <div ref={actionsRef} className="space-y-4 pt-1">
         <div className="flex items-center gap-4">
-          <span className="text-sm font-semibold text-mono-charcoal">Qty:</span>
-          <div className="flex items-center rounded-xl border-2 border-border overflow-hidden">
+          <span className="text-sm text-mono-stone w-20 shrink-0">Quantity</span>
+          <div className="inline-flex items-center border border-border rounded-lg bg-white">
             <button
+              type="button"
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-10 h-10 flex items-center justify-center hover:bg-muted transition-colors disabled:opacity-40"
+              className="w-11 h-11 flex items-center justify-center hover:bg-mono-sand/40 transition-colors disabled:opacity-40"
               disabled={quantity <= 1}
               aria-label="Decrease quantity"
             >
               <Minus className="h-4 w-4" />
             </button>
-            <span className="w-10 text-center font-semibold text-sm tabular-nums">
-              {quantity}
-            </span>
+            <span className="w-10 text-center text-sm font-semibold tabular-nums">{quantity}</span>
             <button
+              type="button"
               onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
-              className="w-10 h-10 flex items-center justify-center hover:bg-muted transition-colors disabled:opacity-40"
+              className="w-11 h-11 flex items-center justify-center hover:bg-mono-sand/40 transition-colors disabled:opacity-40"
               disabled={isOutOfStock || quantity >= maxQuantity}
               aria-label="Increase quantity"
             >
               <Plus className="h-4 w-4" />
             </button>
           </div>
-          {urgency && (
-            <motion.span
-              initial={{ opacity: 0, x: -6 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="text-xs font-medium text-orange-500"
-            >
-              {urgency}
-            </motion.span>
+        </div>
+
+        <Button
+          onClick={onAddToCart}
+          disabled={isOutOfStock || cartLoading || buyNowLoading}
+          className="w-full h-12 sm:h-[52px] text-[15px] font-semibold rounded-lg bg-mono-terracotta hover:bg-mono-terracotta/90 text-white shadow-sm"
+        >
+          {cartLoading ? (
+            <Spinner light />
+          ) : addedToCart ? (
+            <>
+              <Check className="mr-2 h-5 w-5" />
+              Added to bag
+            </>
+          ) : (
+            <>
+              <ShoppingBag className="mr-2 h-5 w-5" />
+              {isOutOfStock ? 'Sold out' : 'Add to bag'}
+            </>
           )}
-        </div>
+        </Button>
 
-        {/* CTA Buttons */}
-        <div className="flex flex-col gap-3">
-          <Button
-            onClick={onBuyNow}
-            disabled={isOutOfStock || buyNowLoading || cartLoading}
-            className="w-full bg-mono-terracotta hover:bg-mono-terracotta/90 text-white h-14 text-base font-semibold rounded-xl shadow-sm"
-          >
-            {buyNowLoading ? <Spinner light /> : (
-              <>
-                <Zap className="mr-2 h-5 w-5" />
-                {isOutOfStock ? 'Sold Out' : 'Buy Now'}
-              </>
-            )}
-          </Button>
-
-          <Button
-            onClick={onAddToCart}
-            disabled={isOutOfStock || cartLoading || buyNowLoading}
-            variant="outline"
-            className="w-full border-2 border-mono-charcoal text-mono-charcoal hover:bg-mono-charcoal hover:text-white h-12 text-base rounded-xl transition-all"
-          >
-            {cartLoading ? <Spinner /> : addedToCart ? (
-              <>
-                <Check className="mr-2 h-5 w-5 text-green-500" />
-                Added to Cart!
-              </>
-            ) : (
-              <>
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                Add to Cart
-              </>
-            )}
-          </Button>
-        </div>
+        <button
+          type="button"
+          onClick={onBuyNow}
+          disabled={isOutOfStock || buyNowLoading || cartLoading}
+          className="w-full h-11 text-sm font-semibold text-mono-charcoal border border-mono-charcoal rounded-lg hover:bg-mono-charcoal hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {buyNowLoading ? 'Processing…' : 'Buy now'}
+        </button>
       </div>
 
-      {/* Sticky Bottom Bar — mobile only, appears when CTA scrolls out of view */}
       <AnimatePresence>
         {showStickyBar && (
           <motion.div
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-            className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/95 backdrop-blur-md border-t border-border/60 px-4 py-3 flex gap-3 shadow-2xl"
+            className="fixed bottom-0 inset-x-0 z-50 lg:hidden bg-white border-t border-border shadow-[0_-4px_24px_rgba(0,0,0,0.08)] px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
           >
-            {productName && (
-              <div className="hidden sm:block flex-1 min-w-0 self-center">
-                <p className="text-xs font-semibold truncate text-mono-charcoal">{productName}</p>
-                {selectedVariant?.size && (
-                  <p className="text-xs text-muted-foreground">Size: {selectedVariant.size}</p>
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-lg font-bold text-mono-charcoal tabular-nums leading-tight">
+                  ₹{price.toLocaleString('en-IN')}
+                </p>
+                {comparePrice && comparePrice > price && (
+                  <p className="text-xs text-mono-stone line-through tabular-nums">
+                    ₹{comparePrice.toLocaleString('en-IN')}
+                  </p>
+                )}
+                {variantLabel && (
+                  <p className="text-xs text-mono-stone truncate capitalize">{variantLabel}</p>
                 )}
               </div>
-            )}
-            <Button
-              onClick={onAddToCart}
-              disabled={isOutOfStock || cartLoading || buyNowLoading}
-              variant="outline"
-              size="sm"
-              className="flex-1 border-2 border-mono-charcoal text-mono-charcoal hover:bg-mono-charcoal hover:text-white rounded-xl h-11"
-            >
-              {cartLoading ? <Spinner /> : addedToCart ? <><Check className="mr-1.5 h-4 w-4" /> Added</> : <><ShoppingCart className="mr-1.5 h-4 w-4" /> Add to Cart</>}
-            </Button>
-            <Button
-              onClick={onBuyNow}
-              disabled={isOutOfStock || buyNowLoading || cartLoading}
-              size="sm"
-              className="flex-1 bg-mono-terracotta hover:bg-mono-terracotta/90 text-white rounded-xl h-11 font-semibold"
-            >
-              {buyNowLoading ? <Spinner light /> : <><Zap className="mr-1.5 h-4 w-4" /> Buy Now</>}
-            </Button>
+              <Button
+                onClick={onAddToCart}
+                disabled={isOutOfStock || cartLoading || buyNowLoading}
+                className="h-11 px-6 rounded-lg bg-mono-terracotta hover:bg-mono-terracotta/90 text-white font-semibold shrink-0"
+              >
+                {cartLoading ? <Spinner light /> : addedToCart ? <Check className="h-4 w-4" /> : 'Add to bag'}
+              </Button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

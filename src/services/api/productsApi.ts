@@ -17,7 +17,11 @@ interface PaginatedProductsResponse {
 // Sort primary image first and parse numeric fields that the API may return as strings
 const mapImages = (p: RawProduct): Product => {
   const media: ProductMedia[] = p.media ?? [];
-  const sorted = [...media].sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0));
+  const sorted = [...media].sort((a, b) => {
+    const orderDiff = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+    if (orderDiff !== 0) return orderDiff;
+    return (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0);
+  });
   return {
     ...p,
     media,

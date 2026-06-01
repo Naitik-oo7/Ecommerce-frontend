@@ -1,158 +1,180 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-interface ProductGalleryProps {
-  media: { url: string; isPrimary?: boolean; alt?: string }[];
-  productName: string;
+export interface GalleryImage {
+  url: string;
+  alt?: string;
+  isPrimary?: boolean;
 }
 
-export function ProductGallery({ media, productName }: ProductGalleryProps) {
+interface ProductGalleryProps {
+  media?: { url: string; isPrimary?: boolean; alt?: string; type?: string; sortOrder?: number }[];
+  imageUrls?: string[];
+  productName: string;
+  salePercent?: number | null;
+}
+
+function buildGalleryImages(
+  media: ProductGalleryProps['media'],
+  imageUrls: ProductGalleryProps['imageUrls'],
+  productName: string
+): GalleryImage[] {
+  const fromMedia = (Array.isArray(media) ? media : [])
+    .filter((m) => m?.url && (!m.type || m.type === 'image'))
+    .sort((a, b) => {
+      const orderA = a.sortOrder ?? 999;
+      const orderB = b.sortOrder ?? 999;
+      if (orderA !== orderB) return orderA - orderB;
+      return (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0);
+    })
+    .map((m) => ({ url: m.url, alt: m.alt, isPrimary: m.isPrimary }));
+
+  if (fromMedia.length > 0) return fromMedia;
+
+  const urls = (Array.isArray(imageUrls) ? imageUrls : []).filter(Boolean);
+  return urls.map((url, i) => ({
+    url,
+    alt: productName,
+    isPrimary: i === 0,
+  }));
+}
+
+export function ProductGallery({
+  media,
+  imageUrls,
+  productName,
+  salePercent,
+}: ProductGalleryProps) {
+  const images = useMemo(
+    () => buildGalleryImages(media, imageUrls, productName),
+    [media, imageUrls, productName]
+  );
+
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [isZoomed, setIsZoomed] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
   const touchStartX = useRef<number>(0);
 
-  const images = media?.length ? media : [];
-  const currentImage = images[selectedIndex];
+  const safeIndex = images.length ? Math.min(selectedIndex, images.length - 1) : 0;
+  const currentImage = images[safeIndex];
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isZoomed) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setMousePos({ x, y });
-  };
+  const goToPrev = useCallback(() => {
+    setSelectedIndex((p) => (p === 0 ? images.length - 1 : p - 1));
+  }, [images.length]);
 
-  const goToPrev = () => setSelectedIndex((p) => (p === 0 ? images.length - 1 : p - 1));
-  const goToNext = () => setSelectedIndex((p) => (p === images.length - 1 ? 0 : p + 1));
+  const goToNext = useCallback(() => {
+    setSelectedIndex((p) => (p === images.length - 1 ? 0 : p + 1));
+  }, [images.length]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
+
   const handleTouchEnd = (e: React.TouchEvent) => {
+    if (images.length <= 1) return;
     const diff = touchStartX.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 40) {
-      if (diff > 0) goToNext(); else goToPrev();
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) goToNext();
+      else goToPrev();
     }
   };
 
   if (images.length === 0) {
     return (
-      <div className="aspect-square bg-muted rounded-2xl flex items-center justify-center">
-        <span className="text-muted-foreground text-sm">No images available</span>
+      <div className="flex h-[min(40vh,320px)] w-full items-center justify-center rounded-xl bg-mono-sand/40">
+        <span className="text-sm text-mono-stone">No images available</span>
       </div>
     );
   }
 
+  const hasMultiple = images.length > 1;
+
   return (
-    <div className="flex gap-3">
-      {/* Vertical thumbnail strip — desktop only */}
-      {images.length > 1 && (
-        <div className="hidden md:flex flex-col gap-2 w-16 shrink-0">
-          {images.map((image, idx) => (
-            <button
-              key={idx}
-              onClick={() => setSelectedIndex(idx)}
-              className={`relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border-2 transition-all duration-200 ${
-                selectedIndex === idx
-                  ? 'border-mono-terracotta ring-1 ring-mono-terracotta/30'
-                  : 'border-transparent hover:border-mono-stone/40'
-              }`}
-              aria-label={`View image ${idx + 1}`}
-            >
-              <img
-                src={image.url}
-                alt={`${productName} ${idx + 1}`}
-                className="w-full h-full object-cover"
-              />
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Main image area */}
-      <div className="flex-1 space-y-3">
-        <div
-          className={`relative aspect-[4/5] bg-[#F6F3EE] rounded-2xl overflow-hidden group select-none ${
-            isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'
-          }`}
-          onMouseEnter={() => setIsZoomed(true)}
-          onMouseLeave={() => { setIsZoomed(false); setMousePos({ x: 50, y: 50 }); }}
-          onMouseMove={handleMouseMove}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-        >
-          <AnimatePresence mode="wait">
-            <motion.img
-              key={selectedIndex}
-              src={currentImage.url}
-              alt={currentImage.alt || productName}
-              className="w-full h-full object-cover"
-              style={{
-                transform: isZoomed ? 'scale(2.2)' : 'scale(1)',
-                transformOrigin: `${mousePos.x}% ${mousePos.y}%`,
-                transition: isZoomed ? 'transform-origin 0s' : 'transform 0.35s ease',
-              }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-            />
-          </AnimatePresence>
-
-          {/* Counter pill */}
-          {images.length > 1 && (
-            <div className="absolute bottom-3 left-3 bg-black/60 text-white text-xs font-medium px-2.5 py-1 rounded-full">
-              {selectedIndex + 1} / {images.length}
-            </div>
-          )}
-
-          {/* Zoom indicator */}
-          <div className="absolute bottom-3 right-3 bg-black/60 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-            {isZoomed ? <ZoomOut className="h-3.5 w-3.5" /> : <ZoomIn className="h-3.5 w-3.5" />}
-          </div>
-
-          {/* Navigation arrows */}
-          {images.length > 1 && (
-            <>
+    <div className="w-full min-w-0">
+      <div className="flex flex-col gap-3 lg:flex-row lg:gap-4">
+        {/* Thumbnails — horizontal on mobile, vertical on desktop */}
+        {hasMultiple && (
+          <div
+            className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory lg:flex-col lg:overflow-x-visible lg:overflow-y-auto lg:pb-0 lg:w-[76px] lg:shrink-0 lg:max-h-[min(calc(100vh-10rem),480px)] lg:order-1"
+            role="tablist"
+            aria-label="Product images"
+          >
+            {images.map((image, idx) => (
               <button
-                onClick={(e) => { e.stopPropagation(); goToPrev(); }}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white hover:scale-105 active:scale-95"
-                aria-label="Previous image"
-              >
-                <ChevronLeft className="h-4 w-4 text-mono-charcoal" />
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); goToNext(); }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white hover:scale-105 active:scale-95"
-                aria-label="Next image"
-              >
-                <ChevronRight className="h-4 w-4 text-mono-charcoal" />
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* Mobile dot indicators */}
-        {images.length > 1 && (
-          <div className="flex md:hidden justify-center gap-1.5">
-            {images.map((_, idx) => (
-              <button
-                key={idx}
+                key={`${image.url}-${idx}`}
+                type="button"
+                role="tab"
+                aria-selected={safeIndex === idx}
                 onClick={() => setSelectedIndex(idx)}
-                className={`rounded-full transition-all duration-200 ${
-                  idx === selectedIndex
-                    ? 'w-5 h-1.5 bg-mono-terracotta'
-                    : 'w-1.5 h-1.5 bg-muted-foreground/30'
+                className={`relative shrink-0 snap-start overflow-hidden rounded-lg transition-all w-[64px] h-[80px] lg:w-[76px] lg:h-[95px] ${
+                  safeIndex === idx
+                    ? 'ring-2 ring-mono-charcoal ring-offset-2 opacity-100'
+                    : 'opacity-55 hover:opacity-90 ring-1 ring-border/40'
                 }`}
-                aria-label={`Go to image ${idx + 1}`}
-              />
+              >
+                <img
+                  src={image.url}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              </button>
             ))}
           </div>
         )}
+
+        {/* Main image — constrained to viewport */}
+        <div className="relative flex-1 min-w-0 lg:order-2">
+          <div
+            className="relative flex h-[min(42vh,360px)] sm:h-[min(48vh,400px)] lg:h-[min(calc(100vh-11rem),480px)] w-full items-center justify-center overflow-hidden rounded-xl bg-mono-cream ring-1 ring-border/30"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={currentImage.url + safeIndex}
+                src={currentImage.url}
+                alt={currentImage.alt || productName}
+                className="max-h-full max-w-full object-contain"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                draggable={false}
+              />
+            </AnimatePresence>
+
+            {salePercent && (
+              <span className="absolute top-3 left-3 z-10 rounded-full bg-mono-terracotta px-2.5 py-1 text-[11px] font-bold text-white">
+                −{salePercent}%
+              </span>
+            )}
+
+            {hasMultiple && (
+              <>
+                <button
+                  type="button"
+                  onClick={goToPrev}
+                  className="absolute left-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 shadow-md transition-transform hover:scale-105 active:scale-95"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="h-5 w-5 text-mono-charcoal" />
+                </button>
+                <button
+                  type="button"
+                  onClick={goToNext}
+                  className="absolute right-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 shadow-md transition-transform hover:scale-105 active:scale-95"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="h-5 w-5 text-mono-charcoal" />
+                </button>
+                <div className="absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/55 px-3 py-1 text-xs font-medium text-white tabular-nums">
+                  {safeIndex + 1} / {images.length}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
