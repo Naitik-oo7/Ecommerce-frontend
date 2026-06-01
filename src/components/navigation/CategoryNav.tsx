@@ -96,8 +96,13 @@ export default function CategoryNav({
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Category hover
+  // Category hover / focus
   const handleNavMouseEnter = (category: CategoryTreeItem) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setActiveCategory(category);
+    setIsDropdownOpen(true);
+  };
+  const handleNavFocus = (category: CategoryTreeItem) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setActiveCategory(category);
     setIsDropdownOpen(true);
@@ -110,6 +115,12 @@ export default function CategoryNav({
   };
   const handleDropdownMouseEnter = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
+  };
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setIsDropdownOpen(false);
+      setActiveCategory(null);
+    }
   };
 
   // Search submit
@@ -160,6 +171,7 @@ export default function CategoryNav({
           scrolled ? 'bg-background/95 backdrop-blur-sm shadow-sm' : 'bg-white'
         )}
         onMouseLeave={handleMouseLeave}
+        onKeyDown={handleKeyDown}
       >
         <div className="flex items-center h-14 md:h-16 gap-4 px-2 md:px-4">
 
@@ -198,6 +210,9 @@ export default function CategoryNav({
                   <li key={category.id}>
                     <button
                       onMouseEnter={() => handleNavMouseEnter(category)}
+                      onFocus={() => handleNavFocus(category)}
+                      aria-expanded={activeCategory?.id === category.id && isDropdownOpen}
+                      aria-haspopup="true"
                       className={cn(
                         'flex items-center px-2 lg:px-4 py-2 text-xs lg:text-sm font-semibold tracking-wider transition-colors whitespace-nowrap',
                         activeCategory?.id === category.id
@@ -547,6 +562,7 @@ export default function CategoryNav({
               style={{ top: '56px' }}
               onMouseEnter={handleDropdownMouseEnter}
               onMouseLeave={handleMouseLeave}
+              onKeyDown={handleKeyDown}
             >
               <div className="container-mono py-8">
                 <div className="grid grid-cols-12 gap-8">

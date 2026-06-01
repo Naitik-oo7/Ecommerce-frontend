@@ -451,9 +451,21 @@
     color: var(--foreground);
   }
 
-  /* Focus visible */
+  /* Focus visible — gold ring for keyboard users only */
+  :focus { outline: none; }
   :focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 2px solid var(--ring); /* #C7A27C gold */
     outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Respect reduced-motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .001ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
@@ -16,6 +16,16 @@ interface CollectionCardProps {
 export const CollectionCard = ({ title, subtitle, image, href, index }: CollectionCardProps) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [isTouch, setIsTouch] = useState(false);
+
+  useEffect(() => {
+    setIsTouch(window.matchMedia?.('(hover: none)').matches ?? false);
+  }, []);
+
+  // Overlay controls visible on hover, focus, or touch devices.
+  // Image zoom/pan stays on isHovered only so touch cards don't sit permanently zoomed.
+  const reveal = isHovered || isFocused || isTouch;
 
   // Mouse position tracking for image pan effect
   const mouseX = useMotionValue(0);
@@ -51,14 +61,16 @@ export const CollectionCard = ({ title, subtitle, image, href, index }: Collecti
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-50px' }}
-      transition={{ 
-        duration: 0.8, 
+      transition={{
+        duration: 0.8,
         delay: index * 0.1,
-        ease: [0.16, 1, 0.3, 1] as const 
+        ease: [0.16, 1, 0.3, 1] as const
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
+      onFocus={() => setIsFocused(true)}
+      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsFocused(false); }}
       className="group relative aspect-[3/4] overflow-hidden rounded-2xl cursor-pointer"
     >
       <Link href={href} className="block w-full h-full">
@@ -94,37 +106,39 @@ export const CollectionCard = ({ title, subtitle, image, href, index }: Collecti
             viewport={{ once: true }}
             transition={{ delay: index * 0.1 + 0.3, duration: 0.6 }}
           >
-            <motion.span 
+            <motion.span
               className="text-xs font-medium tracking-[0.15em] uppercase text-white/70 mb-2 block"
-              animate={{ 
-                y: isHovered ? -4 : 0,
-                opacity: isHovered ? 1 : 0.7 
+              animate={{
+                y: reveal ? -4 : 0,
+                opacity: reveal ? 1 : 0.7
               }}
               transition={{ duration: 0.3 }}
             >
               {subtitle}
             </motion.span>
-            <motion.h3 
+            <motion.h3
               className="text-2xl md:text-3xl font-bold text-white mb-4 leading-tight"
-              animate={{ y: isHovered ? -8 : 0 }}
+              animate={{ y: reveal ? -8 : 0 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] as const }}
             >
               {title}
             </motion.h3>
-            
-            {/* Hover reveal button with slide up */}
+
+            {/* Reveal on hover / focus / touch */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
-              animate={{ 
-                opacity: isHovered ? 1 : 0, 
-                y: isHovered ? 0 : 20 
+              animate={{
+                opacity: reveal ? 1 : 0,
+                y: reveal ? 0 : 20
               }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] as const }}
+              aria-hidden={!reveal}
+              style={{ pointerEvents: reveal ? 'auto' : 'none' }}
               className="flex items-center gap-2 text-white/90 font-medium text-sm"
             >
               <span>Explore Collection</span>
               <motion.div
-                animate={{ x: isHovered ? 4 : 0, y: isHovered ? -4 : 0 }}
+                animate={{ x: reveal ? 4 : 0, y: reveal ? -4 : 0 }}
                 transition={{ duration: 0.3 }}
               >
                 <ArrowUpRight className="h-4 w-4" />
@@ -133,13 +147,13 @@ export const CollectionCard = ({ title, subtitle, image, href, index }: Collecti
           </motion.div>
         </div>
 
-        {/* Animated border glow on hover */}
-        <motion.div 
+        {/* Animated border glow on hover/focus/touch */}
+        <motion.div
           className="absolute inset-0 rounded-2xl border-2 border-white/0"
-          animate={{ 
-            borderColor: isHovered ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0)',
-            boxShadow: isHovered 
-              ? '0 0 40px rgba(199, 162, 124, 0.2), inset 0 0 40px rgba(255,255,255,0.05)' 
+          animate={{
+            borderColor: reveal ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0)',
+            boxShadow: reveal
+              ? '0 0 40px rgba(199, 162, 124, 0.2), inset 0 0 40px rgba(255,255,255,0.05)'
               : '0 0 0 rgba(0,0,0,0)'
           }}
           transition={{ duration: 0.5 }}
@@ -149,10 +163,10 @@ export const CollectionCard = ({ title, subtitle, image, href, index }: Collecti
         <motion.div
           className="absolute top-4 right-4 w-8 h-8"
           initial={{ opacity: 0, scale: 0 }}
-          animate={{ 
-            opacity: isHovered ? 1 : 0, 
-            scale: isHovered ? 1 : 0,
-            rotate: isHovered ? 0 : -45 
+          animate={{
+            opacity: reveal ? 1 : 0,
+            scale: reveal ? 1 : 0,
+            rotate: reveal ? 0 : -45
           }}
           transition={{ duration: 0.3 }}
         >
