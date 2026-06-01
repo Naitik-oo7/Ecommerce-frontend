@@ -7,6 +7,7 @@ import { clearUser } from '@/lib/redux/authSlice';
 import { motion } from 'framer-motion';
 import { useGetCartQuery } from '@/services/api/cartApi';
 import { useLogoutMutation } from '@/services/api/authApi';
+import { clearAuthTokens } from '@/lib/authTokens';
 import {
   useGetNotificationsQuery,
   useGetUnreadCountQuery,
@@ -58,9 +59,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   const handleLogout = async () => {
     try { await logoutMutation().unwrap(); } catch {}
     dispatch(clearUser());
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    document.cookie = 'accessToken=; path=/; max-age=0; SameSite=Lax';
+    clearAuthTokens();
     router.push('/login');
   };
 

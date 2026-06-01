@@ -122,7 +122,7 @@ export default function AdminOrderDetailPage() {
   interface OrderItem { id?: number; productImage?: string; productName?: string; price?: string; quantity?: number; size?: string; variant?: { product?: { slug?: string; name?: string } } }
   interface OrderData {
     id?: number; status?: string; paymentStatus?: string; paymentMethod?: string;
-    total?: string; subtotal?: string; discount?: string; createdAt?: string; updatedAt?: string;
+    total?: string; subtotal?: string; discount?: string; shipping?: string; tax?: string; createdAt?: string; updatedAt?: string;
     user?: { name?: string; email?: string };
     address?: Addr; shippingAddress?: Addr;
     items?: OrderItem[]; orderItems?: OrderItem[];
@@ -338,7 +338,15 @@ export default function AdminOrderDetailPage() {
                 )}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Shipping</span>
-                  <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 h-5 text-[11px]">Free</Badge>
+                  {parseFloat(order.shipping ?? '0') === 0 ? (
+                    <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 h-5 text-[11px]">Free</Badge>
+                  ) : (
+                    <span>₹{parseFloat(order.shipping!).toLocaleString('en-IN')}</span>
+                  )}
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Tax</span>
+                  <span>₹{parseFloat(order.tax ?? '0').toLocaleString('en-IN')}</span>
                 </div>
                 <div className="border-t pt-3 flex justify-between items-baseline">
                   <span className="font-semibold">Total</span>
@@ -406,7 +414,7 @@ export default function AdminOrderDetailPage() {
                       {[...ORDER_STEPS, 'cancelled'].map((s) => (
                         <SelectItem key={s} value={s}>
                           <span className="flex items-center gap-2 capitalize">
-                            <span className={`w-2 h-2 rounded-full ${STATUS_CFG[s]?.dot ?? 'bg-muted-foreground'}`} style={{
+                            <span className="w-2 h-2 rounded-full" style={{
                               backgroundColor: s === 'pending' ? '#f59e0b' : s === 'processing' ? '#3b82f6' : s === 'shipped' ? '#8b5cf6' : s === 'delivered' ? '#22c55e' : '#ef4444'
                             }} />
                             {s}

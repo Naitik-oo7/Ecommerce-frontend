@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAppSelector, useAppDispatch } from '@/lib/redux/hooks';
 import { clearUser } from '@/lib/redux/authSlice';
 import { useLogoutMutation } from '@/services/api/authApi';
+import { clearAuthTokens } from '@/lib/authTokens';
 import {
   LayoutDashboard, Package, ShoppingCart, Users, Tag,
   MessageSquare, Settings, LogOut, Menu, FolderTree, BarChart3,
@@ -110,9 +111,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleLogout = async () => {
     try { await logoutMutation().unwrap(); } catch {}
     dispatch(clearUser());
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    document.cookie = 'accessToken=; path=/; max-age=0; SameSite=Lax';
+    clearAuthTokens();
     router.push('/login');
   };
 

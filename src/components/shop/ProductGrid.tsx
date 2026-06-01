@@ -3,33 +3,68 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { PackageSearch } from 'lucide-react';
-import { ProductCard } from '@/components/products/ProductCard';
-import { CardSkeleton } from '@/components/common/CardSkeleton';
+import { ProductCard, type ProductCardView } from '@/components/products/ProductCard';
 import { EmptyState } from '@/components/common/EmptyState';
 import type { Product } from '@/types';
 
 interface ProductGridProps {
   products: Product[];
+  view?: ProductCardView;
   wishlistIds: Set<number>;
   onToggleWishlist: (productId: number, e: React.MouseEvent) => void;
+  onQuickView?: (product: Product) => void;
   isLoading: boolean;
   isFetchingMore: boolean;
   hasMore: boolean;
   onLoadMore: () => void;
-  totalCount?: number;
-  currentCount?: number;
+}
+
+const GRID_CLASS =
+  'grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-2 md:grid-cols-3 md:gap-x-6 md:gap-y-9 xl:grid-cols-4';
+
+/** Skeleton card matching the real ProductCard footprint. */
+function GridCardSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-[#E8E2DA] bg-white">
+      <div className="aspect-[3/4] skeleton-shimmer" />
+      <div className="space-y-2 px-4 py-3.5">
+        <div className="h-2.5 w-1/3 rounded bg-mono-sand" />
+        <div className="h-3.5 w-3/4 rounded bg-mono-sand" />
+        <div className="h-3.5 w-1/2 rounded bg-mono-sand" />
+        <div className="flex gap-1.5 pt-1">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-3.5 w-3.5 rounded-full bg-mono-sand" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ListCardSkeleton() {
+  return (
+    <div className="flex gap-4 rounded-2xl border border-[#E8E2DA] bg-white p-3 sm:gap-6 sm:p-4">
+      <div className="aspect-square w-28 shrink-0 rounded-xl skeleton-shimmer sm:w-44" />
+      <div className="flex-1 space-y-3 py-2">
+        <div className="h-2.5 w-24 rounded bg-mono-sand" />
+        <div className="h-4 w-2/3 rounded bg-mono-sand" />
+        <div className="h-3 w-full max-w-md rounded bg-mono-sand" />
+        <div className="h-5 w-24 rounded bg-mono-sand" />
+      </div>
+    </div>
+  );
 }
 
 export function ProductGrid({
   products,
+  view = 'grid',
   wishlistIds,
   onToggleWishlist,
+  onQuickView,
   isLoading,
   isFetchingMore,
   hasMore,
   onLoadMore,
-  totalCount,
-  currentCount,
 }: ProductGridProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -50,15 +85,21 @@ export function ProductGrid({
     return () => observer.disconnect();
   }, [handleIntersect]);
 
+  const isList = view === 'list';
+  const containerClass = isList ? 'flex flex-col gap-4' : GRID_CLASS;
+  const Skeleton = isList ? ListCardSkeleton : GridCardSkeleton;
+
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-        <CardSkeleton count={9} />
+      <div className={containerClass}>
+        {Array.from({ length: isList ? 6 : 9 }).map((_, i) => (
+          <Skeleton key={i} />
+        ))}
       </div>
     );
   }
 
-  if (!isLoading && products.length === 0) {
+  if (products.length === 0) {
     return (
       <EmptyState
         icon={PackageSearch}
@@ -71,31 +112,26 @@ export function ProductGrid({
 
   return (
     <div>
-      {/* Count */}
-      {totalCount !== undefined && currentCount !== undefined && (
-        <p className="text-sm text-mono-stone mb-5">
-          Showing <span className="font-medium text-mono-charcoal">{currentCount}</span> of{' '}
-          <span className="font-medium text-mono-charcoal">{totalCount}</span> products
-        </p>
-      )}
-
-      {/* Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+      <div className={containerClass}>
         {products.map((product, index) => (
           <ProductCard
             key={product.id}
             product={product}
             index={index}
+            view={view}
             isInWishlist={wishlistIds.has(product.id)}
             onToggleWishlist={(e) => onToggleWishlist(product.id, e)}
+            onQuickView={onQuickView}
           />
         ))}
       </div>
 
-      {/* Skeleton rows when fetching more */}
+      {/* Skeletons while fetching the next page */}
       {isFetchingMore && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mt-4 md:mt-6">
-          <CardSkeleton count={3} />
+        <div className={`${containerClass} mt-7 md:mt-9`}>
+          {Array.from({ length: isList ? 2 : 4 }).map((_, i) => (
+            <Skeleton key={i} />
+          ))}
         </div>
       )}
 
@@ -108,11 +144,13 @@ export function ProductGrid({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4 }}
-          className="text-center pt-12 pb-4"
+          className="pb-4 pt-14 text-center"
         >
           <div className="inline-flex items-center gap-3">
             <div className="h-px w-16 bg-[#E5E2DD]" />
-            <span className="text-xs text-mono-stone tracking-widest uppercase">End of results</span>
+            <span className="text-[11px] uppercase tracking-[0.2em] text-mono-stone">
+              You&apos;ve seen it all
+            </span>
             <div className="h-px w-16 bg-[#E5E2DD]" />
           </div>
         </motion.div>

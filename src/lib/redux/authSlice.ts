@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { getAccessToken, isPersistedAuth } from '@/lib/authTokens';
 
 interface User {
   id: number;
@@ -27,8 +28,7 @@ function getPersistedUser(): User | null {
 }
 
 function hasToken(): boolean {
-  if (typeof window === 'undefined') return false;
-  return !!localStorage.getItem('accessToken') || !!sessionStorage.getItem('accessToken');
+  return !!getAccessToken();
 }
 
 const persistedUser = getPersistedUser();
@@ -48,11 +48,8 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
       state.isLoading = false;
       if (typeof window !== 'undefined') {
-        if (localStorage.getItem('accessToken')) {
-          localStorage.setItem('user', JSON.stringify(action.payload));
-        } else {
-          sessionStorage.setItem('user', JSON.stringify(action.payload));
-        }
+        const storage = isPersistedAuth() ? localStorage : sessionStorage;
+        storage.setItem('user', JSON.stringify(action.payload));
       }
     },
     clearUser: (state) => {

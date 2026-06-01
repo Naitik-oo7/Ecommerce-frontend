@@ -3,7 +3,7 @@
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useGetOrderByIdQuery } from '@/services/api/ordersApi';
 import { motion } from 'framer-motion';
-import { CheckCircle, XCircle, Clock, Package, ArrowRight, ShoppingBag, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle, XCircle, Clock, Package, ArrowRight, ShoppingBag, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
@@ -234,6 +234,34 @@ export default function OrderPlacedPage() {
                   {items.length > 3 && (
                     <p className="text-xs text-muted-foreground text-center pt-1">+{items.length - 3} more items</p>
                   )}
+                </div>
+              )}
+
+              {/* Price breakdown */}
+              {order?.subtotal != null && (
+                <div className="px-5 py-4 border-b border-border/50 space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span>₹{parseFloat(order.subtotal).toFixed(2)}</span>
+                  </div>
+                  {parseFloat(order.discount || '0') > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Discount</span>
+                      <span>−₹{parseFloat(order.discount).toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Shipping</span>
+                    <span>{parseFloat(order.shipping || '0') === 0 ? 'Free' : `₹${parseFloat(order.shipping).toFixed(2)}`}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tax</span>
+                    <span>₹{parseFloat(order.tax || '0').toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold pt-1.5 border-t border-border/40 mt-1.5">
+                    <span>Total</span>
+                    <span>₹{totalAmount.toFixed(2)}</span>
+                  </div>
                 </div>
               )}
 

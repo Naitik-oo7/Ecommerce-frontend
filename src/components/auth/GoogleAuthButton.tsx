@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useGoogleAuthMutation } from '@/services/api/authApi';
 import { setUser } from '@/lib/redux/authSlice';
 import { useAppDispatch } from '@/lib/redux/hooks';
-import { setCookie } from '@/lib/cookies';
+import { setAuthTokens } from '@/lib/authTokens';
 
 declare global {
   interface Window {
@@ -47,9 +47,7 @@ export default function GoogleAuthButton({ onError }: GoogleAuthButtonProps) {
           setLoading(true);
           try {
             const result = await googleAuthMutation({ idToken: response.credential }).unwrap();
-            localStorage.setItem('accessToken', result.accessToken);
-            localStorage.setItem('refreshToken', result.refreshToken);
-            setCookie('accessToken', result.accessToken, 60 * 60 * 24 * 7);
+            setAuthTokens(result.accessToken, result.refreshToken, true);
             dispatch(setUser(result.user));
             router.push('/');
           } catch (err: unknown) {

@@ -53,8 +53,13 @@ export interface ShopFilters {
   minPrice?: number;
   maxPrice?: number;
   inStock?: boolean;
-  onSale?: boolean;
   isBestseller?: boolean;
+  isNewArrival?: boolean;
+  isSustainable?: boolean;
+  gender?: string;
+  sizes?: string[];
+  materials?: string[];
+  tags?: string[];
   minRating?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';

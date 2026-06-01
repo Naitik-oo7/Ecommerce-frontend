@@ -10,7 +10,7 @@ import { useLoginMutation } from '@/services/api/authApi';
 import { loginSchema, type LoginFormData } from '@/lib/validators/auth';
 import { setUser } from '@/lib/redux/authSlice';
 import { useAppDispatch } from '@/lib/redux/hooks';
-import { setCookie } from '@/lib/cookies';
+import { setAuthTokens } from '@/lib/authTokens';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,17 +36,7 @@ export default function LoginPage() {
     try {
       setError(null);
       const response = await loginMutation(data).unwrap();
-      if (rememberMe) {
-        // Persist across browser sessions — 7 days
-        localStorage.setItem('accessToken', response.accessToken);
-        localStorage.setItem('refreshToken', response.refreshToken);
-        setCookie('accessToken', response.accessToken, 60 * 60 * 24 * 7);
-      } else {
-        // Session only — cleared when browser tab/window closes
-        sessionStorage.setItem('accessToken', response.accessToken);
-        sessionStorage.setItem('refreshToken', response.refreshToken);
-        setCookie('accessToken', response.accessToken, 0);
-      }
+      setAuthTokens(response.accessToken, response.refreshToken, rememberMe);
       dispatch(setUser(response.user));
       router.push(response.user.role === 'admin' ? '/admin/dashboard' : '/');
     } catch (err: unknown) {

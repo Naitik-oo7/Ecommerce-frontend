@@ -1,225 +1,347 @@
 'use client';
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Heart, Eye } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useMemo, useState } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { Heart, Eye, ShoppingBag, Star } from 'lucide-react';
 import Link from 'next/link';
 
-import type { Product } from '@/types';
+import type { Product, ProductVariant } from '@/types';
+
+export type ProductCardView = 'grid' | 'list';
 
 interface ProductCardProps {
   product: Product;
   index?: number;
+  view?: ProductCardView;
   isInWishlist?: boolean;
   isAddingToCart?: boolean;
-  onAddToCart?: (e: React.MouseEvent) => void;
+  /** Opens the quick-view / quick-add experience (variant + size selection). */
+  onQuickView?: (product: Product) => void;
   onToggleWishlist?: (e: React.MouseEvent) => void;
-  onQuickView?: (e: React.MouseEvent) => void;
+}
+
+const EASE = [0.16, 1, 0.3, 1] as const;
+
+/** Unique colour swatches derived from a product's variants. */
+function useColorSwatches(variants: ProductVariant[] | undefined) {
+  return useMemo(() => {
+    if (!variants?.length) return [] as { color: string; hex: string; inStock: boolean }[];
+    const seen = new Map<string, { color: string; hex: string; inStock: boolean }>();
+    for (const v of variants) {
+      if (!v.color) continue;
+      const key = (v.colorHex || v.color).toLowerCase();
+      const existing = seen.get(key);
+      if (existing) {
+        existing.inStock = existing.inStock || v.stock > 0;
+      } else {
+        seen.set(key, { color: v.color, hex: v.colorHex || '#CFC7BD', inStock: v.stock > 0 });
+      }
+    }
+    return Array.from(seen.values());
+  }, [variants]);
 }
 
 export const ProductCard = ({
   product,
   index = 0,
+  view = 'grid',
   isInWishlist = false,
   isAddingToCart = false,
-  onAddToCart,
-  onToggleWishlist,
   onQuickView,
+  onToggleWishlist,
 }: ProductCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
 
-  const hasSecondaryImage = product.images && product.images.length > 1;
+  const hasSecondaryImage = (product.images?.length ?? 0) > 1;
+  const swatches = useColorSwatches(product.variants);
 
-  const salePercent = product.comparePrice && product.comparePrice > product.price
-    ? Math.round((1 - product.price / product.comparePrice) * 100)
-    : null;
+  const salePercent =
+    product.comparePrice && product.comparePrice > product.price
+      ? Math.round((1 - product.price / product.comparePrice) * 100)
+      : null;
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-50px' }}
-      transition={{ 
-        duration: 0.6, 
-        delay: index * 0.08,
-        ease: [0.16, 1, 0.3, 1] as const 
+  const rating = Number(product.avgRating) || 0;
+  const isSoldOut = product.stock === 0;
+  const isLowStock = product.stock > 0 && product.stock < 10;
+
+  const handleQuickView = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onQuickView?.(product);
+  };
+
+  const entrance = prefersReducedMotion
+    ? { initial: { opacity: 0 }, whileInView: { opacity: 1 } }
+    : { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 } };
+
+  // ── Shared sub-elements ────────────────────────────────────────────────
+  const Badges = (
+    <div className="absolute top-3 left-3 z-20 flex flex-col items-start gap-1.5">
+      {isSoldOut && (
+        <span className="px-2.5 py-1 bg-mono-charcoal/85 backdrop-blur-sm text-white text-[9px] font-semibold tracking-[0.12em] uppercase rounded-full">
+          Sold Out
+        </span>
+      )}
+      {salePercent && !isSoldOut && (
+        <span className="px-2.5 py-1 bg-mono-terracotta text-white text-[9px] font-bold tracking-wide rounded-full shadow-sm">
+          −{salePercent}%
+        </span>
+      )}
+      {product.isBestseller && !isSoldOut && (
+        <span className="px-2.5 py-1 bg-white/90 backdrop-blur-sm text-mono-charcoal text-[9px] font-semibold tracking-[0.12em] uppercase rounded-full shadow-sm">
+          Bestseller
+        </span>
+      )}
+      {isLowStock && !isSoldOut && (
+        <span className="px-2.5 py-1 bg-[#B54A4A]/90 backdrop-blur-sm text-white text-[9px] font-semibold tracking-[0.12em] uppercase rounded-full">
+          Only {product.stock} left
+        </span>
+      )}
+    </div>
+  );
+
+  const WishlistButton = onToggleWishlist && (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onToggleWishlist(e);
       }}
+      aria-label={isInWishlist ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
+      aria-pressed={isInWishlist}
+      className={`z-20 flex h-9 w-9 items-center justify-center rounded-full backdrop-blur-sm transition-all duration-200 focus-visible:opacity-100 ${
+        isInWishlist
+          ? 'bg-[#B54A4A] text-white shadow-md'
+          : 'bg-white/90 text-mono-charcoal shadow-sm hover:bg-white hover:scale-105'
+      }`}
+    >
+      <Heart className={`h-[15px] w-[15px] ${isInWishlist ? 'fill-current' : ''}`} />
+    </button>
+  );
+
+  const PriceBlock = (
+    <div className="flex items-baseline gap-2">
+      <span className="font-bold text-[15px] text-mono-charcoal tabular-nums">
+        ₹{product.price.toLocaleString('en-IN')}
+      </span>
+      {product.comparePrice && product.comparePrice > product.price && (
+        <span className="text-xs text-[#A8A199] line-through tabular-nums">
+          ₹{product.comparePrice.toLocaleString('en-IN')}
+        </span>
+      )}
+    </div>
+  );
+
+  const RatingRow = rating > 0 && (
+    <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-0.5">
+        {[1, 2, 3, 4, 5].map((s) => (
+          <Star
+            key={s}
+            className={`h-3 w-3 ${
+              s <= Math.round(rating) ? 'fill-mono-terracotta text-mono-terracotta' : 'fill-[#E8E2DA] text-[#E8E2DA]'
+            }`}
+          />
+        ))}
+      </div>
+      <span className="text-[10px] text-[#A8A199] tabular-nums">{rating.toFixed(1)}</span>
+      {product.reviewCount !== undefined && product.reviewCount > 0 && (
+        <span className="text-[10px] text-[#C8C0B8]">({product.reviewCount})</span>
+      )}
+    </div>
+  );
+
+  const Swatches = swatches.length > 0 && (
+    <div className="flex items-center gap-1.5 pt-0.5">
+      {swatches.slice(0, 5).map((s) => (
+        <span
+          key={s.hex + s.color}
+          title={s.color}
+          className={`h-3.5 w-3.5 rounded-full ring-1 ring-black/10 ${s.inStock ? '' : 'opacity-40'}`}
+          style={{ backgroundColor: s.hex }}
+        />
+      ))}
+      {swatches.length > 5 && (
+        <span className="text-[10px] font-medium text-[#A8A199]">+{swatches.length - 5}</span>
+      )}
+    </div>
+  );
+
+  const ImageStack = (
+    <>
+      {product.images?.[0] ? (
+        <>
+          <motion.img
+            src={product.images[0]}
+            alt={product.name}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover"
+            animate={{ scale: isHovered && !prefersReducedMotion ? 1.07 : 1 }}
+            transition={{ duration: 0.7, ease: EASE }}
+          />
+          <AnimatePresence>
+            {isHovered && hasSecondaryImage && (
+              <motion.img
+                src={product.images[1]}
+                alt=""
+                aria-hidden
+                className="absolute inset-0 h-full w-full object-cover"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.5 }}
+              />
+            )}
+          </AnimatePresence>
+        </>
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-mono-sand text-[#A8A199]">
+          <ShoppingBag className="h-7 w-7" strokeWidth={1.25} />
+        </div>
+      )}
+    </>
+  );
+
+  // ── LIST VIEW ───────────────────────────────────────────────────────────
+  if (view === 'list') {
+    return (
+      <motion.article
+        {...entrance}
+        viewport={{ once: true, margin: '-40px' }}
+        transition={{ duration: 0.5, delay: Math.min(index * 0.04, 0.3), ease: EASE }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className="group relative flex gap-4 rounded-2xl border border-[#E8E2DA] bg-white p-3 shadow-sm transition-shadow duration-300 hover:shadow-md sm:gap-6 sm:p-4"
+      >
+        <div className="relative aspect-square w-28 shrink-0 overflow-hidden rounded-xl bg-mono-cream sm:w-40 md:w-48">
+          {ImageStack}
+          {Badges}
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col py-1">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#A8A199]">
+            {product.category?.name || 'Collection'}
+          </p>
+          <h3 className="text-base font-semibold leading-snug text-mono-charcoal transition-colors group-hover:text-mono-terracotta sm:text-lg">
+            {product.name}
+          </h3>
+          {product.description && (
+            <p className="mt-1.5 hidden max-w-prose text-[13px] leading-relaxed text-mono-stone sm:line-clamp-2">
+              {product.description}
+            </p>
+          )}
+          <div className="mt-2">{RatingRow}</div>
+          <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-3">
+            <div className="space-y-1.5">
+              {PriceBlock}
+              {Swatches}
+            </div>
+            <div className="z-20 flex items-center gap-2">
+              {WishlistButton}
+              {onQuickView && (
+                <button
+                  type="button"
+                  onClick={handleQuickView}
+                  disabled={isSoldOut}
+                  className="inline-flex h-9 items-center gap-2 rounded-full bg-mono-charcoal px-4 text-xs font-medium text-white transition-all duration-200 hover:bg-[#2A2A26] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <ShoppingBag className="h-3.5 w-3.5" />
+                  {isSoldOut ? 'Sold Out' : 'Quick Add'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <Link
+          href={`/products/${product.slug}`}
+          aria-label={product.name}
+          className="absolute inset-0 z-10 rounded-2xl"
+        />
+      </motion.article>
+    );
+  }
+
+  // ── GRID VIEW (default) ──────────────────────────────────────────────────
+  return (
+    <motion.article
+      {...entrance}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.55, delay: Math.min(index * 0.05, 0.35), ease: EASE }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="group"
+      className="group relative"
     >
-      <Link href={`/products/${product.slug}`} className="block">
-        <motion.div
-          whileHover={{ y: -8 }}
-          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] as const }}
-          className="relative bg-white rounded-2xl overflow-hidden border border-[#E5E2DD] shadow-sm hover:shadow-xl transition-shadow duration-500"
-        >
-          {/* Image Container */}
-          <div className="relative aspect-[3/4] overflow-hidden bg-[#F6F3EE]">
-            {/* Primary Image */}
-            {product.images?.[0] ? (
-              <>
-                <motion.img
-                  src={product.images[0]}
-                  alt={product.name}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  initial={{ scale: 1 }}
-                  animate={{ scale: isHovered ? 1.08 : 1 }}
-                  transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const }}
-                />
-                
-                {/* Secondary Image Crossfade */}
-                <AnimatePresence>
-                  {isHovered && hasSecondaryImage && (
-                    <motion.img
-                      src={product.images[1]}
-                      alt={`${product.name} - alternate view`}
-                      className="absolute inset-0 w-full h-full object-cover"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.5 }}
-                    />
-                  )}
-                </AnimatePresence>
-              </>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-[#6B6B6B]">
-                <span className="text-sm">No image</span>
-              </div>
-            )}
+      <motion.div
+        animate={{ y: isHovered && !prefersReducedMotion ? -6 : 0 }}
+        transition={{ duration: 0.4, ease: EASE }}
+        className="relative overflow-hidden rounded-2xl border border-[#E8E2DA] bg-white shadow-sm transition-shadow duration-500 group-hover:shadow-xl"
+      >
+        {/* Image */}
+        <div className="relative aspect-[3/4] overflow-hidden bg-mono-cream">
+          {ImageStack}
+          {Badges}
 
-            {/* Badges */}
-            <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-              {product.stock === 0 && (
-                <span className="px-2.5 py-1 bg-[#111111]/80 backdrop-blur-sm text-white text-[9px] font-semibold tracking-wider uppercase rounded-full">
-                  Sold Out
-                </span>
-              )}
-              {product.stock > 0 && product.stock < 10 && (
-                <span className="px-2.5 py-1 bg-[#B54A4A]/90 backdrop-blur-sm text-white text-[9px] font-semibold tracking-wider uppercase rounded-full">
-                  Low Stock
-                </span>
-              )}
-              {salePercent && (
-                <span className="px-2.5 py-1 bg-[#C7A27C]/90 backdrop-blur-sm text-white text-[9px] font-semibold tracking-wider rounded-full">
-                  -{salePercent}%
-                </span>
-              )}
-            </div>
-
-            {/* Wishlist Button */}
-            {onToggleWishlist && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ 
-                  opacity: isHovered ? 1 : 0, 
-                  scale: isHovered ? 1 : 0.8 
-                }}
-                transition={{ duration: 0.2 }}
-                onClick={onToggleWishlist}
-                className={`absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
-                  isInWishlist
-                    ? 'bg-[#B54A4A] text-white'
-                    : 'bg-white/90 backdrop-blur-sm text-[#111111] hover:bg-white'
-                }`}
-              >
-                <Heart className={`h-4 w-4 ${isInWishlist ? 'fill-current' : ''}`} />
-              </motion.button>
-            )}
-
-            {/* Quick View Button */}
+          {/* Top-right actions */}
+          <div className="absolute right-3 top-3 z-20 flex flex-col gap-2 opacity-100 md:opacity-0 md:translate-x-2 md:transition-all md:duration-300 md:group-hover:translate-x-0 md:group-hover:opacity-100">
+            {WishlistButton}
             {onQuickView && (
-              <motion.button
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ 
-                  opacity: isHovered ? 1 : 0, 
-                  y: isHovered ? 0 : -10 
-                }}
-                transition={{ duration: 0.2, delay: 0.05 }}
-                onClick={onQuickView}
-                className="absolute top-4 right-16 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm text-[#111111] hover:bg-white flex items-center justify-center transition-all duration-200"
+              <button
+                type="button"
+                onClick={handleQuickView}
+                aria-label={`Quick view ${product.name}`}
+                className="z-20 hidden h-9 w-9 items-center justify-center rounded-full bg-white/90 text-mono-charcoal shadow-sm backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-white md:flex"
               >
-                <Eye className="h-4 w-4" />
-              </motion.button>
-            )}
-
-            {/* Add to Cart - Slides Up */}
-            {onAddToCart && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ 
-                  opacity: isHovered ? 1 : 0, 
-                  y: isHovered ? 0 : 20 
-                }}
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] as const }}
-                className="absolute bottom-0 left-0 right-0 p-4"
-              >
-                <Button
-                  onClick={onAddToCart}
-                  disabled={product.stock === 0 || isAddingToCart}
-                  className="w-full bg-[#111111] hover:bg-[#1a1a1a] text-white shadow-lg rounded-full h-12 font-medium"
-                >
-                  {isAddingToCart ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                      className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
-                    />
-                  ) : (
-                    <>
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      {product.stock === 0 ? 'Sold Out' : 'Add to Cart'}
-                    </>
-                  )}
-                </Button>
-              </motion.div>
+                <Eye className="h-[15px] w-[15px]" />
+              </button>
             )}
           </div>
 
-          {/* Product Info */}
-          <div className="px-4 py-3.5">
-            {/* Category */}
-            <p className="text-[9px] font-semibold tracking-[0.18em] uppercase text-[#9B9B9B] mb-1">
-              {product.category?.name || 'Uncategorized'}
-            </p>
-            {/* Name */}
-            <h3 className="font-semibold text-[14px] text-[#111111] truncate group-hover:text-[#C7A27C] transition-colors leading-snug mb-2">
-              {product.name}
-            </h3>
-            {/* Price row */}
-            <div className="flex items-baseline gap-2">
-              <span className="font-bold text-[15px] text-[#111111]">
-                ₹{product.price.toLocaleString('en-IN')}
-              </span>
-              {product.comparePrice && product.comparePrice > product.price && (
-                <span className="text-xs text-[#9B9B9B] line-through">
-                  ₹{product.comparePrice.toLocaleString('en-IN')}
-                </span>
-              )}
-            </div>
-            {/* Rating */}
-            {product.avgRating !== undefined && Number(product.avgRating) > 0 && (
-              <div className="flex items-center gap-1 mt-1.5">
-                <div className="flex">
-                  {[1,2,3,4,5].map((s) => (
-                    <svg key={s} className={`w-2.5 h-2.5 ${
-                      s <= Math.round(Number(product.avgRating)) ? 'text-[#C7A27C]' : 'text-[#E5E2DD]'
-                    }`} fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-                {product.reviewCount !== undefined && (
-                  <span className="text-[9px] text-[#9B9B9B]">({product.reviewCount})</span>
+          {/* Quick Add bar — slides up on hover (desktop), always visible (mobile) */}
+          {onQuickView && (
+            <div className="absolute inset-x-0 bottom-0 z-20 p-3 opacity-100 md:translate-y-3 md:opacity-0 md:transition-all md:duration-300 md:group-hover:translate-y-0 md:group-hover:opacity-100">
+              <button
+                type="button"
+                onClick={handleQuickView}
+                disabled={isSoldOut || isAddingToCart}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-mono-charcoal text-sm font-medium text-white shadow-lg transition-colors duration-200 hover:bg-[#2A2A26] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isAddingToCart ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                ) : (
+                  <>
+                    <ShoppingBag className="h-4 w-4" />
+                    {isSoldOut ? 'Sold Out' : 'Quick Add'}
+                  </>
                 )}
-              </div>
-            )}
-          </div>
-        </motion.div>
-      </Link>
-    </motion.div>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="space-y-1.5 px-4 py-3.5">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#A8A199]">
+            {product.category?.name || 'Collection'}
+          </p>
+          <h3 className="truncate text-[14px] font-semibold leading-snug text-mono-charcoal transition-colors group-hover:text-mono-terracotta">
+            {product.name}
+          </h3>
+          {PriceBlock}
+          {RatingRow}
+          {Swatches}
+        </div>
+
+        {/* Stretched link overlay — sits below action buttons (z-20) */}
+        <Link
+          href={`/products/${product.slug}`}
+          aria-label={product.name}
+          className="absolute inset-0 z-10 rounded-2xl"
+        />
+      </motion.div>
+    </motion.article>
   );
 };
 

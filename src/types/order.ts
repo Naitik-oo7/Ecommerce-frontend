@@ -52,15 +52,23 @@ export interface OrderCoupon {
   value: number;
 }
 
+export interface FreeShippingInfo {
+  threshold: number;
+  eligible: boolean;
+  remaining: number;
+}
+
 export interface Cart {
   id?: number;
   items: CartItem[];
   appliedCoupon?: OrderCoupon;
+  totalQuantity?: number;
   subtotal?: number;
   shipping?: number;
   discount?: number;
   tax?: number;
   total?: number;
+  freeShipping?: FreeShippingInfo;
 }
 
 export interface CartItem {

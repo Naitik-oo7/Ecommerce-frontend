@@ -1,90 +1,67 @@
 'use client';
 
-import { Card, CardContent } from '@/components/ui/card';
-import { CreditCard, Wallet, ArrowLeft } from 'lucide-react';
+import { CreditCard, Wallet, Check } from 'lucide-react';
 import type { PaymentMethod } from '../hooks/useCheckout';
 
 interface PaymentStepProps {
   paymentMethod: PaymentMethod;
   setPaymentMethod: (method: PaymentMethod) => void;
-  onBack: () => void;
 }
 
-export function PaymentStep({ paymentMethod, setPaymentMethod, onBack }: PaymentStepProps) {
+const OPTIONS: {
+  value: PaymentMethod;
+  title: string;
+  desc: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
+  {
+    value: 'online',
+    title: 'Pay Online',
+    desc: 'Card, UPI, or Net Banking — secured by Razorpay',
+    icon: CreditCard,
+  },
+  {
+    value: 'cod',
+    title: 'Cash on Delivery',
+    desc: 'Pay in cash when your order arrives',
+    icon: Wallet,
+  },
+];
+
+export function PaymentStep({ paymentMethod, setPaymentMethod }: PaymentStepProps) {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={onBack}
-          className="p-2 hover:bg-muted rounded-full transition-colors"
-          aria-label="Back to shipping"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-          <CreditCard className="h-6 w-6 text-blue-700" />
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold">Payment Method</h2>
-          <p className="text-sm text-muted-foreground">Choose how you want to pay</p>
-        </div>
-      </div>
-
-      <div className="grid gap-4">
-        <Card
-          className={`cursor-pointer transition-all ${
-            paymentMethod === 'online' ? 'ring-2 ring-blue-500 border-blue-500' : 'hover:border-blue-300'
-          }`}
-          onClick={() => setPaymentMethod('online')}
-        >
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-              paymentMethod === 'online' ? 'bg-blue-100' : 'bg-muted'
-            }`}>
-              <CreditCard className={`h-6 w-6 ${paymentMethod === 'online' ? 'text-blue-700' : 'text-muted-foreground'}`} />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-medium">Pay Online</span>
-                {paymentMethod === 'online' && (
-                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Selected</span>
-                )}
+    <div className="grid gap-3 sm:grid-cols-2">
+      {OPTIONS.map((opt) => {
+        const Icon = opt.icon;
+        const isSelected = paymentMethod === opt.value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => setPaymentMethod(opt.value)}
+            className={`text-left rounded-2xl border p-4 transition-all ${
+              isSelected
+                ? 'border-[#C7A27C] bg-[#C7A27C]/5 ring-1 ring-[#C7A27C]'
+                : 'border-[#E5E2DD] bg-white hover:border-[#C7A27C]/50'
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                isSelected ? 'bg-[#C7A27C] text-white' : 'bg-[#F6F3EE] text-[#C7A27C]'
+              }`}>
+                <Icon className="h-5 w-5" />
               </div>
-              <p className="text-sm text-muted-foreground">Credit/Debit Card, UPI, Net Banking via Razorpay</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card
-          className={`cursor-pointer transition-all ${
-            paymentMethod === 'cod' ? 'ring-2 ring-green-500 border-green-500' : 'hover:border-green-300'
-          }`}
-          onClick={() => setPaymentMethod('cod')}
-        >
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-              paymentMethod === 'cod' ? 'bg-green-100' : 'bg-muted'
-            }`}>
-              <Wallet className={`h-6 w-6 ${paymentMethod === 'cod' ? 'text-green-700' : 'text-muted-foreground'}`} />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-medium">Cash on Delivery</span>
-                {paymentMethod === 'cod' && (
-                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Selected</span>
-                )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="font-semibold text-[#111111]">{opt.title}</span>
+                  {isSelected && <Check className="h-4 w-4 text-[#C7A27C]" />}
+                </div>
+                <p className="text-sm text-[#9B9B9B]">{opt.desc}</p>
               </div>
-              <p className="text-sm text-muted-foreground">Pay when your order is delivered</p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="bg-muted/50 rounded-lg p-4">
-        <p className="text-sm text-muted-foreground">
-          <strong>Secure Checkout:</strong> Your payment information is encrypted and secure. We never store your card details.
-        </p>
-      </div>
+          </button>
+        );
+      })}
     </div>
   );
 }

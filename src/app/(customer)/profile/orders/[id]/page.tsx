@@ -55,6 +55,8 @@ export default function ProfileOrderDetailPage() {
       total?: string;
       subtotal?: string;
       discount?: string;
+      shipping?: string;
+      tax?: string;
       address?: {
         label?: string;
         street?: string;
@@ -427,6 +429,16 @@ export default function ProfileOrderDetailPage() {
               <span>–₹{parseFloat(order.discount).toLocaleString('en-IN')}</span>
             </div>
           )}
+          <div className="flex justify-between text-sm">
+            <span className="text-[#9B9B9B]">Shipping</span>
+            <span className="text-[#111111]">
+              {parseFloat(order.shipping || '0') === 0 ? 'Free' : `₹${parseFloat(order.shipping || '0').toLocaleString('en-IN')}`}
+            </span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-[#9B9B9B]">Tax</span>
+            <span className="text-[#111111]">₹{parseFloat(order.tax || '0').toLocaleString('en-IN')}</span>
+          </div>
           <div className="flex justify-between font-bold text-base pt-3 border-t border-[#F0EDE8]">
             <span className="text-[#111111]">Total</span>
             <span className="text-[#111111]">₹{parseFloat(order.total).toLocaleString('en-IN')}</span>

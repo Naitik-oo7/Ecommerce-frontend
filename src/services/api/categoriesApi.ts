@@ -1,6 +1,16 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { axiosBaseQuery } from '@/lib/axiosBaseQuery';
 
+export interface CategoryFeaturedProduct {
+  id: number;
+  name: string;
+  slug: string;
+  price: number | string;
+  comparePrice?: number | string | null;
+  avgRating?: number | string;
+  imageUrl?: string | null;
+}
+
 export interface CategoryTreeItem {
   id: number;
   name: string;
@@ -13,6 +23,7 @@ export interface CategoryTreeItem {
     slug: string;
     imageUrl?: string;
   }[];
+  featuredProducts?: CategoryFeaturedProduct[];
 }
 
 export const categoriesApi = createApi({
@@ -24,7 +35,10 @@ export const categoriesApi = createApi({
       query: (params = {}) => ({ url: '/api/v1/categories', method: 'GET', params }),
       providesTags: ['Categories'],
     }),
-    getCategoryTree: builder.query<CategoryTreeItem[], { limit?: number } | void>({
+    getCategoryTree: builder.query<
+      CategoryTreeItem[],
+      { limit?: number; withProducts?: boolean; productsPerCategory?: number } | void
+    >({
       query: (params = {}) => ({ url: '/api/v1/categories/tree', method: 'GET', params: params || {} }),
       providesTags: ['Categories'],
     }),

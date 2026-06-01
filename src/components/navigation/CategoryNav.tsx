@@ -45,6 +45,11 @@ const promoNavItems = [
 
 const EXCLUDED = ['journal', 'about'];
 
+const formatINR = (value: number | string | null | undefined): string => {
+  const n = typeof value === 'string' ? parseFloat(value) : value ?? 0;
+  return `₹${(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+};
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function CategoryNav({
@@ -76,7 +81,11 @@ export default function CategoryNav({
   const notificationsRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  const { data: categoryTree, isLoading } = useGetCategoryTreeQuery({ limit: 10 });
+  const { data: categoryTree, isLoading } = useGetCategoryTreeQuery({
+    limit: 10,
+    withProducts: true,
+    productsPerCategory: 4,
+  });
   const categories = (categoryTree || []).filter(
     (c) => !EXCLUDED.includes(c.name.toLowerCase())
   );
@@ -566,104 +575,139 @@ export default function CategoryNav({
             >
               <div className="container-mono py-8">
                 <div className="grid grid-cols-12 gap-8">
-                  {/* Subcategories */}
-                  <div className="col-span-12 lg:col-span-3">
-                    <h3 className="text-lg font-bold text-foreground mb-6 tracking-wide">
-                      {activeCategory.name.toUpperCase()}
+
+                  {/* ── Zone 1: Subcategory navigation + category-scoped quick links ── */}
+                  <div className="col-span-12 lg:col-span-3 flex flex-col">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">
+                      Shop {activeCategory.name}
                     </h3>
-                    <ul className="space-y-1">
+                    <ul className="space-y-0.5">
                       <li>
                         <Link href={`/products?category=${activeCategory.slug}`}
-                          className="flex items-center py-2 text-sm font-semibold text-mono-terracotta hover:underline"
+                          className="flex items-center py-1.5 text-sm font-semibold text-foreground hover:text-mono-terracotta transition-colors"
                           onClick={() => setIsDropdownOpen(false)}>
-                          EVERYTHING {activeCategory.name.toUpperCase()}
+                          All {activeCategory.name}
                         </Link>
                       </li>
                       {activeCategory.children.map((child) => (
                         <li key={child.id}>
                           <Link href={`/products?category=${child.slug}`}
-                            className="flex items-center py-2 text-sm text-foreground/80 hover:text-mono-terracotta transition-colors"
+                            className="flex items-center py-1.5 text-sm text-foreground/70 hover:text-mono-terracotta hover:translate-x-1 transition-all duration-200"
                             onClick={() => setIsDropdownOpen(false)}>
-                            {child.name.toUpperCase()}
+                            {child.name}
                           </Link>
                         </li>
                       ))}
                     </ul>
-                    <div className="mt-6 pt-4 border-t border-border/50">
-                      <Link href={`/products?category=${activeCategory.slug}`}
-                        className="inline-flex items-center gap-2 text-sm font-semibold text-foreground hover:text-mono-terracotta transition-colors"
+
+                    {/* Category-scoped quick links (no longer hardcoded global links) */}
+                    <div className="mt-6 pt-4 border-t border-border/50 space-y-0.5">
+                      <Link href={`/products?category=${activeCategory.slug}&sortBy=createdAt&sortOrder=desc`}
+                        className="flex items-center py-1.5 text-sm text-foreground/70 hover:text-mono-terracotta transition-colors"
                         onClick={() => setIsDropdownOpen(false)}>
-                        Shop All {activeCategory.name}
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                        </svg>
+                        New In
+                      </Link>
+                      <Link href={`/products?category=${activeCategory.slug}&sortBy=avgRating&sortOrder=desc`}
+                        className="flex items-center py-1.5 text-sm text-foreground/70 hover:text-mono-terracotta transition-colors"
+                        onClick={() => setIsDropdownOpen(false)}>
+                        Best Rated
+                      </Link>
+                      <Link href={`/products?category=${activeCategory.slug}&onSale=true`}
+                        className="flex items-center py-1.5 text-sm text-red-500 hover:text-red-600 font-medium transition-colors"
+                        onClick={() => setIsDropdownOpen(false)}>
+                        On Sale
                       </Link>
                     </div>
                   </div>
 
-                  {/* Trending */}
-                  <div className="hidden lg:block lg:col-span-3">
-                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-4">Trending Now</h4>
-                    <ul className="space-y-2">
-                      {[
-                        { href: '/products?sortBy=createdAt&sortOrder=desc', label: 'New Arrivals', cls: 'text-foreground/70 hover:text-mono-terracotta' },
-                        { href: '/products?isBestseller=true',              label: 'Bestsellers',  cls: 'text-foreground/70 hover:text-mono-terracotta' },
-                        { href: '/products?onSale=true',                    label: 'Sale',         cls: 'text-red-500 hover:text-red-600' },
-                      ].map((l) => (
-                        <li key={l.href}>
-                          <Link href={l.href} className={cn('text-sm transition-colors', l.cls)}
-                            onClick={() => setIsDropdownOpen(false)}>
-                            {l.label}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Featured image */}
+                  {/* ── Zone 2: Real featured products from this category (merchandising) ── */}
                   <div className="col-span-12 lg:col-span-6">
-                    <Link href={`/products?category=${activeCategory.slug}`}
-                      className="block relative aspect-video lg:aspect-2/1 rounded-lg overflow-hidden group"
-                      onClick={() => setIsDropdownOpen(false)}>
-                      {activeCategory.imageUrl ? (
-                        <Image src={activeCategory.imageUrl} alt={activeCategory.name} fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-700" />
-                      ) : (
-                        <div className="w-full h-full bg-linear-to-br from-mono-cream to-mono-stone/20 flex items-center justify-center">
-                          <span className="text-2xl font-bold text-mono-charcoal/30">{activeCategory.name}</span>
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
-                      <div className="absolute bottom-0 left-0 right-0 p-6">
-                        <p className="text-white text-sm font-medium mb-1">Explore</p>
-                        <h4 className="text-white text-xl font-bold">{activeCategory.name}</h4>
-                        {activeCategory.isFeatured && (
-                          <span className="inline-block mt-2 px-2 py-1 bg-mono-terracotta text-white text-xs font-semibold rounded">Featured</span>
-                        )}
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                        Popular in {activeCategory.name}
+                      </h4>
+                      <Link href={`/products?category=${activeCategory.slug}`}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-foreground hover:text-mono-terracotta transition-colors"
+                        onClick={() => setIsDropdownOpen(false)}>
+                        View all
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+
+                    {activeCategory.featuredProducts && activeCategory.featuredProducts.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        {activeCategory.featuredProducts.map((product) => {
+                          const onSale =
+                            product.comparePrice != null &&
+                            parseFloat(String(product.comparePrice)) > parseFloat(String(product.price));
+                          return (
+                            <Link key={product.id} href={`/products/${product.slug}`}
+                              className="group block" onClick={() => setIsDropdownOpen(false)}>
+                              <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                                {product.imageUrl ? (
+                                  <Image src={product.imageUrl} alt={product.name} fill sizes="160px"
+                                    className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-mono-cream to-mono-stone/20">
+                                    <span className="text-[10px] text-muted-foreground text-center px-2">{product.name}</span>
+                                  </div>
+                                )}
+                                {onSale && (
+                                  <span className="absolute top-2 left-2 px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded">
+                                    SALE
+                                  </span>
+                                )}
+                              </div>
+                              <p className="mt-2 text-xs font-medium text-foreground line-clamp-1 group-hover:text-mono-terracotta transition-colors">
+                                {product.name}
+                              </p>
+                              <div className="mt-0.5 flex items-baseline gap-1.5">
+                                <span className={cn('text-xs font-semibold', onSale ? 'text-red-500' : 'text-foreground')}>
+                                  {formatINR(product.price)}
+                                </span>
+                                {onSale && (
+                                  <span className="text-[10px] text-muted-foreground line-through">
+                                    {formatINR(product.comparePrice)}
+                                  </span>
+                                )}
+                              </div>
+                            </Link>
+                          );
+                        })}
                       </div>
-                    </Link>
-                    {activeCategory.children.length > 0 && (
-                      <div className="grid grid-cols-3 gap-3 mt-4">
-                        {activeCategory.children.slice(0, 3).map((child) => (
-                          <Link key={child.id} href={`/products?category=${child.slug}`}
-                            className="block group" onClick={() => setIsDropdownOpen(false)}>
-                            <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-                              {child.imageUrl ? (
-                                <Image src={child.imageUrl} alt={child.name} fill
-                                  className="object-cover group-hover:scale-110 transition-transform duration-500" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-muted">
-                                  <span className="text-xs text-muted-foreground text-center px-2">{child.name}</span>
-                                </div>
-                              )}
-                            </div>
-                            <p className="mt-2 text-xs font-medium text-center text-foreground group-hover:text-mono-terracotta transition-colors">
-                              {child.name}
-                            </p>
-                          </Link>
-                        ))}
+                    ) : (
+                      <div className="flex items-center justify-center h-40 rounded-lg border border-dashed border-border/60 text-sm text-muted-foreground">
+                        No products yet — explore the full collection
                       </div>
                     )}
+                  </div>
+
+                  {/* ── Zone 3: Editorial banner with CTA ── */}
+                  <div className="hidden lg:block lg:col-span-3">
+                    <Link href={`/products?category=${activeCategory.slug}`}
+                      className="block relative h-full min-h-[260px] rounded-lg overflow-hidden group"
+                      onClick={() => setIsDropdownOpen(false)}>
+                      {activeCategory.imageUrl ? (
+                        <Image src={activeCategory.imageUrl} alt={activeCategory.name} fill sizes="320px"
+                          className="object-cover group-hover:scale-105 transition-transform duration-700" />
+                      ) : (
+                        <div className="w-full h-full bg-linear-to-br from-mono-cream to-mono-stone/20" />
+                      )}
+                      <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/10 to-transparent" />
+                      <div className="absolute bottom-0 left-0 right-0 p-5">
+                        {activeCategory.isFeatured && (
+                          <span className="inline-block mb-2 px-2 py-0.5 bg-mono-terracotta text-white text-[10px] font-semibold rounded tracking-wide">
+                            FEATURED
+                          </span>
+                        )}
+                        <p className="text-white/80 text-xs font-medium mb-0.5">Explore the collection</p>
+                        <h4 className="text-white text-2xl font-bold leading-tight">{activeCategory.name}</h4>
+                        <span className="mt-3 inline-flex items-center gap-1.5 text-white text-sm font-semibold">
+                          Shop now
+                          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </span>
+                      </div>
+                    </Link>
                   </div>
                 </div>
               </div>

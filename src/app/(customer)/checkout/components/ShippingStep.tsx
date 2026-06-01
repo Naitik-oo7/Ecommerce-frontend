@@ -1,10 +1,8 @@
 'use client';
 
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { MapPin, Plus, Home, Briefcase, Building } from 'lucide-react';
+import { MapPin, Plus, Home, Briefcase, Building, Check } from 'lucide-react';
 import type { NewAddressForm } from '../hooks/useCheckout';
 
 interface Address {
@@ -14,6 +12,7 @@ interface Address {
   city: string;
   state: string;
   pincode: string;
+  country?: string;
 }
 
 interface ShippingStepProps {
@@ -42,136 +41,123 @@ export function ShippingStep({
   setNewAddrForm,
 }: ShippingStepProps) {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
-          <MapPin className="h-6 w-6 text-amber-700" />
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold">Shipping Address</h2>
-          <p className="text-sm text-muted-foreground">Select where you want your order delivered</p>
-        </div>
-      </div>
-
+    <div className="space-y-4">
       {addresses.length > 0 && (
-        <div className="grid gap-4">
+        <div className="grid gap-3 sm:grid-cols-2">
           {addresses.map((addr) => {
             const Icon = addressTypeIcons[addr.label?.toLowerCase()] || MapPin;
-            const isSelected = selectedAddressId === addr.id;
+            const isSelected = selectedAddressId === addr.id && !showNewForm;
             return (
-              <Card
+              <button
                 key={addr.id}
-                className={`cursor-pointer transition-all ${
-                  isSelected ? 'ring-2 ring-amber-500 border-amber-500' : 'hover:border-amber-300'
-                }`}
+                type="button"
                 onClick={() => {
                   setSelectedAddressId(addr.id);
                   setUseNewAddress(false);
                 }}
+                className={`text-left rounded-2xl border p-4 transition-all ${
+                  isSelected
+                    ? 'border-[#C7A27C] bg-[#C7A27C]/5 ring-1 ring-[#C7A27C]'
+                    : 'border-[#E5E2DD] bg-white hover:border-[#C7A27C]/50'
+                }`}
               >
-                <CardContent className="p-4 flex items-start gap-4">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                    isSelected ? 'bg-amber-100' : 'bg-muted'
+                <div className="flex items-start gap-3">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                    isSelected ? 'bg-[#C7A27C] text-white' : 'bg-[#F6F3EE] text-[#C7A27C]'
                   }`}>
-                    <Icon className={`h-5 w-5 ${isSelected ? 'text-amber-700' : 'text-muted-foreground'}`} />
+                    <Icon className="h-4.5 w-4.5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium capitalize">{addr.label}</span>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="font-semibold text-[#111111] capitalize">{addr.label}</span>
                       {isSelected && (
-                        <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Selected</span>
+                        <Check className="h-4 w-4 text-[#C7A27C]" />
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">{addr.street}</p>
-                    <p className="text-sm text-muted-foreground">{addr.city}, {addr.state} {addr.pincode}</p>
+                    <p className="text-sm text-[#6B6B6B] truncate">{addr.street}</p>
+                    <p className="text-sm text-[#9B9B9B]">{addr.city}, {addr.state} {addr.pincode}</p>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </button>
             );
           })}
         </div>
       )}
 
-      {addresses.length > 0 && (
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="bg-background px-2 text-muted-foreground">or</span>
-          </div>
-        </div>
-      )}
-
-      <Card className={showNewForm ? 'ring-2 ring-amber-500 border-amber-500' : ''}>
-        <CardContent className="p-4">
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-2 mb-4"
-            onClick={() => setUseNewAddress(true)}
-          >
+      {/* Add new address */}
+      <div className={`rounded-2xl border transition-all ${
+        showNewForm ? 'border-[#C7A27C] bg-white' : 'border-[#E5E2DD] bg-white'
+      }`}>
+        <button
+          type="button"
+          onClick={() => setUseNewAddress(true)}
+          className="w-full flex items-center gap-2 px-4 py-3.5 text-sm font-medium text-[#111111]"
+        >
+          <span className={`w-7 h-7 rounded-full flex items-center justify-center ${
+            showNewForm ? 'bg-[#C7A27C] text-white' : 'bg-[#F6F3EE] text-[#C7A27C]'
+          }`}>
             <Plus className="h-4 w-4" />
-            Use a new address
-          </Button>
+          </span>
+          {addresses.length > 0 ? 'Deliver to a new address' : 'Add a delivery address'}
+        </button>
 
-          {showNewForm && (
-            <div className="space-y-4 pt-4 border-t">
+        {showNewForm && (
+          <div className="space-y-4 px-4 pb-4 pt-2 border-t border-[#E5E2DD]">
+            <div>
+              <Label className="text-xs text-[#9B9B9B] uppercase tracking-wider mb-1 block">Address Label</Label>
+              <Input
+                value={newAddrForm.label}
+                onChange={(e) => setNewAddrForm({ ...newAddrForm, label: e.target.value })}
+                placeholder="Home, Work, etc."
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-[#9B9B9B] uppercase tracking-wider mb-1 block">Street Address</Label>
+              <Input
+                value={newAddrForm.street}
+                onChange={(e) => setNewAddrForm({ ...newAddrForm, street: e.target.value })}
+                placeholder="123 Main Street, Apt 4B"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Address Label</Label>
+                <Label className="text-xs text-[#9B9B9B] uppercase tracking-wider mb-1 block">City</Label>
                 <Input
-                  value={newAddrForm.label}
-                  onChange={(e) => setNewAddrForm({ ...newAddrForm, label: e.target.value })}
-                  placeholder="Home, Work, etc."
+                  value={newAddrForm.city}
+                  onChange={(e) => setNewAddrForm({ ...newAddrForm, city: e.target.value })}
+                  placeholder="Mumbai"
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Street Address</Label>
+                <Label className="text-xs text-[#9B9B9B] uppercase tracking-wider mb-1 block">State</Label>
                 <Input
-                  value={newAddrForm.street}
-                  onChange={(e) => setNewAddrForm({ ...newAddrForm, street: e.target.value })}
-                  placeholder="123 Main Street, Apt 4B"
+                  value={newAddrForm.state}
+                  onChange={(e) => setNewAddrForm({ ...newAddrForm, state: e.target.value })}
+                  placeholder="Maharashtra"
                 />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-1 block">City</Label>
-                  <Input
-                    value={newAddrForm.city}
-                    onChange={(e) => setNewAddrForm({ ...newAddrForm, city: e.target.value })}
-                    placeholder="Mumbai"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-1 block">State</Label>
-                  <Input
-                    value={newAddrForm.state}
-                    onChange={(e) => setNewAddrForm({ ...newAddrForm, state: e.target.value })}
-                    placeholder="Maharashtra"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Pincode</Label>
-                  <Input
-                    value={newAddrForm.pincode}
-                    onChange={(e) => setNewAddrForm({ ...newAddrForm, pincode: e.target.value })}
-                    placeholder="400001"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Country</Label>
-                  <Input
-                    value={newAddrForm.country}
-                    onChange={(e) => setNewAddrForm({ ...newAddrForm, country: e.target.value })}
-                    placeholder="India"
-                  />
-                </div>
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs text-[#9B9B9B] uppercase tracking-wider mb-1 block">Pincode</Label>
+                <Input
+                  value={newAddrForm.pincode}
+                  onChange={(e) => setNewAddrForm({ ...newAddrForm, pincode: e.target.value })}
+                  placeholder="400001"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-[#9B9B9B] uppercase tracking-wider mb-1 block">Country</Label>
+                <Input
+                  value={newAddrForm.country}
+                  onChange={(e) => setNewAddrForm({ ...newAddrForm, country: e.target.value })}
+                  placeholder="India"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

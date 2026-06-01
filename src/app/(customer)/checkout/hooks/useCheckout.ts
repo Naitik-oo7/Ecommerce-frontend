@@ -20,12 +20,39 @@ export interface NewAddressForm {
   country: string;
 }
 
+export interface AppliedCoupon {
+  id?: number;
+  code?: string;
+  type?: string;
+  value?: number;
+  discount?: number;
+}
+
+export interface FreeShippingInfo {
+  threshold: number;
+  eligible: boolean;
+  remaining: number;
+}
+
+// Authoritative cart shape returned by the backend (cart.service).
+// All money is computed server-side — the storefront must NOT recompute it.
+interface CartShape {
+  items?: unknown[];
+  totalQuantity?: number;
+  subtotal?: number;
+  discount?: number;
+  shipping?: number;
+  tax?: number;
+  total?: number;
+  appliedCoupon?: AppliedCoupon | null;
+  freeShipping?: FreeShippingInfo;
+}
+
 export function useCheckout() {
   const router = useRouter();
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
 
-  const [step, setStep] = useState(1);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
   const [useNewAddress, setUseNewAddress] = useState(false);
   const [orderError, setOrderError] = useState('');
@@ -48,35 +75,25 @@ export function useCheckout() {
   const [verifyPayment, { isLoading: isVerifyingPayment }] = useVerifyPaymentMutation();
   const [createAddress] = useCreateAddressMutation();
 
-  const cart = extractCart(cartResponse);
-  const cartItems = (cart as { items?: unknown[] })?.items || [];
+  const cart = (extractCart(cartResponse) as CartShape) ?? {};
+  const cartItems = cart.items ?? [];
   const addresses = (addressesResponse as unknown[]) || [];
 
-  interface CartItem {
-    product?: { price?: string | number };
-    quantity: number;
-  }
-
-  const subtotal = cartItems.reduce(
-    (sum: number, item) => sum + parseFloat(String((item as CartItem).product?.price || 0)) * (item as CartItem).quantity,
-    0
-  );
-  const shipping = subtotal >= 50 ? 0 : 5.99;
-  const coupon = (cart as { appliedCoupon?: { type: string; value: number } })?.appliedCoupon;
-  const discount = coupon
-    ? coupon.type === 'percentage'
-      ? (subtotal * coupon.value) / 100
-      : Math.min(coupon.value, subtotal)
-    : 0;
-  const tax = (subtotal - discount) * 0.1;
-  const total = subtotal - discount + shipping + tax;
+  // Money breakdown — read straight from the authoritative cart response.
+  const subtotal = cart.subtotal ?? 0;
+  const discount = cart.discount ?? 0;
+  const shipping = cart.shipping ?? 0;
+  const tax = cart.tax ?? 0;
+  const total = cart.total ?? 0;
+  const coupon = cart.appliedCoupon ?? null;
+  const freeShipping = cart.freeShipping ?? null;
 
   const isProcessingOrder = isPlacingOrder || isCreatingPayment || isVerifyingPayment || isProcessing;
 
   const hasSavedAddresses = addresses.length > 0;
   const showNewForm = !hasSavedAddresses || useNewAddress;
   const newFormValid = !!(newAddrForm.label && newAddrForm.street && newAddrForm.city && newAddrForm.state && newAddrForm.pincode && newAddrForm.country);
-  const canContinue = showNewForm ? newFormValid : !!selectedAddressId;
+  const canPlaceOrder = showNewForm ? newFormValid : !!selectedAddressId;
 
   interface PaymentData {
     key?: string;
@@ -141,7 +158,7 @@ export function useCheckout() {
         name: user?.name || '',
         email: user?.email || '',
       },
-      theme: { color: '#C4A484' },
+      theme: { color: '#C7A27C' },
       modal: {
         ondismiss: () => {
           setIsProcessing(false);
@@ -172,14 +189,10 @@ export function useCheckout() {
         return;
       }
 
-      interface CartWithCoupon {
-        appliedCoupon?: { id?: number };
-      }
-
       const order = await createOrder({
         addressId,
         paymentMethod,
-        ...(coupon ? { couponId: (cart as CartWithCoupon | undefined)?.appliedCoupon?.id } : {}),
+        ...(coupon?.id ? { couponId: coupon.id } : {}),
       }).unwrap();
       const orderWithData = order as { data?: { id?: number }; id?: number };
       const orderId = orderWithData?.data?.id ?? orderWithData?.id;
@@ -213,8 +226,6 @@ export function useCheckout() {
   const selectedAddress = addresses.find((a) => (a as Address).id === selectedAddressId);
 
   return {
-    step,
-    setStep,
     selectedAddressId,
     setSelectedAddressId,
     useNewAddress,
@@ -234,9 +245,10 @@ export function useCheckout() {
     tax,
     total,
     coupon,
+    freeShipping,
     hasSavedAddresses,
     showNewForm,
-    canContinue,
+    canPlaceOrder,
     handlePlaceOrder,
     selectedAddress,
     isAuthenticated,

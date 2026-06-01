@@ -5,6 +5,7 @@ import { Provider } from 'react-redux';
 import { store } from '@/lib/redux/store';
 import { setUser, clearUser, setLoading } from '@/lib/redux/authSlice';
 import axiosInstance from '@/lib/axiosBaseQuery';
+import { getAccessToken } from '@/lib/authTokens';
 import Lenis from 'lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -55,7 +56,7 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
-    const token = localStorage.getItem('accessToken');
+    const token = getAccessToken();
     if (!token) {
       store.dispatch(clearUser());
       return;
