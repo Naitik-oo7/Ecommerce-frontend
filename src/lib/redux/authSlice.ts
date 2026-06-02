@@ -1,11 +1,11 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { getAccessToken, isPersistedAuth } from '@/lib/authTokens';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { getAccessToken, isPersistedAuth } from "@/lib/authTokens";
 
 interface User {
   id: number;
   name: string;
   email: string;
-  role: 'customer' | 'admin';
+  role: "customer" | "admin";
   avatar?: string;
 }
 
@@ -16,9 +16,9 @@ interface AuthState {
 }
 
 function getPersistedUser(): User | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
   try {
-    const stored = localStorage.getItem('user') ?? sessionStorage.getItem('user');
+    const stored = localStorage.getItem("user") ?? sessionStorage.getItem("user");
     if (stored) {
       const user = JSON.parse(stored);
       if (user?.id) return user;
@@ -40,25 +40,25 @@ const initialState: AuthState = {
 };
 
 const authSlice = createSlice({
-  name: 'auth',
+  name: "auth",
   initialState,
   reducers: {
     setUser: (state, action: PayloadAction<User>) => {
       state.user = action.payload;
       state.isAuthenticated = true;
       state.isLoading = false;
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         const storage = isPersistedAuth() ? localStorage : sessionStorage;
-        storage.setItem('user', JSON.stringify(action.payload));
+        storage.setItem("user", JSON.stringify(action.payload));
       }
     },
     clearUser: (state) => {
       state.user = null;
       state.isAuthenticated = false;
       state.isLoading = false;
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('user');
-        sessionStorage.removeItem('user');
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("user");
+        sessionStorage.removeItem("user");
       }
     },
     setLoading: (state, action: PayloadAction<boolean>) => {

@@ -5,11 +5,17 @@ export interface Order {
   orderNumber?: string;
   status: OrderStatus;
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  paymentMethod?: 'online' | 'cod';
   total: number;
   subtotal: number;
   shipping: number;
   discount?: number;
   tax?: number;
+  trackingNumber?: string;
+  cancellationReason?: string;
+  shippedAt?: string;
+  deliveredAt?: string;
+  returnRequestedAt?: string;
   createdAt: string;
   updatedAt?: string;
   items: OrderItem[];

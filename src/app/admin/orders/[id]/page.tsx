@@ -7,49 +7,32 @@ import {
   useGetOrderByIdAdminQuery,
   useUpdateOrderStatusMutation,
   useUpdatePaymentStatusMutation,
+  useProcessReturnMutation,
 } from '@/services/api/ordersApi';
-import { useGetPaymentByOrderIdQuery } from '@/services/api/paymentsApi';
-import { useRefundPaymentMutation } from '@/services/api/paymentsApi';
+import { useGetPaymentByOrderIdQuery, useRefundPaymentMutation } from '@/services/api/paymentsApi';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   ArrowLeft, Package, Clock, Truck, CheckCircle, XCircle,
   MapPin, CreditCard, Banknote, User, Mail, Calendar,
   Hash, ImageOff, Loader2, AlertCircle, Copy, ChevronRight,
   AlertTriangle, ShieldCheck, RotateCcw, RefreshCw,
+  CheckCircle2, ArrowLeftCircle,
 } from 'lucide-react';
 import Link from 'next/link';
+import { ORDER_STATUS_CONFIG, ORDER_PROGRESS_STEPS } from '@/constants/order-status';
 
 // ─── motion variants ──────────────────────────────────────────────────────────
-const container = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
-};
-const item = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } },
-};
-
-// ─── config ──────────────────────────────────────────────────────────────────
-const ORDER_STEPS = ['pending', 'processing', 'shipped', 'delivered'] as const;
-
-const STATUS_CFG: Record<string, { label: string; color: string; bg: string; ring: string; icon: React.ComponentType<{ className?: string }> }> = {
-  pending:    { label: 'Pending',    color: 'text-amber-700',  bg: 'bg-amber-50',  ring: 'ring-amber-200',  icon: Clock },
-  processing: { label: 'Processing', color: 'text-blue-700',   bg: 'bg-blue-50',   ring: 'ring-blue-200',   icon: Package },
-  shipped:    { label: 'Shipped',    color: 'text-violet-700', bg: 'bg-violet-50', ring: 'ring-violet-200', icon: Truck },
-  delivered:  { label: 'Delivered',  color: 'text-green-700',  bg: 'bg-green-50',  ring: 'ring-green-200',  icon: CheckCircle },
-  cancelled:  { label: 'Cancelled',  color: 'text-red-700',    bg: 'bg-red-50',    ring: 'ring-red-200',    icon: XCircle },
-};
+const container = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.07, delayChildren: 0.05 } } };
+const item = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } } };
 
 const PAYMENT_STATUS_CFG: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  pending:  { label: 'Unpaid',    color: 'text-amber-700',  bg: 'bg-amber-50',  border: 'border-amber-200' },
-  paid:     { label: 'Paid',      color: 'text-green-700',  bg: 'bg-green-50',  border: 'border-green-200' },
-  failed:   { label: 'Failed',    color: 'text-red-700',    bg: 'bg-red-50',    border: 'border-red-200' },
-  refunded: { label: 'Refunded',  color: 'text-slate-600',  bg: 'bg-slate-50',  border: 'border-slate-200' },
+  pending:  { label: 'Unpaid',   color: 'text-amber-700',  bg: 'bg-amber-50',  border: 'border-amber-200' },
+  paid:     { label: 'Paid',     color: 'text-green-700',  bg: 'bg-green-50',  border: 'border-green-200' },
+  failed:   { label: 'Failed',   color: 'text-red-700',    bg: 'bg-red-50',    border: 'border-red-200' },
+  refunded: { label: 'Refunded', color: 'text-slate-600',  bg: 'bg-slate-50',  border: 'border-slate-200' },
 };
 
 const PAYMENT_ATTEMPT_CFG: Record<string, { label: string; color: string; bg: string; icon: React.ComponentType<{ className?: string }> }> = {
@@ -60,29 +43,22 @@ const PAYMENT_ATTEMPT_CFG: Record<string, { label: string; color: string; bg: st
   refunded:   { label: 'Refunded',   color: 'text-slate-600',  bg: 'bg-slate-50',  icon: RotateCcw },
 };
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button
-      onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-      className="ml-1.5 p-1 rounded hover:bg-muted transition-colors"
-      title="Copy"
-    >
-      <AnimatePresence mode="wait">
-        {copied
-          ? <motion.span key="ok" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="text-green-600 text-[10px] font-semibold">Copied</motion.span>
-          : <motion.span key="copy" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><Copy className="h-3 w-3 text-muted-foreground" /></motion.span>}
-      </AnimatePresence>
-    </button>
-  );
-}
+// Allowed next statuses per current (admin)
+const VALID_NEXT: Record<string, string[]> = {
+  pending:          ['confirmed', 'cancelled'],
+  confirmed:        ['processing', 'cancelled'],
+  processing:       ['shipped', 'cancelled'],
+  shipped:          ['out_for_delivery', 'delivered'],
+  out_for_delivery: ['delivered'],
+  delivered:        [],
+  cancelled:        [],
+  return_requested: ['returned', 'delivered'],
+  returned:         [],
+};
 
 function fmt(dateStr?: string) {
   if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('en-IN', {
-    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
-  });
+  return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 function hoursUntilExpiry(dateStr?: string) {
@@ -96,12 +72,21 @@ function hoursUntilExpiry(dateStr?: string) {
 }
 
 function methodLabel(method?: string) {
-  if (!method) return '—';
-  const map: Record<string, string> = {
-    card: 'Card', upi: 'UPI', netbanking: 'Net Banking',
-    wallet: 'Wallet', emi: 'EMI', cod: 'Cash on Delivery',
-  };
-  return map[method] ?? method;
+  const map: Record<string, string> = { card: 'Card', upi: 'UPI', netbanking: 'Net Banking', wallet: 'Wallet', emi: 'EMI', cod: 'Cash on Delivery' };
+  return method ? (map[method] ?? method) : '—';
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="ml-1.5 p-1 rounded hover:bg-muted transition-colors" title="Copy">
+      <AnimatePresence mode="wait">
+        {copied
+          ? <motion.span key="ok" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="text-green-600 text-[10px] font-semibold">Copied</motion.span>
+          : <motion.span key="copy" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><Copy className="h-3 w-3 text-muted-foreground" /></motion.span>}
+      </AnimatePresence>
+    </button>
+  );
 }
 
 // ─── page ─────────────────────────────────────────────────────────────────────
@@ -111,18 +96,24 @@ export default function AdminOrderDetailPage() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [updatingPayment, setUpdatingPayment] = useState(false);
   const [refunding, setRefunding] = useState(false);
+  const [processingReturn, setProcessingReturn] = useState(false);
+  const [trackingInput, setTrackingInput] = useState('');
+  const [pendingStatus, setPendingStatus] = useState('');
 
   const { data: orderResponse, isLoading, error } = useGetOrderByIdAdminQuery(orderId);
   const { data: paymentResponse } = useGetPaymentByOrderIdQuery(orderId);
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
   const [updatePaymentStatus] = useUpdatePaymentStatusMutation();
   const [refundPayment] = useRefundPaymentMutation();
+  const [processReturn] = useProcessReturnMutation();
 
-  interface Addr { label?: string; street?: string; addressLine1?: string; city?: string; state?: string; pincode?: string; zipCode?: string; country?: string; phone?: string; }
+  interface Addr { label?: string; street?: string; addressLine1?: string; city?: string; state?: string; pincode?: string; zipCode?: string; country?: string; }
   interface OrderItem { id?: number; productImage?: string; productName?: string; price?: string; quantity?: number; size?: string; variant?: { product?: { slug?: string; name?: string } } }
   interface OrderData {
     id?: number; status?: string; paymentStatus?: string; paymentMethod?: string;
-    total?: string; subtotal?: string; discount?: string; shipping?: string; tax?: string; createdAt?: string; updatedAt?: string;
+    total?: string; subtotal?: string; discount?: string; shipping?: string; tax?: string;
+    createdAt?: string; updatedAt?: string; shippedAt?: string; deliveredAt?: string; returnRequestedAt?: string;
+    trackingNumber?: string; cancellationReason?: string;
     user?: { name?: string; email?: string };
     address?: Addr; shippingAddress?: Addr;
     items?: OrderItem[]; orderItems?: OrderItem[];
@@ -140,19 +131,36 @@ export default function AdminOrderDetailPage() {
   const handleStatusChange = async (newStatus: string) => {
     if (newStatus === order?.status) return;
     setUpdatingStatus(true);
-    try { await updateOrderStatus({ id: orderId, status: newStatus, isAdmin: true }).unwrap(); } catch {} finally { setUpdatingStatus(false); }
+    try {
+      await updateOrderStatus({
+        id: orderId, status: newStatus, isAdmin: true,
+        trackingNumber: newStatus === 'shipped' ? trackingInput || undefined : undefined,
+      }).unwrap();
+      setTrackingInput('');
+      setPendingStatus('');
+    } catch {}
+    finally { setUpdatingStatus(false); }
   };
 
   const handlePaymentStatusChange = async (newStatus: string) => {
     if (newStatus === order?.paymentStatus) return;
     setUpdatingPayment(true);
-    try { await updatePaymentStatus({ id: orderId, paymentStatus: newStatus, isAdmin: true }).unwrap(); } catch {} finally { setUpdatingPayment(false); }
+    try { await updatePaymentStatus({ id: orderId, paymentStatus: newStatus, isAdmin: true }).unwrap(); } catch {}
+    finally { setUpdatingPayment(false); }
   };
 
   const handleRefund = async () => {
     if (!confirm('Issue a full refund for this order? This cannot be undone.')) return;
     setRefunding(true);
-    try { await refundPayment({ orderId }).unwrap(); } catch {} finally { setRefunding(false); }
+    try { await refundPayment({ orderId }).unwrap(); } catch {}
+    finally { setRefunding(false); }
+  };
+
+  const handleProcessReturn = async (approve: boolean) => {
+    if (!confirm(approve ? 'Approve this return? A refund will be initiated.' : 'Reject this return request?')) return;
+    setProcessingReturn(true);
+    try { await processReturn({ id: orderId, approve }).unwrap(); } catch {}
+    finally { setProcessingReturn(false); }
   };
 
   if (isLoading) return <OrderDetailSkeleton />;
@@ -170,10 +178,14 @@ export default function AdminOrderDetailPage() {
     );
   }
 
-  const statusCfg = STATUS_CFG[order.status!] ?? STATUS_CFG.pending;
+  const statusCfg = ORDER_STATUS_CONFIG[order.status!] ?? ORDER_STATUS_CONFIG.pending;
   const StatusIcon = statusCfg.icon;
   const payCfg = PAYMENT_STATUS_CFG[order.paymentStatus!] ?? PAYMENT_STATUS_CFG.pending;
-  const currentStep = ORDER_STEPS.indexOf(order.status as typeof ORDER_STEPS[number]);
+
+  // Progress tracker index
+  const progressIdx = ORDER_PROGRESS_STEPS.indexOf(order.status as typeof ORDER_PROGRESS_STEPS[number]);
+  const isProgressStatus = progressIdx >= 0;
+
   const addr: Addr = order.address ?? order.shippingAddress ?? {};
   const items: OrderItem[] = order.items ?? order.orderItems ?? [];
   const customer = order.user ?? {};
@@ -185,16 +197,18 @@ export default function AdminOrderDetailPage() {
   const payAttemptCfg = payment?.status ? (PAYMENT_ATTEMPT_CFG[payment.status] ?? PAYMENT_ATTEMPT_CFG.created) : null;
   const PayAttemptIcon = payAttemptCfg?.icon;
 
+  const nextStatuses = VALID_NEXT[order.status ?? 'pending'] ?? [];
+  const isReturnRequested = order.status === 'return_requested';
+  const showShippingInput = (pendingStatus === 'shipped') || (nextStatuses.includes('shipped') && !pendingStatus);
+
   return (
     <motion.div initial="hidden" animate="visible" variants={container} className="space-y-5">
 
-      {/* ── Header ── */}
+      {/* Header */}
       <motion.div variants={item} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link href="/admin/orders">
-            <Button variant="outline" size="icon" className="h-9 w-9 shrink-0">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+            <Button variant="outline" size="icon" className="h-9 w-9 shrink-0"><ArrowLeft className="h-4 w-4" /></Button>
           </Link>
           <div>
             <div className="flex items-center gap-2">
@@ -205,20 +219,16 @@ export default function AdminOrderDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Payment status chip */}
           <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${payCfg.bg} ${payCfg.color} ${payCfg.border}`}>
-            <CreditCard className="h-3.5 w-3.5" />
-            {payCfg.label}
+            <CreditCard className="h-3.5 w-3.5" />{payCfg.label}
           </span>
-          {/* Order status chip */}
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${statusCfg.bg} ${statusCfg.color}`}>
-            <StatusIcon className="h-3.5 w-3.5" />
-            {statusCfg.label}
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${statusCfg.bg} ${statusCfg.color}`}>
+            <StatusIcon className="h-3.5 w-3.5" />{statusCfg.label}
           </span>
         </div>
       </motion.div>
 
-      {/* ── Urgency banner ── */}
+      {/* Urgency banner */}
       {isUrgent && (
         <motion.div variants={item} className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
           <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
@@ -227,14 +237,38 @@ export default function AdminOrderDetailPage() {
             <p className="text-xs text-amber-700 mt-0.5">
               This online order has not been paid.
               {timeLeft ? ` Auto-cancels in ${timeLeft}.` : ' It may auto-cancel soon.'}
-              {' '}The customer can retry payment from their order detail page.
             </p>
           </div>
         </motion.div>
       )}
 
-      {/* ── Progress tracker ── */}
-      {order.status !== 'cancelled' && (
+      {/* Return request banner */}
+      {isReturnRequested && (
+        <motion.div variants={item} className="flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+          <RotateCcw className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-semibold text-yellow-800 text-sm">Return requested</p>
+            <p className="text-xs text-yellow-700 mt-0.5">
+              Customer requested a return on {fmt(order.returnRequestedAt)}.
+              {order.cancellationReason && ` Reason: "${order.cancellationReason}"`}
+            </p>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <Button size="sm" disabled={processingReturn} onClick={() => handleProcessReturn(true)}
+              className="h-8 text-xs bg-green-600 hover:bg-green-700 text-white">
+              {processingReturn ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle className="h-3.5 w-3.5" />}
+              Approve
+            </Button>
+            <Button size="sm" variant="outline" disabled={processingReturn} onClick={() => handleProcessReturn(false)}
+              className="h-8 text-xs border-red-200 text-red-600 hover:bg-red-50">
+              <XCircle className="h-3.5 w-3.5" /> Reject
+            </Button>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Progress tracker */}
+      {isProgressStatus && (
         <motion.div variants={item}>
           <Card>
             <CardContent className="p-5">
@@ -244,19 +278,19 @@ export default function AdminOrderDetailPage() {
                 <motion.div
                   className="absolute left-0 top-4 h-0.5 bg-primary rounded-full"
                   initial={{ width: 0 }}
-                  animate={{ width: currentStep >= 0 ? `${(currentStep / (ORDER_STEPS.length - 1)) * 100}%` : '0%' }}
+                  animate={{ width: progressIdx >= 0 ? `${(progressIdx / (ORDER_PROGRESS_STEPS.length - 1)) * 100}%` : '0%' }}
                   transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
                 />
-                {ORDER_STEPS.map((step, idx) => {
-                  const cfg = STATUS_CFG[step];
+                {ORDER_PROGRESS_STEPS.map((step, idx) => {
+                  const cfg = ORDER_STATUS_CONFIG[step];
                   const Icon = cfg.icon;
-                  const done = currentStep >= idx;
+                  const done = progressIdx >= idx;
                   return (
                     <div key={step} className="flex flex-col items-center gap-2 z-10 relative">
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 transition-all ${done ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/20 bg-background text-muted-foreground'}`}>
                         <Icon className="h-4 w-4" />
                       </div>
-                      <span className={`text-[11px] font-medium hidden sm:block ${done ? 'text-primary' : 'text-muted-foreground'}`}>{cfg.label}</span>
+                      <span className={`text-[10px] font-medium hidden sm:block text-center leading-tight ${done ? 'text-primary' : 'text-muted-foreground'}`}>{cfg.label}</span>
                     </div>
                   );
                 })}
@@ -266,10 +300,10 @@ export default function AdminOrderDetailPage() {
         </motion.div>
       )}
 
-      {/* ── Body grid ── */}
+      {/* Body grid */}
       <div className="grid lg:grid-cols-3 gap-5">
 
-        {/* ── LEFT: items + summary ── */}
+        {/* LEFT: items + summary */}
         <div className="lg:col-span-2 space-y-5">
 
           {/* Order items */}
@@ -283,16 +317,10 @@ export default function AdminOrderDetailPage() {
               </CardHeader>
               <CardContent className="p-0">
                 {items.map((it, idx) => (
-                  <motion.div
-                    key={it.id ?? idx}
-                    initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.04 }}
-                    className="flex items-center gap-4 px-5 py-4 border-b last:border-b-0 hover:bg-muted/20 transition-colors"
-                  >
+                  <motion.div key={it.id ?? idx} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.04 }}
+                    className="flex items-center gap-4 px-5 py-4 border-b last:border-b-0 hover:bg-muted/20 transition-colors">
                     <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden border">
-                      {it.productImage
-                        ? <img src={it.productImage} alt={it.productName} className="object-cover w-full h-full" />
-                        : <ImageOff className="h-5 w-5 text-muted-foreground/40" />}
+                      {it.productImage ? <img src={it.productImage} alt={it.productName} className="object-cover w-full h-full" /> : <ImageOff className="h-5 w-5 text-muted-foreground/40" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <Link href={`/products/${it.variant?.product?.slug ?? '#'}`} target="_blank">
@@ -317,10 +345,7 @@ export default function AdminOrderDetailPage() {
           <motion.div variants={item}>
             <Card>
               <CardHeader className="py-3 px-5 bg-muted/30 border-b">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Hash className="h-4 w-4 text-primary" />
-                  Order Summary
-                </CardTitle>
+                <CardTitle className="text-sm font-semibold flex items-center gap-2"><Hash className="h-4 w-4 text-primary" />Order Summary</CardTitle>
               </CardHeader>
               <CardContent className="p-5 space-y-3">
                 <div className="flex justify-between text-sm">
@@ -338,11 +363,9 @@ export default function AdminOrderDetailPage() {
                 )}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Shipping</span>
-                  {parseFloat(order.shipping ?? '0') === 0 ? (
-                    <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 h-5 text-[11px]">Free</Badge>
-                  ) : (
-                    <span>₹{parseFloat(order.shipping!).toLocaleString('en-IN')}</span>
-                  )}
+                  {parseFloat(order.shipping ?? '0') === 0
+                    ? <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 h-5 text-[11px]">Free</Badge>
+                    : <span>₹{parseFloat(order.shipping!).toLocaleString('en-IN')}</span>}
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Tax</span>
@@ -356,74 +379,91 @@ export default function AdminOrderDetailPage() {
             </Card>
           </motion.div>
 
-          {/* Payment activity — full detail (shown under items on mobile, sidebar on desktop is repeated) */}
+          {/* Payment activity (mobile) */}
           <motion.div variants={item} className="lg:hidden">
-            <PaymentActivityCard
-              order={order}
-              payment={payment}
-              payAttemptCfg={payAttemptCfg}
-              PayAttemptIcon={PayAttemptIcon}
-              isOnline={isOnline}
-              refunding={refunding}
-              onRefund={handleRefund}
-            />
+            <PaymentActivityCard order={order} payment={payment} payAttemptCfg={payAttemptCfg} PayAttemptIcon={PayAttemptIcon} isOnline={isOnline} refunding={refunding} onRefund={handleRefund} />
           </motion.div>
         </div>
 
-        {/* ── RIGHT: sidebar ── */}
+        {/* RIGHT: sidebar */}
         <div className="space-y-5">
 
           {/* Order management */}
           <motion.div variants={item}>
             <Card className="border-primary/10">
               <CardHeader className="py-3 px-5 bg-primary/5 border-b">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <RefreshCw className="h-4 w-4 text-primary" />
-                  Order Management
-                </CardTitle>
+                <CardTitle className="text-sm font-semibold flex items-center gap-2"><RefreshCw className="h-4 w-4 text-primary" />Order Management</CardTitle>
               </CardHeader>
               <CardContent className="p-5 space-y-4">
-                {/* Quick status buttons */}
-                <div className="grid grid-cols-2 gap-2">
-                  {ORDER_STEPS.map((step) => {
-                    const isActive = order.status === step;
-                    const Icon = STATUS_CFG[step].icon;
-                    return (
-                      <button
-                        key={step}
-                        onClick={() => handleStatusChange(step)}
-                        disabled={updatingStatus || order.status === 'cancelled' || order.status === 'delivered'}
-                        className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium border transition-all disabled:opacity-40 disabled:cursor-not-allowed capitalize
-                          ${isActive ? 'bg-primary text-primary-foreground border-primary shadow-sm' : 'bg-background border-border hover:bg-muted'}`}
-                      >
-                        <Icon className="h-3 w-3 shrink-0" />{step}
-                      </button>
-                    );
-                  })}
-                </div>
+                {nextStatuses.length > 0 ? (
+                  <>
+                    {/* Tracking number input when shipping */}
+                    {nextStatuses.includes('shipped') && (
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground">Tracking Number (optional)</label>
+                        <input
+                          type="text"
+                          value={trackingInput}
+                          onChange={(e) => setTrackingInput(e.target.value)}
+                          placeholder="e.g. DELHIVERY1234567"
+                          className="w-full h-9 border border-border rounded-md px-3 text-sm bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                        />
+                      </div>
+                    )}
 
-                {/* Order status select */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Order Status</label>
-                  <Select value={order.status} onValueChange={handleStatusChange} disabled={updatingStatus}>
-                    <SelectTrigger className="h-9 text-sm">
-                      <SelectValue />
-                      {updatingStatus && <Loader2 className="h-3.5 w-3.5 animate-spin ml-2 text-muted-foreground" />}
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[...ORDER_STEPS, 'cancelled'].map((s) => (
-                        <SelectItem key={s} value={s}>
-                          <span className="flex items-center gap-2 capitalize">
-                            <span className="w-2 h-2 rounded-full" style={{
-                              backgroundColor: s === 'pending' ? '#f59e0b' : s === 'processing' ? '#3b82f6' : s === 'shipped' ? '#8b5cf6' : s === 'delivered' ? '#22c55e' : '#ef4444'
-                            }} />
-                            {s}
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    {/* Status select */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">Move to status</label>
+                      <Select value={pendingStatus || order.status} onValueChange={setPendingStatus} disabled={updatingStatus}>
+                        <SelectTrigger className="h-9 text-sm">
+                          <SelectValue />
+                          {updatingStatus && <Loader2 className="h-3.5 w-3.5 animate-spin ml-2 text-muted-foreground" />}
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={order.status!}>
+                            <span className="flex items-center gap-2">
+                              <span className={`w-2 h-2 rounded-full ${ORDER_STATUS_CONFIG[order.status!]?.dot ?? 'bg-gray-400'}`} />
+                              {ORDER_STATUS_CONFIG[order.status!]?.label ?? order.status} (current)
+                            </span>
+                          </SelectItem>
+                          {nextStatuses.map((s) => (
+                            <SelectItem key={s} value={s}>
+                              <span className="flex items-center gap-2">
+                                <span className={`w-2 h-2 rounded-full ${ORDER_STATUS_CONFIG[s]?.dot ?? 'bg-gray-400'}`} />
+                                {ORDER_STATUS_CONFIG[s]?.label ?? s}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <Button
+                      className="w-full h-9 text-sm"
+                      onClick={() => handleStatusChange(pendingStatus || order.status!)}
+                      disabled={updatingStatus || !pendingStatus || pendingStatus === order.status}
+                    >
+                      {updatingStatus ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      Update Status
+                    </Button>
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center py-2">
+                    Order is in a terminal state ({ORDER_STATUS_CONFIG[order.status!]?.label ?? order.status}).
+                    No further status changes are available.
+                  </p>
+                )}
+
+                {/* Tracking number display */}
+                {order.trackingNumber && (
+                  <div className="flex items-center justify-between p-2.5 bg-muted/40 rounded-lg">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase font-medium tracking-wide">Tracking</p>
+                      <p className="text-sm font-mono font-medium">{order.trackingNumber}</p>
+                    </div>
+                    <CopyButton text={order.trackingNumber} />
+                  </div>
+                )}
 
                 {/* Payment status select */}
                 <div className="space-y-1.5">
@@ -437,10 +477,8 @@ export default function AdminOrderDetailPage() {
                       {['pending', 'paid', 'failed', 'refunded'].map((s) => (
                         <SelectItem key={s} value={s}>
                           <span className="flex items-center gap-2 capitalize">
-                            <span className={`w-2 h-2 rounded-full`} style={{
-                              backgroundColor: s === 'pending' ? '#f59e0b' : s === 'paid' ? '#22c55e' : s === 'failed' ? '#ef4444' : '#94a3b8'
-                            }} />
-                            {s}
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s === 'pending' ? '#f59e0b' : s === 'paid' ? '#22c55e' : s === 'failed' ? '#ef4444' : '#94a3b8' }} />
+                            {PAYMENT_STATUS_CFG[s]?.label ?? s}
                           </span>
                         </SelectItem>
                       ))}
@@ -450,11 +488,8 @@ export default function AdminOrderDetailPage() {
 
                 {/* Refund button */}
                 {payment?.status === 'captured' && order.paymentStatus !== 'refunded' && (
-                  <button
-                    onClick={handleRefund}
-                    disabled={refunding}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium border border-red-200 text-red-600 bg-red-50 rounded-lg hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors disabled:opacity-50"
-                  >
+                  <button onClick={handleRefund} disabled={refunding}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium border border-red-200 text-red-600 bg-red-50 rounded-lg hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors disabled:opacity-50">
                     {refunding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
                     {refunding ? 'Processing refund…' : 'Issue Full Refund'}
                   </button>
@@ -465,29 +500,18 @@ export default function AdminOrderDetailPage() {
 
           {/* Payment activity — desktop */}
           <motion.div variants={item} className="hidden lg:block">
-            <PaymentActivityCard
-              order={order}
-              payment={payment}
-              payAttemptCfg={payAttemptCfg}
-              PayAttemptIcon={PayAttemptIcon}
-              isOnline={isOnline}
-              refunding={refunding}
-              onRefund={handleRefund}
-            />
+            <PaymentActivityCard order={order} payment={payment} payAttemptCfg={payAttemptCfg} PayAttemptIcon={PayAttemptIcon} isOnline={isOnline} refunding={refunding} onRefund={handleRefund} />
           </motion.div>
 
           {/* Customer */}
           <motion.div variants={item}>
             <Card>
               <CardHeader className="py-3 px-5 bg-muted/30 border-b">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <User className="h-4 w-4 text-primary" />
-                  Customer
-                </CardTitle>
+                <CardTitle className="text-sm font-semibold flex items-center gap-2"><User className="h-4 w-4 text-primary" />Customer</CardTitle>
               </CardHeader>
               <CardContent className="p-5">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-linear-to-br from-primary/20 to-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
                     <span className="text-base font-bold text-primary">{customer.name?.charAt(0).toUpperCase() ?? '?'}</span>
                   </div>
                   <div className="min-w-0">
@@ -511,10 +535,7 @@ export default function AdminOrderDetailPage() {
           <motion.div variants={item}>
             <Card>
               <CardHeader className="py-3 px-5 bg-muted/30 border-b">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-primary" />
-                  Shipping Address
-                </CardTitle>
+                <CardTitle className="text-sm font-semibold flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" />Shipping Address</CardTitle>
               </CardHeader>
               <CardContent className="p-5 space-y-1 text-sm">
                 {addr.label && <Badge variant="secondary" className="mb-2 capitalize text-xs">{addr.label}</Badge>}
@@ -529,58 +550,31 @@ export default function AdminOrderDetailPage() {
           <motion.div variants={item}>
             <Card>
               <CardHeader className="py-3 px-5 bg-muted/30 border-b">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-primary" />
-                  Timeline
-                </CardTitle>
+                <CardTitle className="text-sm font-semibold flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" />Timeline</CardTitle>
               </CardHeader>
               <CardContent className="p-5">
                 <ol className="relative border-l border-border space-y-5 ml-2">
-                  <TimelineEvent
-                    icon={<Package className="h-3.5 w-3.5" />}
-                    label="Order placed"
-                    date={order.createdAt}
-                    color="bg-primary"
-                  />
+                  <TimelineEvent icon={<Package className="h-3.5 w-3.5" />} label="Order placed" date={order.createdAt} color="bg-primary" />
                   {payment?.createdAt && isOnline && (
-                    <TimelineEvent
-                      icon={<CreditCard className="h-3.5 w-3.5" />}
-                      label="Payment session created"
-                      date={payment.createdAt}
-                      color="bg-amber-400"
-                    />
+                    <TimelineEvent icon={<CreditCard className="h-3.5 w-3.5" />} label="Payment session created" date={payment.createdAt} color="bg-amber-400" />
                   )}
                   {payment?.status === 'captured' && payment.updatedAt && (
-                    <TimelineEvent
-                      icon={<ShieldCheck className="h-3.5 w-3.5" />}
-                      label="Payment captured"
-                      date={payment.updatedAt}
-                      color="bg-green-500"
-                    />
+                    <TimelineEvent icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Payment captured" date={payment.updatedAt} color="bg-green-500" />
+                  )}
+                  {order.shippedAt && (
+                    <TimelineEvent icon={<Truck className="h-3.5 w-3.5" />} label={`Shipped${order.trackingNumber ? ` · ${order.trackingNumber}` : ''}`} date={order.shippedAt} color="bg-violet-400" />
+                  )}
+                  {order.deliveredAt && (
+                    <TimelineEvent icon={<CheckCircle className="h-3.5 w-3.5" />} label="Delivered" date={order.deliveredAt} color="bg-green-500" />
+                  )}
+                  {order.returnRequestedAt && (
+                    <TimelineEvent icon={<RotateCcw className="h-3.5 w-3.5" />} label="Return requested" date={order.returnRequestedAt} color="bg-yellow-400" />
                   )}
                   {payment?.status === 'refunded' && payment.updatedAt && (
-                    <TimelineEvent
-                      icon={<RotateCcw className="h-3.5 w-3.5" />}
-                      label="Payment refunded"
-                      date={payment.updatedAt}
-                      color="bg-slate-400"
-                    />
+                    <TimelineEvent icon={<RotateCcw className="h-3.5 w-3.5" />} label="Payment refunded" date={payment.updatedAt} color="bg-slate-400" />
                   )}
                   {order.status === 'cancelled' && order.updatedAt && (
-                    <TimelineEvent
-                      icon={<XCircle className="h-3.5 w-3.5" />}
-                      label="Order cancelled"
-                      date={order.updatedAt}
-                      color="bg-red-400"
-                    />
-                  )}
-                  {order.updatedAt && order.updatedAt !== order.createdAt && order.status !== 'cancelled' && (
-                    <TimelineEvent
-                      icon={<RefreshCw className="h-3.5 w-3.5" />}
-                      label={`Status → ${order.status}`}
-                      date={order.updatedAt}
-                      color="bg-blue-400"
-                    />
+                    <TimelineEvent icon={<XCircle className="h-3.5 w-3.5" />} label={`Cancelled${order.cancellationReason ? ` · ${order.cancellationReason}` : ''}`} date={order.updatedAt} color="bg-red-400" />
                   )}
                 </ol>
               </CardContent>
@@ -592,10 +586,8 @@ export default function AdminOrderDetailPage() {
   );
 }
 
-// ─── Payment Activity Card ────────────────────────────────────────────────────
-function PaymentActivityCard({
-  order, payment, payAttemptCfg, PayAttemptIcon, isOnline, refunding, onRefund,
-}: {
+// ─── Payment Activity Card ─────────────────────────────────────────────────────
+function PaymentActivityCard({ order, payment, payAttemptCfg, PayAttemptIcon, isOnline, refunding, onRefund }: {
   order: { paymentMethod?: string; paymentStatus?: string; status?: string; createdAt?: string; id?: number };
   payment: { id?: number; status?: string; amount?: string | number; razorpayOrderId?: string; razorpayPaymentId?: string; method?: string; currency?: string; createdAt?: string; updatedAt?: string } | null;
   payAttemptCfg: { label: string; color: string; bg: string; icon: React.ComponentType<{ className?: string }> } | null;
@@ -611,15 +603,11 @@ function PaymentActivityCard({
     <Card className={isUrgent ? 'border-amber-200' : ''}>
       <CardHeader className={`py-3 px-5 border-b ${isUrgent ? 'bg-amber-50' : 'bg-muted/30'}`}>
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
-          {isOnline
-            ? <CreditCard className={`h-4 w-4 ${isUrgent ? 'text-amber-600' : 'text-primary'}`} />
-            : <Banknote className="h-4 w-4 text-primary" />}
+          {isOnline ? <CreditCard className={`h-4 w-4 ${isUrgent ? 'text-amber-600' : 'text-primary'}`} /> : <Banknote className="h-4 w-4 text-primary" />}
           Payment Activity
         </CardTitle>
       </CardHeader>
       <CardContent className="p-5 space-y-4">
-
-        {/* COD */}
         {!isOnline && (
           <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-lg">
             <Banknote className="h-5 w-5 text-muted-foreground shrink-0" />
@@ -629,83 +617,47 @@ function PaymentActivityCard({
             </div>
           </div>
         )}
-
-        {/* Online — no payment row yet */}
         {isOnline && !payment && (
           <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-lg text-sm text-muted-foreground">
-            <Clock className="h-4 w-4 shrink-0" />
-            No payment session started yet
+            <Clock className="h-4 w-4 shrink-0" />No payment session started yet
           </div>
         )}
-
-        {/* Online — payment row exists */}
         {isOnline && payment && (
           <>
-            {/* Attempt status */}
             {payAttemptCfg && PayAttemptIcon && (
               <div className={`flex items-center gap-3 p-3 rounded-lg ${payAttemptCfg.bg}`}>
                 <PayAttemptIcon className={`h-5 w-5 shrink-0 ${payAttemptCfg.color}`} />
                 <div>
                   <p className={`font-semibold text-sm ${payAttemptCfg.color}`}>{payAttemptCfg.label}</p>
                   <p className="text-xs text-muted-foreground">
-                    {payment.status === 'captured' ? 'Payment successfully received' :
-                     payment.status === 'failed' ? 'Last attempt failed — customer can retry' :
-                     payment.status === 'created' ? 'Session open, awaiting customer action' :
-                     payment.status === 'refunded' ? 'Amount returned to customer' : ''}
+                    {payment.status === 'captured' ? 'Payment successfully received' : payment.status === 'failed' ? 'Last attempt failed — customer can retry' : payment.status === 'created' ? 'Session open, awaiting customer' : payment.status === 'refunded' ? 'Amount returned to customer' : ''}
                   </p>
                 </div>
               </div>
             )}
-
-            {/* Expiry warning */}
             {isUrgent && timeLeft && (
               <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                Order auto-cancels in <strong>{timeLeft}</strong> if unpaid
+                Auto-cancels in <strong>{timeLeft}</strong> if unpaid
               </div>
             )}
-
-            {/* Details grid */}
             <div className="space-y-2.5 text-sm">
-              <DetailRow label="Amount">
-                <span className="font-semibold">₹{parseFloat(String(payment.amount ?? 0)).toLocaleString('en-IN')}</span>
-              </DetailRow>
-
+              <DetailRow label="Amount"><span className="font-semibold">₹{parseFloat(String(payment.amount ?? 0)).toLocaleString('en-IN')}</span></DetailRow>
               {payment.razorpayOrderId && (
                 <DetailRow label="Razorpay Order">
-                  <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded truncate max-w-[150px]" title={payment.razorpayOrderId}>
-                    {payment.razorpayOrderId}
-                  </span>
+                  <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded truncate max-w-[150px]" title={payment.razorpayOrderId}>{payment.razorpayOrderId}</span>
                   <CopyButton text={payment.razorpayOrderId} />
                 </DetailRow>
               )}
-
               {payment.razorpayPaymentId && (
                 <DetailRow label="Payment ID">
-                  <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded truncate max-w-[150px]" title={payment.razorpayPaymentId}>
-                    {payment.razorpayPaymentId}
-                  </span>
+                  <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded truncate max-w-[150px]" title={payment.razorpayPaymentId}>{payment.razorpayPaymentId}</span>
                   <CopyButton text={payment.razorpayPaymentId} />
                 </DetailRow>
               )}
-
-              {payment.method && (
-                <DetailRow label="Method">
-                  <span className="capitalize font-medium">{methodLabel(payment.method)}</span>
-                </DetailRow>
-              )}
-
-              {payment.createdAt && (
-                <DetailRow label="Initiated">
-                  <span className="text-muted-foreground">{fmt(payment.createdAt)}</span>
-                </DetailRow>
-              )}
-
-              {payment.status === 'captured' && payment.updatedAt && (
-                <DetailRow label="Captured">
-                  <span className="text-green-700 font-medium">{fmt(payment.updatedAt)}</span>
-                </DetailRow>
-              )}
+              {payment.method && <DetailRow label="Method"><span className="capitalize font-medium">{methodLabel(payment.method)}</span></DetailRow>}
+              {payment.createdAt && <DetailRow label="Initiated"><span className="text-muted-foreground">{fmt(payment.createdAt)}</span></DetailRow>}
+              {payment.status === 'captured' && payment.updatedAt && <DetailRow label="Captured"><span className="text-green-700 font-medium">{fmt(payment.updatedAt)}</span></DetailRow>}
             </div>
           </>
         )}
@@ -714,7 +666,6 @@ function PaymentActivityCard({
   );
 }
 
-// ─── sub-components ───────────────────────────────────────────────────────────
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-2">
@@ -727,16 +678,13 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
 function TimelineEvent({ icon, label, date, color }: { icon: React.ReactNode; label: string; date?: string; color: string }) {
   return (
     <li className="ml-5 relative">
-      <span className={`absolute -left-[1.65rem] flex items-center justify-center w-6 h-6 rounded-full text-white ${color}`}>
-        {icon}
-      </span>
+      <span className={`absolute left-[-1.65rem] flex items-center justify-center w-6 h-6 rounded-full text-white ${color}`}>{icon}</span>
       <p className="text-xs font-medium text-foreground leading-tight">{label}</p>
       <p className="text-[11px] text-muted-foreground mt-0.5">{fmt(date)}</p>
     </li>
   );
 }
 
-// ─── skeleton ────────────────────────────────────────────────────────────────
 function OrderDetailSkeleton() {
   return (
     <div className="space-y-5">

@@ -186,7 +186,7 @@ export default function OrderPlacedPage() {
                 <h1 className="text-3xl font-bold text-mono-charcoal mb-2">Order Placed</h1>
                 <p className="text-muted-foreground text-sm">
                   {isCOD
-                    ? 'Your order has been confirmed. Pay when it arrives.'
+                    ? "Your order has been placed. We'll confirm it shortly — pay when it arrives."
                     : 'Your payment was successful and your order is confirmed.'}
                 </p>
               </motion.div>

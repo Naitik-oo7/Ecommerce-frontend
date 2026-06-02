@@ -1,2 +1,2 @@
-export { ORDER_STATUS_CONFIG, type OrderStatus, type StatusConfig } from './order-status';
+export { ORDER_STATUS_CONFIG, ORDER_PROGRESS_STEPS, type OrderStatus, type StatusConfig } from './order-status';
 export { ROUTES } from './routes';

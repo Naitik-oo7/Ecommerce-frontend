@@ -27,14 +27,32 @@ export const ordersApi = createApi({
       invalidatesTags: ['Orders'],
     }),
     cancelOrder: builder.mutation({
-      query: (id) => ({ url: `/api/v1/orders/${id}/cancel`, method: 'PATCH' }),
-      invalidatesTags: (result, error, id) => [{ type: 'Orders', id }, 'Orders'],
+      query: ({ id, reason }: { id: string | number; reason?: string }) => ({
+        url: `/api/v1/orders/${id}/cancel`,
+        method: 'PATCH',
+        data: reason ? { reason } : {},
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'Orders', id }, 'Orders'],
+    }),
+    requestReturn: builder.mutation({
+      query: ({ id, reason }: { id: string | number; reason: string }) => ({
+        url: `/api/v1/orders/${id}/return`,
+        method: 'POST',
+        data: { reason },
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'Orders', id }, 'Orders'],
     }),
     updateOrderStatus: builder.mutation({
-      query: ({ id, status, isAdmin }: { id: number; status: string; isAdmin?: boolean }) => ({
+      query: ({ id, status, isAdmin, trackingNumber, cancellationReason }: {
+        id: number;
+        status: string;
+        isAdmin?: boolean;
+        trackingNumber?: string;
+        cancellationReason?: string;
+      }) => ({
         url: isAdmin ? `/api/v1/orders/admin/${id}/status` : `/api/v1/orders/${id}/status`,
         method: 'PATCH',
-        data: { status },
+        data: { status, trackingNumber, cancellationReason },
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Orders', id }, 'Orders'],
     }),
@@ -43,6 +61,14 @@ export const ordersApi = createApi({
         url: isAdmin ? `/api/v1/orders/admin/${id}/payment-status` : `/api/v1/orders/${id}/payment-status`,
         method: 'PATCH',
         data: { paymentStatus },
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'Orders', id }, 'Orders'],
+    }),
+    processReturn: builder.mutation({
+      query: ({ id, approve }: { id: number; approve: boolean }) => ({
+        url: `/api/v1/orders/admin/${id}/return`,
+        method: 'PATCH',
+        data: { approve },
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Orders', id }, 'Orders'],
     }),
@@ -55,6 +81,8 @@ export const {
   useGetOrderByIdAdminQuery,
   useCreateOrderMutation,
   useCancelOrderMutation,
+  useRequestReturnMutation,
   useUpdateOrderStatusMutation,
   useUpdatePaymentStatusMutation,
+  useProcessReturnMutation,
 } = ordersApi;
