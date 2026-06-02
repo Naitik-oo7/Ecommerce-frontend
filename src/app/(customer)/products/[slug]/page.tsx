@@ -2,7 +2,8 @@
 
 import { useParams } from 'next/navigation';
 import { useGetProductBySlugQuery } from '@/services/api/productsApi';
-import { useGetProductReviewsQuery } from '@/services/api/reviewsApi';
+import { useGetProductReviewsQuery, useGetUserReviewsQuery } from '@/services/api/reviewsApi';
+import { useGetOrdersQuery } from '@/services/api/ordersApi';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -15,6 +16,7 @@ import {
   RotateCcw,
   AlertTriangle,
   Share2,
+  CheckCircle2,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -26,6 +28,7 @@ import { ReviewsSection } from './components/ReviewsSection';
 import { RelatedProducts } from './components/RelatedProducts';
 import { AccordionSection } from './components/ProductAccordion';
 import { useProductActions } from './hooks/useProductActions';
+import { WriteReviewModal } from '@/components/WriteReviewModal';
 import type { Product, ProductVariant } from '@/types';
 
 function ProductDetailSkeleton() {
@@ -66,10 +69,19 @@ export default function ProductDetailPage() {
 
   const { data: product, isLoading, error } = useGetProductBySlugQuery(slug as string);
 
-  const { data: reviewsResponse } = useGetProductReviewsQuery(
+  const { data: reviewsResponse, refetch: refetchReviews } = useGetProductReviewsQuery(
     { productId: product?.id ?? 0 },
     { skip: !product?.id }
   );
+
+  const { data: userOrdersData } = useGetOrdersQuery(
+    { status: 'delivered', limit: 50 },
+    { skip: !isAuthenticated }
+  );
+
+  const { data: userReviewsData } = useGetUserReviewsQuery({}, { skip: !isAuthenticated });
+
+  const [showWriteReview, setShowWriteReview] = useState(false);
 
   interface ReviewItem {
     id: number;
@@ -77,6 +89,7 @@ export default function ProductDetailPage() {
     comment: string;
     createdAt: string;
     user?: { name: string };
+    images?: string[];
   }
   interface ReviewStatsShape {
     average: number;
@@ -86,6 +99,33 @@ export default function ProductDetailPage() {
   const reviews: ReviewItem[] = (reviewsResponse as { reviews?: ReviewItem[] })?.reviews || [];
   const reviewStats: ReviewStatsShape | undefined = (reviewsResponse as { stats?: ReviewStatsShape })
     ?.stats;
+
+  // Compute delivered orders containing this product
+  interface OrderItemShape { variant?: { productId?: number; product?: { id?: number } }; productId?: number; }
+  interface OrderShape { id: number; createdAt?: string; items?: OrderItemShape[]; orderItems?: OrderItemShape[]; }
+  const deliveredOrdersForProduct: { id: number; label: string }[] = isAuthenticated
+    ? ((userOrdersData as { data?: OrderShape[] } | undefined)?.data || [])
+        .filter((o) => {
+          const items: OrderItemShape[] = o.items || o.orderItems || [];
+          return items.some((item) =>
+            (item.productId === product?.id) ||
+            (item.variant?.productId === product?.id) ||
+            (item.variant?.product?.id === product?.id)
+          );
+        })
+        .map((o) => ({
+          id: o.id,
+          label: `Order #${o.id}${o.createdAt ? ` · ${new Date(o.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}`,
+        }))
+    : [];
+
+  // Check if user already reviewed this product
+  interface UserReviewShape { productId?: number; }
+  const alreadyReviewed = isAuthenticated
+    ? ((userReviewsData as { data?: UserReviewShape[] } | undefined)?.data || []).some(
+        (r) => r.productId === product?.id
+      )
+    : false;
 
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const initializedRef = useRef(false);
@@ -434,6 +474,31 @@ export default function ProductDetailPage() {
               open={reviewsOpen}
               onOpenChange={setReviewsOpen}
             >
+              {/* Write review CTA */}
+              {isAuthenticated && !alreadyReviewed && deliveredOrdersForProduct.length > 0 && (
+                <div className="mb-6 flex items-center justify-between gap-4 p-4 rounded-xl bg-mono-cream/60 border border-border/40">
+                  <p className="text-sm text-mono-stone">Share your experience with this product</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowWriteReview(true)}
+                    className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-mono-charcoal text-white text-sm font-medium hover:bg-mono-charcoal/80 transition-colors"
+                  >
+                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                    Write a review
+                  </button>
+                </div>
+              )}
+              {isAuthenticated && alreadyReviewed && (
+                <p className="text-sm text-emerald-600 mb-4 flex items-center gap-1.5">
+                  <CheckCircle2 className="h-4 w-4" /> You have reviewed this product.
+                </p>
+              )}
+              {isAuthenticated && !alreadyReviewed && deliveredOrdersForProduct.length === 0 && (
+                <p className="text-sm text-mono-stone mb-4">
+                  Purchase this product to write a review.
+                </p>
+              )}
+
               {reviews.length > 0 ? (
                 <ReviewsSection reviews={reviews} stats={reviewStats} inline />
               ) : (
@@ -447,6 +512,16 @@ export default function ProductDetailPage() {
       </div>
 
       <RelatedProducts slug={slug as string} />
+
+      {showWriteReview && product && (
+        <WriteReviewModal
+          productId={product.id}
+          productName={product.name}
+          orderOptions={deliveredOrdersForProduct}
+          onClose={() => setShowWriteReview(false)}
+          onSuccess={() => { setShowWriteReview(false); refetchReviews(); setReviewsOpen(true); }}
+        />
+      )}
     </div>
   );
 }

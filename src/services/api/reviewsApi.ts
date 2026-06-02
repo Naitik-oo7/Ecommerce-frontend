@@ -27,7 +27,7 @@ export const reviewsApi = createApi({
       providesTags: ['Reviews'],
     }),
     createReview: builder.mutation({
-      query: (data: { productId: number; orderId: number; rating: number; comment?: string }) => ({
+      query: (data: { productId: number; orderId: number; rating: number; comment?: string; images?: string[] }) => ({
         url: '/api/v1/reviews',
         method: 'POST',
         data,
@@ -38,7 +38,7 @@ export const reviewsApi = createApi({
       ],
     }),
     updateReview: builder.mutation({
-      query: ({ id, ...data }: { id: number; rating?: number; comment?: string }) => ({
+      query: ({ id, ...data }: { id: number; rating?: number; comment?: string; images?: string[] }) => ({
         url: `/api/v1/reviews/${id}`,
         method: 'PATCH',
         data,

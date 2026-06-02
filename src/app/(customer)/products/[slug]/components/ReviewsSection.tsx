@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Star, ThumbsUp, User } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Star, ThumbsUp, User, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface Review {
@@ -11,6 +11,7 @@ interface Review {
   comment: string;
   createdAt: string;
   user?: { name: string };
+  images?: string[];
 }
 
 interface ReviewStats {
@@ -41,8 +42,62 @@ function StarRow({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'md' }
   );
 }
 
+function ImageLightbox({ images, startIndex, onClose }: { images: string[]; startIndex: number; onClose: () => void }) {
+  const [idx, setIdx] = useState(startIndex);
+  const prev = () => setIdx((i) => (i - 1 + images.length) % images.length);
+  const next = () => setIdx((i) => (i + 1) % images.length);
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center"
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+      >
+        <X className="h-5 w-5 text-white" />
+      </button>
+
+      {images.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); prev(); }}
+            className="absolute left-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+          >
+            <ChevronLeft className="h-5 w-5 text-white" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); next(); }}
+            className="absolute right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+          >
+            <ChevronRight className="h-5 w-5 text-white" />
+          </button>
+        </>
+      )}
+
+      <img
+        src={images[idx]}
+        alt={`Review photo ${idx + 1}`}
+        className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg"
+        onClick={(e) => e.stopPropagation()}
+      />
+
+      {images.length > 1 && (
+        <p className="absolute bottom-4 left-0 right-0 text-center text-white/60 text-sm">
+          {idx + 1} / {images.length}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function ReviewsSection({ reviews, stats, inline = false }: ReviewsSectionProps) {
   const [visibleCount, setVisibleCount] = useState(inline ? 4 : 6);
+  const [lightbox, setLightbox] = useState<{ images: string[]; idx: number } | null>(null);
 
   if (!reviews?.length) return null;
 
@@ -110,9 +165,29 @@ export function ReviewsSection({ reviews, stats, inline = false }: ReviewsSectio
                   })}
                 </time>
               </div>
-              <p className="text-mono-charcoal/90 text-sm leading-relaxed mb-4 line-clamp-5">
-                {review.comment}
-              </p>
+
+              {review.comment && (
+                <p className="text-mono-charcoal/90 text-sm leading-relaxed mb-3 line-clamp-5">
+                  {review.comment}
+                </p>
+              )}
+
+              {/* Review images */}
+              {review.images && review.images.length > 0 && (
+                <div className="flex gap-2 mb-3 flex-wrap">
+                  {review.images.map((url, i) => (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => setLightbox({ images: review.images!, idx: i })}
+                      className="w-16 h-16 rounded-lg overflow-hidden border border-border/60 hover:border-mono-terracotta/50 transition-colors shrink-0 focus:outline-none focus:ring-2 focus:ring-mono-terracotta/40"
+                    >
+                      <img src={url} alt={`Review photo ${i + 1}`} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <div className="flex items-center justify-between pt-2 border-t border-border/30">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-mono-sand flex items-center justify-center">
@@ -146,6 +221,16 @@ export function ReviewsSection({ reviews, stats, inline = false }: ReviewsSectio
           </Button>
         </div>
       )}
+
+      <AnimatePresence>
+        {lightbox && (
+          <ImageLightbox
+            images={lightbox.images}
+            startIndex={lightbox.idx}
+            onClose={() => setLightbox(null)}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 

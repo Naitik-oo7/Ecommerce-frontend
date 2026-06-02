@@ -3,17 +3,19 @@
 import { useParams, useSearchParams } from 'next/navigation';
 import { useGetOrderByIdQuery, useCancelOrderMutation, useRequestReturnMutation } from '@/services/api/ordersApi';
 import { useCreatePaymentMutation, useVerifyPaymentMutation } from '@/services/api/paymentsApi';
+import { useGetUserReviewsQuery } from '@/services/api/reviewsApi';
 import {
   ArrowLeft, Package, CheckCircle, Clock, Truck, XCircle,
   MapPin, CreditCard, AlertCircle, ImageOff, Loader2, RefreshCw,
   ChevronRight, Receipt, HelpCircle, ShoppingBag, CheckCircle2,
-  RotateCcw, ArrowLeftCircle,
+  RotateCcw, ArrowLeftCircle, Star,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ORDER_STATUS_CONFIG, ORDER_PROGRESS_STEPS } from '@/constants/order-status';
+import { WriteReviewModal } from '@/components/WriteReviewModal';
 
 declare global {
   interface Window {
@@ -48,7 +50,8 @@ interface OrderItem {
   id?: number;
   productImage?: string;
   productName?: string;
-  variant?: { product?: { slug?: string; name?: string } };
+  productId?: number;
+  variant?: { product?: { slug?: string; name?: string; id?: number } };
   quantity?: number;
   size?: string;
   price?: string;
@@ -222,8 +225,10 @@ export default function ProfileOrderDetailPage() {
   const [returnSuccess, setReturnSuccess] = useState(false);
   const [retryState, setRetryState] = useState<'idle' | 'loading' | 'processing'>('idle');
   const [retryBanner, setRetryBanner] = useState<'success' | 'failed' | 'pending' | null>(null);
+  const [reviewTarget, setReviewTarget] = useState<{ productId: number; productName: string; orderId: number } | null>(null);
 
   const { data: orderResponse, isLoading, error, refetch } = useGetOrderByIdQuery(id as string);
+  const { data: userReviewsData, refetch: refetchReviews } = useGetUserReviewsQuery({});
   const [cancelOrder] = useCancelOrderMutation();
   const [createPayment] = useCreatePaymentMutation();
   const [verifyPayment] = useVerifyPaymentMutation();
@@ -311,6 +316,15 @@ export default function ProfileOrderDetailPage() {
   const shippingAddr: Address = order.address || order.shippingAddress || {};
   const items: OrderItem[] = order.items || order.orderItems || [];
   const computedSubtotal = items.reduce((s, i) => s + parseFloat(i.price || '0') * (i.quantity || 0), 0);
+
+  // Build set of productIds already reviewed for this order
+  interface UserReview { productId?: number; orderId?: number; }
+  const reviewedProductIds = new Set<number>(
+    ((userReviewsData as { data?: UserReview[] } | undefined)?.data || [])
+      .filter((r) => r.orderId === order.id)
+      .map((r) => r.productId)
+      .filter((pid): pid is number => Boolean(pid))
+  );
 
   const showNavBanner = (isSuccess && !retryBanner) || (paymentParam === 'pending' && !isSuccess && !retryBanner) || (paymentParam === 'failed' && !retryBanner) || retryBanner !== null;
 
@@ -476,28 +490,46 @@ export default function ProfileOrderDetailPage() {
               {items.map((item) => {
                 const slug = item.variant?.product?.slug;
                 const lineTotal = parseFloat(item.price || '0') * (item.quantity || 0);
-                const content = (
-                  <div className="flex items-center gap-4 px-5 py-4 md:px-6 hover:bg-muted/30 transition-colors">
-                    <div className="w-16 h-16 rounded-xl bg-muted overflow-hidden shrink-0 border border-border/80 flex items-center justify-center">
-                      {item.productImage
-                        ? <img src={item.productImage} alt={item.productName || ''} className="w-full h-full object-cover" />
-                        : <ImageOff className="h-6 w-6 text-muted-foreground/40" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm text-foreground line-clamp-2">{item.productName || item.variant?.product?.name || 'Product'}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Qty {item.quantity}{item.size ? ` · Size ${item.size}` : ''}{item.price ? ` · ${formatINR(item.price)} each` : ''}
-                      </p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="font-semibold text-foreground tabular-nums">{formatINR(lineTotal)}</p>
-                      {slug && <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-accent mt-1">View<ChevronRight className="h-3 w-3" /></span>}
-                    </div>
-                  </div>
-                );
+                const itemProductId = item.productId || item.variant?.product?.id;
+                const alreadyReviewed = itemProductId ? reviewedProductIds.has(itemProductId) : false;
+                const canReview = orderStatus === 'delivered' && itemProductId && !alreadyReviewed;
+                const itemName = item.productName || item.variant?.product?.name || 'Product';
+
                 return (
-                  <li key={item.id}>
-                    {slug ? <Link href={`/products/${slug}`} className="block group">{content}</Link> : content}
+                  <li key={item.id} className="flex flex-col">
+                    <div className="flex items-center gap-4 px-5 py-4 md:px-6">
+                      <div className="w-16 h-16 rounded-xl bg-muted overflow-hidden shrink-0 border border-border/80 flex items-center justify-center">
+                        {item.productImage
+                          ? <img src={item.productImage} alt={itemName} className="w-full h-full object-cover" />
+                          : <ImageOff className="h-6 w-6 text-muted-foreground/40" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {slug
+                          ? <Link href={`/products/${slug}`} className="font-medium text-sm text-foreground line-clamp-2 hover:underline">{itemName}</Link>
+                          : <p className="font-medium text-sm text-foreground line-clamp-2">{itemName}</p>}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Qty {item.quantity}{item.size ? ` · Size ${item.size}` : ''}{item.price ? ` · ${formatINR(item.price)} each` : ''}
+                        </p>
+                        {alreadyReviewed && (
+                          <span className="inline-flex items-center gap-1 text-xs text-emerald-600 mt-1">
+                            <CheckCircle className="h-3 w-3" /> Reviewed
+                          </span>
+                        )}
+                        {canReview && (
+                          <button
+                            type="button"
+                            onClick={() => setReviewTarget({ productId: itemProductId, productName: itemName, orderId: order.id! })}
+                            className="inline-flex items-center gap-1 mt-1.5 text-xs font-medium text-accent hover:underline"
+                          >
+                            <Star className="h-3 w-3" /> Write a review
+                          </button>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="font-semibold text-foreground tabular-nums">{formatINR(lineTotal)}</p>
+                        {slug && <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-accent mt-1">View<ChevronRight className="h-3 w-3" /></span>}
+                      </div>
+                    </div>
                   </li>
                 );
               })}
@@ -605,6 +637,17 @@ export default function ProfileOrderDetailPage() {
           orderId={id as string}
           onClose={() => setShowReturnModal(false)}
           onSuccess={() => { setShowReturnModal(false); setReturnSuccess(true); refetch(); }}
+        />
+      )}
+
+      {/* Review modal */}
+      {reviewTarget && (
+        <WriteReviewModal
+          productId={reviewTarget.productId}
+          productName={reviewTarget.productName}
+          orderId={reviewTarget.orderId}
+          onClose={() => setReviewTarget(null)}
+          onSuccess={() => { setReviewTarget(null); refetchReviews(); }}
         />
       )}
     </div>
