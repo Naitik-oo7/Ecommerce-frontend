@@ -8,8 +8,6 @@ import {
   shouldSkipTokenRefresh,
   updateAuthTokens,
 } from './authTokens';
-import { store } from './redux/store';
-import { setUser } from './redux/authSlice';
 
 // SECURITY WARNING (Issue #10): Tokens are stored in localStorage and sent via Authorization header.
 // localStorage is accessible to all JavaScript on the page, making tokens vulnerable to XSS attacks.
@@ -110,6 +108,8 @@ axiosInstance.interceptors.response.use(
       updateAuthTokens(newAccessToken, newRefreshToken);
 
       if (responseData?.user?.id) {
+        const { store } = await import('./redux/store');
+        const { setUser } = await import('./redux/authSlice');
         store.dispatch(setUser(responseData.user));
       }
 
@@ -129,15 +129,14 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-export const axiosBaseQuery =
-  (): BaseQueryFn<{
-    url: string;
-    method?: AxiosRequestConfig['method'];
-    data?: AxiosRequestConfig['data'];
-    params?: AxiosRequestConfig['params'];
-    headers?: AxiosRequestConfig['headers'];
-  }> =>
-  async ({ url, method = 'GET', data, params, headers }) => {
+export function axiosBaseQuery(): BaseQueryFn<{
+  url: string;
+  method?: AxiosRequestConfig['method'];
+  data?: AxiosRequestConfig['data'];
+  params?: AxiosRequestConfig['params'];
+  headers?: AxiosRequestConfig['headers'];
+}> {
+  return async ({ url, method = 'GET', data, params, headers }) => {
     try {
       const result = await axiosInstance({
         url,
@@ -164,5 +163,6 @@ export const axiosBaseQuery =
       };
     }
   };
+}
 
 export default axiosInstance;

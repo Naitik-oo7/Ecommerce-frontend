@@ -1,1 +1,1 @@
-export { StockBadge, StatusToggle, StatusLabel } from './StatusBadges';
+export { StockBadge, StatusToggle, StatusLabel } from "./StatusBadges";
