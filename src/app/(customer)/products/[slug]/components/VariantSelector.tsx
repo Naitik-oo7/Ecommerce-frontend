@@ -37,9 +37,11 @@ export function VariantSelector({ variants, selectedVariant, onSelect }: Variant
       ? null
       : selectedVariant.stock === 0
         ? { text: 'Out of stock', className: 'text-mono-rose' }
-        : selectedVariant.stock <= 5
-          ? { text: `Only ${selectedVariant.stock} left`, className: 'text-mono-terracotta' }
-          : { text: 'In stock', className: 'text-mono-sage' };
+        : selectedVariant.stock === 1
+          ? { text: '1 left', className: 'text-mono-terracotta font-semibold' }
+          : selectedVariant.stock <= 5
+            ? { text: `${selectedVariant.stock} left`, className: 'text-mono-terracotta' }
+            : null;
 
   return (
     <div className="space-y-5">

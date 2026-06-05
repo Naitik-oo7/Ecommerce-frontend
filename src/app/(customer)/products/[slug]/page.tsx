@@ -271,7 +271,7 @@ export default function ProductDetailPage() {
             salePercent={salePercent}
           />
 
-          <div className="lg:sticky lg:top-24 space-y-5 lg:pl-2 lg:max-w-[480px]">
+          <div className="space-y-5 lg:pl-2">
             {product.category && (
               <Link
                 href={`/products?categoryId=${product.category.id}`}
@@ -419,94 +419,94 @@ export default function ProductDetailPage() {
                 </div>
               ))}
             </div>
-          </div>
-        </div>
 
-        {/* Below fold — accordions (no hidden tabs) */}
-        <div className="mt-12 lg:mt-20 max-w-3xl">
-          <AccordionSection id="pdp-description" title="Description" defaultOpen>
-            <p className="text-mono-stone leading-relaxed whitespace-pre-line text-[15px]">
-              {product.description}
-            </p>
-          </AccordionSection>
+            {/* Accordions — moved to right column */}
+            <div className="mt-8 pt-6 border-t border-border/60 space-y-0">
+              <AccordionSection id="pdp-description" title="Description" defaultOpen>
+                <p className="text-mono-stone leading-relaxed whitespace-pre-line text-[15px]">
+                  {product.description}
+                </p>
+              </AccordionSection>
 
-          <AccordionSection id="pdp-details" title="Details">
-            <dl className="space-y-0 rounded-xl border border-border/50 overflow-hidden">
-              {detailRows.map(({ label, value }, i) => (
-                <div
-                  key={label}
-                  className={`flex gap-4 px-4 py-3.5 text-sm ${
-                    i % 2 === 0 ? 'bg-mono-cream/30' : 'bg-white'
-                  }`}
+              <AccordionSection id="pdp-details" title="Details">
+                <dl className="space-y-0 rounded-xl border border-border/50 overflow-hidden">
+                  {detailRows.map(({ label, value }, i) => (
+                    <div
+                      key={label}
+                      className={`flex gap-4 px-4 py-3.5 text-sm ${
+                        i % 2 === 0 ? 'bg-mono-cream/30' : 'bg-white'
+                      }`}
+                    >
+                      <dt className="font-medium text-mono-charcoal w-28 shrink-0">{label}</dt>
+                      <dd className="text-mono-stone capitalize">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </AccordionSection>
+
+              <AccordionSection id="pdp-shipping" title="Shipping & returns">
+                <ul className="space-y-4 text-sm text-mono-stone leading-relaxed">
+                  <li>
+                    <strong className="text-mono-charcoal font-medium">Shipping — </strong>
+                    Free on orders over ₹999. Dispatched in 1–2 business days.
+                  </li>
+                  <li>
+                    <strong className="text-mono-charcoal font-medium">Returns — </strong>
+                    7-day returns on unworn items with tags. Start from your orders page.
+                  </li>
+                  {(product.material || product.gender) && (
+                    <li id="pdp-size-fit">
+                      <strong className="text-mono-charcoal font-medium">Fit — </strong>
+                      {product.material && <>Material: {product.material}. </>}
+                      {product.gender && <>Designed for {product.gender}. </>}
+                      Choose your usual size.
+                    </li>
+                  )}
+                </ul>
+              </AccordionSection>
+
+              <div id="pdp-reviews" ref={reviewsRef}>
+                <AccordionSection
+                  id="pdp-reviews-panel"
+                  title={`Reviews${reviewCount > 0 ? ` (${reviewCount})` : ''}`}
+                  open={reviewsOpen}
+                  onOpenChange={setReviewsOpen}
                 >
-                  <dt className="font-medium text-mono-charcoal w-28 shrink-0">{label}</dt>
-                  <dd className="text-mono-stone capitalize">{value}</dd>
-                </div>
-              ))}
-            </dl>
-          </AccordionSection>
+                  {/* Write review CTA */}
+                  {isAuthenticated && !alreadyReviewed && deliveredOrdersForProduct.length > 0 && (
+                    <div className="mb-6 flex items-center justify-between gap-4 p-4 rounded-xl bg-mono-cream/60 border border-border/40">
+                      <p className="text-sm text-mono-stone">Share your experience with this product</p>
+                      <button
+                        type="button"
+                        onClick={() => setShowWriteReview(true)}
+                        className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-mono-charcoal text-white text-sm font-medium hover:bg-mono-charcoal/80 transition-colors"
+                      >
+                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                        Write a review
+                      </button>
+                    </div>
+                  )}
+                  {isAuthenticated && alreadyReviewed && (
+                    <p className="text-sm text-emerald-600 mb-4 flex items-center gap-1.5">
+                      <CheckCircle2 className="h-4 w-4" /> You have reviewed this product.
+                    </p>
+                  )}
+                  {isAuthenticated && !alreadyReviewed && deliveredOrdersForProduct.length === 0 && (
+                    <p className="text-sm text-mono-stone mb-4">
+                      Purchase this product to write a review.
+                    </p>
+                  )}
 
-          <AccordionSection id="pdp-shipping" title="Shipping & returns">
-            <ul className="space-y-4 text-sm text-mono-stone leading-relaxed">
-              <li>
-                <strong className="text-mono-charcoal font-medium">Shipping — </strong>
-                Free on orders over ₹999. Dispatched in 1–2 business days.
-              </li>
-              <li>
-                <strong className="text-mono-charcoal font-medium">Returns — </strong>
-                7-day returns on unworn items with tags. Start from your orders page.
-              </li>
-              {(product.material || product.gender) && (
-                <li id="pdp-size-fit">
-                  <strong className="text-mono-charcoal font-medium">Fit — </strong>
-                  {product.material && <>Material: {product.material}. </>}
-                  {product.gender && <>Designed for {product.gender}. </>}
-                  Choose your usual size.
-                </li>
-              )}
-            </ul>
-          </AccordionSection>
-
-          <div id="pdp-reviews" ref={reviewsRef}>
-            <AccordionSection
-              id="pdp-reviews-panel"
-              title={`Reviews${reviewCount > 0 ? ` (${reviewCount})` : ''}`}
-              open={reviewsOpen}
-              onOpenChange={setReviewsOpen}
-            >
-              {/* Write review CTA */}
-              {isAuthenticated && !alreadyReviewed && deliveredOrdersForProduct.length > 0 && (
-                <div className="mb-6 flex items-center justify-between gap-4 p-4 rounded-xl bg-mono-cream/60 border border-border/40">
-                  <p className="text-sm text-mono-stone">Share your experience with this product</p>
-                  <button
-                    type="button"
-                    onClick={() => setShowWriteReview(true)}
-                    className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-mono-charcoal text-white text-sm font-medium hover:bg-mono-charcoal/80 transition-colors"
-                  >
-                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                    Write a review
-                  </button>
-                </div>
-              )}
-              {isAuthenticated && alreadyReviewed && (
-                <p className="text-sm text-emerald-600 mb-4 flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4" /> You have reviewed this product.
-                </p>
-              )}
-              {isAuthenticated && !alreadyReviewed && deliveredOrdersForProduct.length === 0 && (
-                <p className="text-sm text-mono-stone mb-4">
-                  Purchase this product to write a review.
-                </p>
-              )}
-
-              {reviews.length > 0 ? (
-                <ReviewsSection reviews={reviews} stats={reviewStats} inline />
-              ) : (
-                <p className="text-sm text-mono-stone py-4">
-                  No reviews yet. Be the first to share your experience with this product.
-                </p>
-              )}
-            </AccordionSection>
+                  {reviews.length > 0 ? (
+                    <ReviewsSection reviews={reviews} stats={reviewStats} inline />
+                  ) : (
+                    <p className="text-sm text-mono-stone py-4">
+                      No reviews yet. Be the first to share your experience with this product.
+                    </p>
+                  )}
+                </AccordionSection>
+              </div>
+            </div>
           </div>
         </div>
       </div>

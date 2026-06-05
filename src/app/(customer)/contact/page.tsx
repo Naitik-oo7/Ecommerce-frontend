@@ -26,7 +26,7 @@ export default function ContactPage() {
     {
       icon: MapPin,
       label: 'Address',
-      value: g?.contactAddress || '12, Pali Hill, Bandra West, Mumbai 400050',
+      value: g?.contactAddress || 'MONO Studio, Level 4, Indiranagar, Bengaluru 560038',
       href: 'https://maps.google.com',
     },
   ];

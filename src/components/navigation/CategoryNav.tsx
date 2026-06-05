@@ -217,11 +217,10 @@ export default function CategoryNav({
 
                 {categories.map((category) => (
                   <li key={category.id}>
-                    <button
+                    <Link
+                      href={`/products?category=${category.slug}`}
                       onMouseEnter={() => handleNavMouseEnter(category)}
                       onFocus={() => handleNavFocus(category)}
-                      aria-expanded={activeCategory?.id === category.id && isDropdownOpen}
-                      aria-haspopup="true"
                       className={cn(
                         'flex items-center px-2 lg:px-4 py-2 text-xs lg:text-sm font-semibold tracking-wider transition-colors whitespace-nowrap',
                         activeCategory?.id === category.id
@@ -230,7 +229,7 @@ export default function CategoryNav({
                       )}
                     >
                       {category.name.toUpperCase()}
-                    </button>
+                    </Link>
                   </li>
                 ))}
 

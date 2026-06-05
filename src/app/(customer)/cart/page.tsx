@@ -30,7 +30,8 @@ import {
   Check,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useAppSelector } from '@/lib/redux/hooks';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { AuthLoading } from '@/components/auth/RequireAuth';
 import { motion, AnimatePresence } from 'framer-motion';
 import { staggerContainer, cartItem } from '@/lib/animations';
 import { EmptyState } from '@/components/common';
@@ -69,7 +70,7 @@ interface LocalCartItem {
 }
 
 export default function CartPage() {
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { ready, isAuthenticated } = useAuthGuard();
   const { data: cartResponse, isLoading } = useGetCartQuery(undefined, { skip: !isAuthenticated });
   const [updateCartItem] = useUpdateCartItemMutation();
   const [removeFromCart] = useRemoveFromCartMutation();
@@ -86,6 +87,8 @@ export default function CartPage() {
   const [savingIds, setSavingIds] = useState<Set<number>>(new Set());
 
   // ---------- Auth gate ----------
+  if (!ready) return <AuthLoading />;
+
   if (!isAuthenticated) {
     return (
       <div className="container-mono py-20">
@@ -108,7 +111,7 @@ export default function CartPage() {
           <p className="text-muted-foreground mb-8 leading-relaxed">
             Your saved pieces are waiting. Sign in to pick up right where you left off.
           </p>
-          <Link href="/login">
+          <Link href={`/login?redirect=${encodeURIComponent('/cart')}`}>
             <Button className="w-full sm:w-auto px-10 bg-mono-charcoal hover:bg-mono-charcoal/90" size="lg">
               Sign in to continue
             </Button>

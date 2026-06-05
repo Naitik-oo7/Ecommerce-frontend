@@ -88,16 +88,6 @@ export const ProductCard = ({
           −{salePercent}%
         </span>
       )}
-      {product.isBestseller && !isSoldOut && (
-        <span className="px-2.5 py-1 bg-white/90 backdrop-blur-sm text-mono-charcoal text-[9px] font-semibold tracking-[0.12em] uppercase rounded-full shadow-sm">
-          Bestseller
-        </span>
-      )}
-      {isLowStock && !isSoldOut && (
-        <span className="px-2.5 py-1 bg-[#B54A4A]/90 backdrop-blur-sm text-white text-[9px] font-semibold tracking-[0.12em] uppercase rounded-full">
-          Only {product.stock} left
-        </span>
-      )}
     </div>
   );
 
@@ -220,23 +210,15 @@ export const ProductCard = ({
           {Badges}
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col py-1">
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#A8A199]">
-            {product.category?.name || 'Collection'}
-          </p>
-          <h3 className="text-base font-semibold leading-snug text-mono-charcoal transition-colors group-hover:text-mono-terracotta sm:text-lg">
-            {product.name}
-          </h3>
-          {product.description && (
-            <p className="mt-1.5 hidden max-w-prose text-[13px] leading-relaxed text-mono-stone sm:line-clamp-2">
-              {product.description}
-            </p>
-          )}
-          <div className="mt-2">{RatingRow}</div>
-          <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-3">
-            <div className="space-y-1.5">
+        <div className="flex min-w-0 flex-1 flex-col py-1 justify-between">
+          <div className="min-w-0">
+            <h3 className="text-base font-medium leading-snug text-mono-charcoal transition-colors group-hover:text-mono-terracotta line-clamp-2">
+              {product.name}
+            </h3>
+          </div>
+          <div className="flex flex-wrap items-end justify-between gap-3 pt-2">
+            <div>
               {PriceBlock}
-              {Swatches}
             </div>
             <div className="z-20 flex items-center gap-2">
               {WishlistButton}
@@ -284,22 +266,12 @@ export const ProductCard = ({
           {ImageStack}
           {Badges}
 
-          {/* Top-right actions */}
-          <div className="absolute right-3 top-3 z-20 flex flex-col gap-2 opacity-100 md:opacity-0 md:translate-x-2 md:transition-all md:duration-300 md:group-hover:translate-x-0 md:group-hover:opacity-100">
+          {/* Top-right wishlist button */}
+          <div className="absolute right-3 top-3 z-20">
             {WishlistButton}
-            {onQuickView && (
-              <button
-                type="button"
-                onClick={handleQuickView}
-                aria-label={`Quick view ${product.name}`}
-                className="z-20 hidden h-9 w-9 items-center justify-center rounded-full bg-white/90 text-mono-charcoal shadow-sm backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-white md:flex"
-              >
-                <Eye className="h-[15px] w-[15px]" />
-              </button>
-            )}
           </div>
 
-          {/* Quick Add bar — slides up on hover (desktop), always visible (mobile) */}
+          {/* Quick Add button — slides up on hover (desktop), always visible (mobile) */}
           {onQuickView && (
             <div className="absolute inset-x-0 bottom-0 z-20 p-3 opacity-100 md:translate-y-3 md:opacity-0 md:transition-all md:duration-300 md:group-hover:translate-y-0 md:group-hover:opacity-100">
               <button
@@ -323,15 +295,10 @@ export const ProductCard = ({
 
         {/* Info */}
         <div className="space-y-1.5 px-4 py-3.5">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#A8A199]">
-            {product.category?.name || 'Collection'}
-          </p>
-          <h3 className="truncate text-[14px] font-semibold leading-snug text-mono-charcoal transition-colors group-hover:text-mono-terracotta">
+          <h3 className="text-sm font-medium leading-snug text-mono-charcoal transition-colors group-hover:text-mono-terracotta line-clamp-2">
             {product.name}
           </h3>
           {PriceBlock}
-          {RatingRow}
-          {Swatches}
         </div>
 
         {/* Stretched link overlay — sits below action buttons (z-20) */}

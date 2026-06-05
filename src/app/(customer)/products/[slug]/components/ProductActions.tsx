@@ -93,34 +93,36 @@ export function ProductActions({
           </div>
         </div>
 
-        <Button
-          onClick={onAddToCart}
-          disabled={isOutOfStock || cartLoading || buyNowLoading}
-          className="w-full h-12 sm:h-[52px] text-[15px] font-semibold rounded-lg bg-mono-terracotta hover:bg-mono-terracotta/90 text-white shadow-sm"
-        >
-          {cartLoading ? (
-            <Spinner light />
-          ) : addedToCart ? (
-            <>
-              <Check className="mr-2 h-5 w-5" />
-              Added to bag
-            </>
-          ) : (
-            <>
-              <ShoppingBag className="mr-2 h-5 w-5" />
-              {isOutOfStock ? 'Sold out' : 'Add to bag'}
-            </>
-          )}
-        </Button>
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3">
+          <Button
+            onClick={onAddToCart}
+            disabled={isOutOfStock || cartLoading || buyNowLoading}
+            className="h-12 md:h-11 text-[15px] md:text-sm font-semibold rounded-lg bg-mono-terracotta hover:bg-mono-terracotta/90 text-white shadow-sm"
+          >
+            {cartLoading ? (
+              <Spinner light />
+            ) : addedToCart ? (
+              <>
+                <Check className="mr-2 h-5 w-5" />
+                Added to bag
+              </>
+            ) : (
+              <>
+                <ShoppingBag className="mr-2 h-5 w-5" />
+                {isOutOfStock ? 'Sold out' : 'Add to bag'}
+              </>
+            )}
+          </Button>
 
-        <button
-          type="button"
-          onClick={onBuyNow}
-          disabled={isOutOfStock || buyNowLoading || cartLoading}
-          className="w-full h-11 text-sm font-semibold text-mono-charcoal border border-mono-charcoal rounded-lg hover:bg-mono-charcoal hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {buyNowLoading ? 'Processing…' : 'Buy now'}
-        </button>
+          <button
+            type="button"
+            onClick={onBuyNow}
+            disabled={isOutOfStock || buyNowLoading || cartLoading}
+            className="h-12 md:h-11 md:px-8 font-semibold text-mono-charcoal border border-mono-charcoal rounded-lg hover:bg-mono-charcoal hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+          >
+            {buyNowLoading ? 'Processing…' : 'Buy now'}
+          </button>
+        </div>
       </div>
 
       <AnimatePresence>

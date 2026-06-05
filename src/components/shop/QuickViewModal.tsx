@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { loginRedirectUrl } from '@/lib/loginRedirect';
 import { X, Heart, ShoppingBag, Star, Check, ArrowRight, Minus, Plus } from 'lucide-react';
 
 import { useGetProductBySlugQuery } from '@/services/api/productsApi';
@@ -29,6 +30,7 @@ export function QuickViewModal({
   onToggleWishlist,
 }: QuickViewModalProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   // Fetch full product (variants + all images) lazily when opened.
@@ -98,7 +100,7 @@ export function QuickViewModal({
   const handleAddToCart = async (buyNow = false) => {
     if (!isAuthenticated) {
       onClose();
-      router.push('/login');
+      router.push(loginRedirectUrl(pathname));
       return;
     }
     if (!selectedVariant) return;
@@ -196,7 +198,7 @@ export function QuickViewModal({
                           i === activeImage ? 'border-mono-charcoal' : 'border-transparent opacity-70 hover:opacity-100'
                         }`}
                       >
-                        <img src={img} alt="" className="h-full w-full object-cover" />
+                        <img src={img} alt={`${product?.name ?? seed.name} — view ${i + 1}`} className="h-full w-full object-cover" />
                       </button>
                     ))}
                   </div>

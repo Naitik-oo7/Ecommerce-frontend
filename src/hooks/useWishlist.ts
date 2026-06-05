@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAppSelector } from '@/lib/redux/hooks';
+import { loginRedirectUrl } from '@/lib/loginRedirect';
 import { 
   useGetWishlistQuery, 
   useAddToWishlistMutation, 
@@ -16,6 +17,7 @@ interface UseWishlistOptions {
 
 export function useWishlist(options: UseWishlistOptions = {}) {
   const router = useRouter();
+  const pathname = usePathname();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
   const { skip = false } = options;
   
@@ -58,7 +60,7 @@ export function useWishlist(options: UseWishlistOptions = {}) {
     }
     
     if (!isAuthenticated) {
-      router.push('/login');
+      router.push(loginRedirectUrl(pathname));
       return;
     }
     
@@ -85,7 +87,7 @@ export function useWishlist(options: UseWishlistOptions = {}) {
       // Revert on error by clearing optimistic state
       setOptimisticIds(null);
     }
-  }, [isAuthenticated, router, wishlistIds, serverIds, addToWishlist, removeFromWishlist]);
+  }, [isAuthenticated, router, pathname, wishlistIds, serverIds, addToWishlist, removeFromWishlist]);
   
   return {
     wishlistIds,

@@ -26,6 +26,10 @@ export interface AuthResponse {
   refreshToken: string;
 }
 
+export interface MessageResponse {
+  message: string;
+}
+
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: axiosBaseQuery(),
@@ -38,7 +42,7 @@ export const authApi = createApi({
         data: credentials,
       }),
     }),
-    register: builder.mutation<AuthResponse, RegisterRequest>({
+    register: builder.mutation<MessageResponse, RegisterRequest>({
       query: (userData) => ({
         url: '/api/v1/auth/register',
         method: 'POST',

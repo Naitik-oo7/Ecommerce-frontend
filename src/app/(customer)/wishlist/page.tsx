@@ -1,7 +1,8 @@
 'use client';
 
 import { useGetWishlistQuery, useRemoveFromWishlistMutation, useClearWishlistMutation } from '@/services/api/wishlistApi';
-import { useAppSelector } from '@/lib/redux/hooks';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { AuthLoading } from '@/components/auth/RequireAuth';
 import { Heart, Trash2, ShoppingBag, Star, Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -11,11 +12,13 @@ import { motion } from 'framer-motion';
 
 export default function WishlistPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { ready, isAuthenticated } = useAuthGuard();
   const { data: wishlistResponse, isLoading } = useGetWishlistQuery({}, { skip: !isAuthenticated });
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
   const [clearWishlist] = useClearWishlistMutation();
   const [removeLoadingIds, setRemoveLoadingIds] = useState<Set<number>>(new Set());
+
+  if (!ready) return <AuthLoading />;
 
   if (!isAuthenticated) {
     return (
@@ -31,7 +34,7 @@ export default function WishlistPage() {
           <p className="text-sm mb-8" style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}>
             Save pieces you love and find them here.
           </p>
-          <Link href="/login">
+          <Link href={`/login?redirect=${encodeURIComponent('/wishlist')}`}>
             <motion.span
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}

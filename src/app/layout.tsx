@@ -11,9 +11,32 @@ export const playfair = Playfair_Display({
   variable: "--font-playfair",
 });
 
+const SITE_NAME = "MONO";
+const SITE_DESCRIPTION =
+  "Curated essentials for the modern wardrobe — timeless pieces crafted with precision, comfort, and sustainable craftsmanship.";
+const SITE_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3333";
+
 export const metadata: Metadata = {
-  title: "E-Commerce",
-  description: "Modern e-commerce platform",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: `${SITE_NAME} — Curated Essentials for Modern Living`,
+    // Per-page titles render as "About · MONO", etc.
+    template: `%s · ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} — Curated Essentials for Modern Living`,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} — Curated Essentials for Modern Living`,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export default function RootLayout({

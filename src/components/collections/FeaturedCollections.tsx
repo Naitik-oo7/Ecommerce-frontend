@@ -191,7 +191,7 @@ export const FeaturedCollections = () => {
     image:
       cat.imageUrl ||
       'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=800&q=80',
-    href: `/products?category=${cat.slug}`,
+    href: `/products?categoryId=${cat.id}`,
   }));
 
   return (

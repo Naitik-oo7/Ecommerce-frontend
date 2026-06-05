@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useAppSelector, useAppDispatch } from '@/lib/redux/hooks';
 import { clearUser } from '@/lib/redux/authSlice';
 import { motion } from 'framer-motion';
+import { FacebookIcon, InstagramIcon, TwitterIcon } from '@/components/icons/SocialIcons';
 import { useGetCartQuery } from '@/services/api/cartApi';
+import { useGetSettingQuery } from '@/services/api/settingsApi';
 import { useLogoutMutation } from '@/services/api/authApi';
 import { clearAuthTokens } from '@/lib/authTokens';
 import {
@@ -24,6 +26,20 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const router = useRouter();
+
+  const { data: generalSetting } = useGetSettingQuery('general');
+  const general = (generalSetting as {
+    instagram?: string;
+    twitter?: string;
+    facebook?: string;
+    footerTagline?: string;
+  } | undefined) ?? {};
+
+  const socialLinks = [
+    { name: 'Instagram', href: general.instagram, Icon: InstagramIcon },
+    { name: 'Twitter', href: general.twitter, Icon: TwitterIcon },
+    { name: 'Facebook', href: general.facebook, Icon: FacebookIcon },
+  ].filter((s) => !!s.href);
 
   const { data: cart } = useGetCartQuery(undefined, { skip: !isAuthenticated });
   const { data: notificationsData } = useGetNotificationsQuery({ limit: 10 }, { skip: !isAuthenticated });
@@ -117,17 +133,24 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
                 </span>
               </Link>
               <p className="text-sm text-mono-stone leading-relaxed mb-6 max-w-xs">
-                Curated essentials for the modern wardrobe. Timeless pieces, sustainable quality.
+                {general.footerTagline ?? 'Curated essentials for the modern wardrobe. Timeless pieces, sustainable quality.'}
               </p>
-              <div className="flex gap-4">
-                {['instagram', 'twitter', 'facebook'].map((social) => (
-                  <a key={social} href="#"
-                    className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-mono-terracotta transition-colors duration-300"
-                    aria-label={social}>
-                    <span className="text-xs font-semibold uppercase">{social[0]}</span>
-                  </a>
-                ))}
-              </div>
+              {socialLinks.length > 0 && (
+                <div className="flex gap-4">
+                  {socialLinks.map(({ name, href, Icon }) => (
+                    <a
+                      key={name}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-mono-terracotta transition-colors duration-300"
+                      aria-label={name}
+                    >
+                      <Icon className="w-4 h-4" />
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
             <div>
               <h4 className="label-caps text-mono-stone mb-4">Shop</h4>

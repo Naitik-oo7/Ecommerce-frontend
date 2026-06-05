@@ -3,7 +3,8 @@
 import Script from 'next/script';
 import Link from 'next/link';
 import { ArrowLeft, MapPin, CreditCard, Package, ShieldCheck, Loader2, Truck, AlertCircle } from 'lucide-react';
-import { useAppSelector } from '@/lib/redux/hooks';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { AuthLoading } from '@/components/auth/RequireAuth';
 import { formatCurrency } from '@/lib/currency';
 import { useCheckout } from './hooks/useCheckout';
 import { ShippingStep } from './components/ShippingStep';
@@ -87,7 +88,7 @@ function GuardCard({ title, body, cta, href }: { title: string; body: string; ct
 }
 
 export default function CheckoutPage() {
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { ready, isAuthenticated } = useAuthGuard();
   const {
     selectedAddressId,
     setSelectedAddressId,
@@ -111,6 +112,8 @@ export default function CheckoutPage() {
     canPlaceOrder,
     handlePlaceOrder,
   } = useCheckout();
+
+  if (!ready) return <AuthLoading />;
 
   if (!isAuthenticated) {
     return (

@@ -115,7 +115,7 @@ export function ProductGallery({
               >
                 <img
                   src={image.url}
-                  alt=""
+                  alt={image.alt || `${productName} — view ${idx + 1}`}
                   className="h-full w-full object-cover"
                 />
               </button>
@@ -126,7 +126,7 @@ export function ProductGallery({
         {/* Main image — constrained to viewport */}
         <div className="relative flex-1 min-w-0 lg:order-2">
           <div
-            className="relative flex h-[min(42vh,360px)] sm:h-[min(48vh,400px)] lg:h-[min(calc(100vh-11rem),480px)] w-full items-center justify-center overflow-hidden rounded-xl bg-mono-cream ring-1 ring-border/30"
+            className="relative flex h-[calc(100vh-8rem)] w-full items-center justify-center overflow-hidden rounded-xl bg-mono-cream ring-1 ring-border/30"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >

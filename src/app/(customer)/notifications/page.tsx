@@ -12,7 +12,8 @@ import {
   useDeleteNotificationMutation,
   useClearAllNotificationsMutation,
 } from '@/services/api/notificationsApi';
-import { useAppSelector } from '@/lib/redux/hooks';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { AuthLoading } from '@/components/auth/RequireAuth';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -32,7 +33,7 @@ const notificationColors = {
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { ready, isAuthenticated } = useAuthGuard();
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
@@ -50,6 +51,8 @@ export default function NotificationsPage() {
   const notifications = (notificationsData as any)?.data || [];
   const pagination = (notificationsData as any)?.pagination || {};
 
+  if (!ready) return <AuthLoading />;
+
   if (!isAuthenticated) {
     return (
       <div className="container-mono py-16 text-center">
@@ -58,7 +61,9 @@ export default function NotificationsPage() {
             <Bell className="h-10 w-10 text-mono-terracotta" />
           </div>
           <h2 className="text-editorial text-2xl text-mono-charcoal mb-3">Sign in to view notifications</h2>
-          <Link href="/login"><Button size="lg" className="bg-mono-charcoal">Login</Button></Link>
+          <Link href={`/login?redirect=${encodeURIComponent('/notifications')}`}>
+            <Button size="lg" className="bg-mono-charcoal">Sign in to continue</Button>
+          </Link>
         </motion.div>
       </div>
     );

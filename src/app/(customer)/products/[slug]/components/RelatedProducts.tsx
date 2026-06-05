@@ -7,7 +7,8 @@ import { ChevronLeft, ChevronRight, Star, Heart, ArrowRight } from 'lucide-react
 import { useGetRelatedProductsQuery } from '@/services/api/productsApi';
 import { useAddToWishlistMutation } from '@/services/api/wishlistApi';
 import { useAppSelector } from '@/lib/redux/hooks';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { loginRedirectUrl } from '@/lib/loginRedirect';
 
 interface RelatedProductsProps {
   slug: string;
@@ -18,6 +19,7 @@ export function RelatedProducts({ slug }: RelatedProductsProps) {
   const { isAuthenticated } = useAppSelector((s) => s.auth);
   const [addToWishlist] = useAddToWishlistMutation();
   const router = useRouter();
+  const pathname = usePathname();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (dir: 'left' | 'right') => {
@@ -28,7 +30,7 @@ export function RelatedProducts({ slug }: RelatedProductsProps) {
   const handleWishlist = async (e: React.MouseEvent, productId: number) => {
     e.preventDefault();
     if (!isAuthenticated) {
-      router.push('/login');
+      router.push(loginRedirectUrl(pathname));
       return;
     }
     await addToWishlist(productId);

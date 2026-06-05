@@ -38,7 +38,16 @@ export default function LoginPage() {
       const response = await loginMutation(data).unwrap();
       setAuthTokens(response.accessToken, response.refreshToken, rememberMe);
       dispatch(setUser(response.user));
-      router.push(response.user.role === 'admin' ? '/admin/dashboard' : '/');
+
+      // Return the user to where they were headed before being bounced to /login.
+      // Only same-origin relative paths are honored (open-redirect safe).
+      const redirectTo = new URLSearchParams(window.location.search).get('redirect');
+      const safeRedirect =
+        redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') && !redirectTo.startsWith('/login')
+          ? redirectTo
+          : null;
+      const destination = safeRedirect ?? (response.user.role === 'admin' ? '/admin/dashboard' : '/');
+      router.push(destination);
     } catch (err: unknown) {
       const error = err as { data?: { message?: string } };
       setError(error.data?.message || 'Login failed. Please try again.');
@@ -49,7 +58,7 @@ export default function LoginPage() {
     {
       icon: ShieldCheck,
       title: 'Secure & Safe',
-      desc: 'Your data is protected with enterprise-grade security',
+      desc: 'Encrypted connections and secure authentication protect your account',
     },
     {
       icon: Tag,

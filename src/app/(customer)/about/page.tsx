@@ -83,7 +83,9 @@ export default function AboutPage() {
   const { data: storyData } = useGetSettingQuery('brand_story');
   const { data: valuesData } = useGetSettingQuery('our_values');
   const s = (storyData as typeof defaultStory | undefined) || defaultStory;
-  const dynamicValues = (valuesData as typeof values | undefined) || values;
+  // Settings come from JSON and cannot carry React-component `icon` fields, so
+  // only trust an array shape and always fall back to a local icon when mapping.
+  const dynamicValues = Array.isArray(valuesData) ? (valuesData as typeof values) : values;
 
   return (
     <div className="min-h-screen" style={{ background: '#F6F3EE' }}>
@@ -246,7 +248,7 @@ export default function AboutPage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {dynamicValues.map((v, i) => {
-              const Icon = v.icon;
+              const Icon = v.icon ?? values[i % values.length].icon;
               return (
                 <motion.div
                   key={v.title}

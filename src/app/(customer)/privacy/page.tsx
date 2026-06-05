@@ -71,7 +71,7 @@ const sections = [
       {
         title: 'Essential Cookies',
         items: [
-          'Authentication tokens (JWT) stored in localStorage to keep you logged in',
+          'Authentication tokens stored in your browser (localStorage when "Remember me" is on, otherwise sessionStorage), plus a short-lived cookie used for secure route protection',
           'Session cookies required for the shopping cart and checkout to function',
         ],
       },

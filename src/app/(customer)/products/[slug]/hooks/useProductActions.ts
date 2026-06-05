@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAppSelector } from '@/lib/redux/hooks';
+import { loginRedirectUrl } from '@/lib/loginRedirect';
 import { useAddToCartMutation } from '@/services/api/cartApi';
 import { useAddToWishlistMutation, useRemoveFromWishlistMutation } from '@/services/api/wishlistApi';
 
@@ -13,6 +14,7 @@ interface UseProductActionsOptions {
 
 export function useProductActions({ productId, slug }: UseProductActionsOptions) {
   const router = useRouter();
+  const pathname = usePathname();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   const [quantity, setQuantity] = useState(1);
@@ -28,11 +30,11 @@ export function useProductActions({ productId, slug }: UseProductActionsOptions)
 
   const requireAuth = useCallback(() => {
     if (!isAuthenticated) {
-      router.push('/login');
+      router.push(loginRedirectUrl(pathname));
       return false;
     }
     return true;
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, pathname]);
 
   const handleAddToCart = useCallback(async (variantId: number, size: string) => {
     if (!requireAuth()) return;

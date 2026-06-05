@@ -8,9 +8,6 @@ import Link from 'next/link';
 import { Eye, EyeOff, Mail, Lock, User, ShoppingBag, ArrowRight, Star, Gift, Percent, Heart, CheckCircle } from 'lucide-react';
 import { useRegisterMutation } from '@/services/api/authApi';
 import { registerSchema, type RegisterFormData } from '@/lib/validators/auth';
-import { setUser } from '@/lib/redux/authSlice';
-import { useAppDispatch } from '@/lib/redux/hooks';
-import { setCookie } from '@/lib/cookies';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,7 +15,6 @@ import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const dispatch = useAppDispatch();
   const [registerMutation, { isLoading }] = useRegisterMutation();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -35,13 +31,12 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
     try {
       setError(null);
-      const response = await registerMutation(data).unwrap();
-      dispatch(setUser(response.user));
-      localStorage.setItem('accessToken', response.accessToken);
-      localStorage.setItem('refreshToken', response.refreshToken);
-      setCookie('accessToken', response.accessToken);
+      // Registration requires email verification before login — the backend
+      // returns only a confirmation message (no tokens). Show the success
+      // screen, then send the user to the email-verification page.
+      await registerMutation(data).unwrap();
       setSuccess(true);
-      setTimeout(() => router.push('/'), 2000);
+      setTimeout(() => router.push('/verify-email'), 2500);
     } catch (err: unknown) {
       const error = err as { data?: { message?: string } };
       setError(error.data?.message || 'Registration failed. Please try again.');
@@ -74,7 +69,8 @@ export default function RegisterPage() {
         </div>
         <h2 className="text-2xl font-bold text-foreground">Account Created!</h2>
         <p className="text-sm text-muted-foreground">
-          Your account has been created successfully. Redirecting you now…
+          We&rsquo;ve sent a verification link to your email. Please verify your
+          address to activate your account. Redirecting you now…
         </p>
         <div className="w-8 h-8 border-2 border-[#E5E2DD] border-t-[#C7A27C] rounded-full animate-spin mt-2" />
       </div>
@@ -280,7 +276,7 @@ export default function RegisterPage() {
             <path d="M20 30 L14 70 L66 70 L60 30 Z" fill="#C7A27C" opacity="0.6"/>
             <path d="M28 30 C28 20 52 20 52 30" stroke="#111111" strokeWidth="3" strokeLinecap="round" fill="none" opacity="0.4"/>
             <rect x="14" y="26" width="52" height="8" rx="3" fill="#C7A27C" opacity="0.8"/>
-            <text x="32" y="56" fontSize="18" fontWeight="bold" fill="#E8E4DE" opacity="0.9">%</text>
+            <circle cx="40" cy="52" r="6" fill="none" stroke="#E8E4DE" strokeWidth="2" opacity="0.9"/>
           </svg>
 
           {/* Main bag */}

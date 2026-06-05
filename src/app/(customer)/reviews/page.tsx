@@ -1,7 +1,8 @@
 'use client';
 
 import { useGetUserReviewsQuery, useDeleteReviewMutation } from '@/services/api/reviewsApi';
-import { useAppSelector } from '@/lib/redux/hooks';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { AuthLoading } from '@/components/auth/RequireAuth';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Star, Trash2, Package, Loader2 } from 'lucide-react';
@@ -9,13 +10,15 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 export default function ReviewsPage() {
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { ready, isAuthenticated } = useAuthGuard();
   const { data: reviewsResponse, isLoading } = useGetUserReviewsQuery(
     { limit: 100 },
     { skip: !isAuthenticated }
   );
   const [deleteReview] = useDeleteReviewMutation();
   const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
+
+  if (!ready) return <AuthLoading />;
 
   if (!isAuthenticated) {
     return (

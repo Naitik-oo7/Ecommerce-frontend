@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { User, Package, MapPin, Settings, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useEffect } from 'react';
+import { RequireAuth } from '@/components/auth/RequireAuth';
 
 const navItems = [
   { href: '/profile', label: 'Overview', icon: User, exact: true },
@@ -16,17 +16,16 @@ const navItems = [
 ];
 
 export default function ProfileLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  return (
+    <RequireAuth>
+      <ProfileLayoutContent>{children}</ProfileLayoutContent>
+    </RequireAuth>
+  );
+}
+
+function ProfileLayoutContent({ children }: { children: React.ReactNode }) {
+  const { user } = useAppSelector((state) => state.auth);
   const pathname = usePathname();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace('/login?redirect=' + pathname);
-    }
-  }, [isAuthenticated, pathname, router]);
-
-  if (!isAuthenticated) return null;
 
   const initials = user?.name
     ? user.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
