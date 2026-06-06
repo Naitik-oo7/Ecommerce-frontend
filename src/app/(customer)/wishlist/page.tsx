@@ -181,11 +181,12 @@ export default function WishlistPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: index * 0.05, ease: [0.16, 1, 0.3, 1] }}
-                  className="group"
+                  className="group flex flex-col rounded-2xl overflow-hidden border transition-all hover:shadow-lg"
+                  style={{ background: '#FFFFFF', borderColor: '#E2D9CE' }}
                 >
                   {/* Image */}
-                  <div className="relative aspect-3/4 overflow-hidden rounded-xl mb-3" style={{ background: '#E8E4DE' }}>
-                    <Link href={`/products/${product.slug}`}>
+                  <div className="relative aspect-3/4 overflow-hidden" style={{ background: '#E8E4DE' }}>
+                    <Link href={`/products/${product.slug}`} className="block w-full h-full">
                       {primaryImage ? (
                         <img
                           src={primaryImage}
@@ -214,67 +215,72 @@ export default function WishlistPage() {
                       whileTap={{ scale: 0.9 }}
                       onClick={() => handleRemove(product.id)}
                       disabled={isRemoving}
-                      className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(4px)' }}
+                      aria-label="Remove from wishlist"
+                      className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-opacity"
+                      style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(4px)' }}
                     >
                       {isRemoving ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: '#1A1A18' }} />
+                        <Loader2 className="h-4 w-4 animate-spin" style={{ color: '#1A1A18' }} />
                       ) : (
-                        <Heart className="h-3.5 w-3.5 fill-mono-rose text-mono-rose" />
+                        <Heart className="h-4 w-4 fill-mono-rose text-mono-rose" />
                       )}
                     </motion.button>
                   </div>
 
-                  {/* Info */}
-                  <div className="space-y-1">
-                    <Link href={`/products/${product.slug}`}>
-                      <p
-                        className="text-sm font-semibold leading-snug line-clamp-2 hover:opacity-70 transition-opacity"
-                        style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
-                      >
-                        {product.name}
-                      </p>
-                    </Link>
-                    <p
-                      className="text-xs"
-                      style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
-                    >
-                      {product.category?.name}
-                    </p>
-                    <div className="flex items-center justify-between pt-0.5">
-                      <p
-                        className="text-sm font-bold"
-                        style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
-                      >
-                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(product.price))}
-                      </p>
-                      {product.avgRating && (
-                        <div className="flex items-center gap-1">
-                          <Star className="h-3 w-3 fill-[#C8703A] text-[#C8703A]" />
-                          <span className="text-xs" style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}>
-                            {parseFloat(product.avgRating).toFixed(1)}
-                          </span>
-                        </div>
+                  {/* Info + CTA */}
+                  <div className="flex flex-col flex-1 p-4">
+                    <div className="space-y-1 flex-1">
+                      <Link href={`/products/${product.slug}`}>
+                        <p
+                          className="text-sm font-semibold leading-snug line-clamp-2 hover:opacity-70 transition-opacity"
+                          style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                        >
+                          {product.name}
+                        </p>
+                      </Link>
+                      {product.category?.name && (
+                        <p
+                          className="text-xs"
+                          style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                        >
+                          {product.category.name}
+                        </p>
                       )}
+                      <div className="flex items-center justify-between pt-0.5">
+                        <p
+                          className="text-sm font-bold"
+                          style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                        >
+                          {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(product.price))}
+                        </p>
+                        {product.avgRating && Number(product.avgRating) > 0 && (
+                          <div className="flex items-center gap-1">
+                            <Star className="h-3 w-3 fill-[#C8703A] text-[#C8703A]" />
+                            <span className="text-xs" style={{ color: '#6B6560', fontFamily: 'var(--font-body, Jost, sans-serif)' }}>
+                              {parseFloat(product.avgRating).toFixed(1)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* CTA */}
-                  <motion.button
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => handleAddToCart(product.slug)}
-                    disabled={isOutOfStock}
-                    className="w-full mt-3 py-2.5 text-xs font-medium transition-colors disabled:opacity-40"
-                    style={{
-                      background: isOutOfStock ? '#E2D9CE' : '#1A1A18',
-                      color: isOutOfStock ? '#6B6560' : '#F6F3EE',
-                      fontFamily: 'var(--font-body, Jost, sans-serif)',
-                      letterSpacing: '0.06em',
-                    }}
-                  >
-                    {isOutOfStock ? 'Out of Stock' : 'Select Size'}
-                  </motion.button>
+                    {/* CTA */}
+                    <motion.button
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleAddToCart(product.slug)}
+                      disabled={isOutOfStock}
+                      className="w-full mt-4 py-2.5 text-xs font-medium transition-colors disabled:opacity-40"
+                      style={{
+                        background: isOutOfStock ? '#E2D9CE' : '#1A1A18',
+                        color: isOutOfStock ? '#6B6560' : '#F6F3EE',
+                        fontFamily: 'var(--font-body, Jost, sans-serif)',
+                        letterSpacing: '0.06em',
+                      }}
+                    >
+                      {isOutOfStock ? 'Out of Stock' : 'Select Size'}
+                    </motion.button>
+                  </div>
                 </motion.div>
               );
             })}

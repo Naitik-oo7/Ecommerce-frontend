@@ -5,10 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Star, Heart, ArrowRight } from 'lucide-react';
 import { useGetRelatedProductsQuery } from '@/services/api/productsApi';
-import { useAddToWishlistMutation } from '@/services/api/wishlistApi';
-import { useAppSelector } from '@/lib/redux/hooks';
-import { useRouter, usePathname } from 'next/navigation';
-import { loginRedirectUrl } from '@/lib/loginRedirect';
+import { useWishlist } from '@/hooks/useWishlist';
 
 interface RelatedProductsProps {
   slug: string;
@@ -16,24 +13,12 @@ interface RelatedProductsProps {
 
 export function RelatedProducts({ slug }: RelatedProductsProps) {
   const { data: products, isLoading } = useGetRelatedProductsQuery({ slug, limit: 8 });
-  const { isAuthenticated } = useAppSelector((s) => s.auth);
-  const [addToWishlist] = useAddToWishlistMutation();
-  const router = useRouter();
-  const pathname = usePathname();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (dir: 'left' | 'right') => {
     if (!scrollRef.current) return;
     scrollRef.current.scrollBy({ left: dir === 'left' ? -300 : 300, behavior: 'smooth' });
-  };
-
-  const handleWishlist = async (e: React.MouseEvent, productId: number) => {
-    e.preventDefault();
-    if (!isAuthenticated) {
-      router.push(loginRedirectUrl(pathname));
-      return;
-    }
-    await addToWishlist(productId);
   };
 
   if (isLoading) {
@@ -128,11 +113,22 @@ export function RelatedProducts({ slug }: RelatedProductsProps) {
 
                     <button
                       type="button"
-                      onClick={(e) => handleWishlist(e, product.id)}
-                      className="absolute top-3 right-3 w-9 h-9 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-105 shadow-md"
-                      aria-label="Add to wishlist"
+                      onClick={(e) => toggleWishlist(product.id, e)}
+                      className={`absolute top-3 right-3 w-9 h-9 bg-white rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-md ${
+                        isInWishlist(product.id)
+                          ? 'opacity-100'
+                          : 'opacity-0 group-hover:opacity-100'
+                      }`}
+                      aria-label={isInWishlist(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                      aria-pressed={isInWishlist(product.id)}
                     >
-                      <Heart className="h-4 w-4 text-mono-charcoal" />
+                      <Heart
+                        className={`h-4 w-4 transition-colors ${
+                          isInWishlist(product.id)
+                            ? 'fill-mono-rose text-mono-rose'
+                            : 'text-mono-charcoal'
+                        }`}
+                      />
                     </button>
 
                     <span className="absolute bottom-3 right-3 w-9 h-9 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md">

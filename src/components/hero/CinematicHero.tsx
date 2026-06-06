@@ -219,22 +219,15 @@ export const CinematicHero = () => {
             transition={{ delay: 1, duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }}
             className="absolute bottom-10 right-8 z-20"
           >
-            <div
-              className="relative p-4 shadow-2xl"
+            <Link
+              href={newestProduct?.slug ? `/products/${newestProduct.slug}` : '/products'}
+              className="block relative p-4 shadow-2xl transition-shadow hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.35)]"
               style={{
                 background: 'rgba(255,255,255,0.95)',
                 backdropFilter: 'blur(12px)',
                 minWidth: '220px',
               }}
             >
-              {/* + pill */}
-              <div
-                className="absolute -top-3.5 -right-3.5 w-7 h-7 rounded-full flex items-center justify-center text-white text-lg leading-none select-none cursor-pointer"
-                style={{ background: '#1A1A18' }}
-              >
-                +
-              </div>
-
               <div className="flex items-center gap-3 mb-3">
                 <div
                   className="w-14 h-16 flex-shrink-0 overflow-hidden flex items-center justify-center"
@@ -279,15 +272,13 @@ export const CinematicHero = () => {
                 </div>
               </div>
 
-              <Link href={newestProduct?.slug ? `/products/${newestProduct.slug}` : '/products'}>
-                <span
-                  className="inline-flex items-center gap-1 text-xs font-medium transition-colors cursor-pointer hover:opacity-70"
-                  style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)', letterSpacing: '0.04em' }}
-                >
-                  Shop Now <ArrowRight className="h-3 w-3" />
-                </span>
-              </Link>
-            </div>
+              <span
+                className="inline-flex items-center gap-1 text-xs font-medium transition-colors group-hover:opacity-70"
+                style={{ color: '#1A1A18', fontFamily: 'var(--font-body, Jost, sans-serif)', letterSpacing: '0.04em' }}
+              >
+                Shop Now <ArrowRight className="h-3 w-3" />
+              </span>
+            </Link>
           </motion.div>
         </div>
       </div>

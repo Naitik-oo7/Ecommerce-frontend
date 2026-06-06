@@ -11,6 +11,7 @@ import {
   LogOut, Settings, Bell, Search, ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useWishlist } from '@/hooks/useWishlist';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -89,6 +90,9 @@ export default function CategoryNav({
   const categories = (categoryTree || []).filter(
     (c) => !EXCLUDED.includes(c.name.toLowerCase())
   );
+
+  // Wishlist count (hook handles auth + fetching internally)
+  const { count: wishlistCount } = useWishlist({ skip: !isAuthenticated });
 
   // Cleanup timeout
   useEffect(() => () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); }, []);
@@ -342,6 +346,26 @@ export default function CategoryNav({
                     )}
                   </AnimatePresence>
                 </div>
+              )}
+
+              {/* Wishlist */}
+              {isAuthenticated && (
+                <Link href="/wishlist" className="relative">
+                  <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.05 }}>
+                    <Button variant="ghost" size="icon" className="relative text-foreground/70 hover:text-foreground hover:bg-muted/50" aria-label="Wishlist">
+                      <Heart className="h-5 w-5" />
+                      {wishlistCount > 0 && (
+                        <motion.span
+                          initial={{ scale: 0 }} animate={{ scale: 1 }} key={wishlistCount}
+                          transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+                          className="absolute -top-0.5 -right-0.5 bg-mono-rose text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center"
+                        >
+                          {wishlistCount > 9 ? '9+' : wishlistCount}
+                        </motion.span>
+                      )}
+                    </Button>
+                  </motion.div>
+                </Link>
               )}
 
               {/* Cart */}

@@ -1,32 +1,15 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useGetOrdersQuery } from '@/services/api/ordersApi';
-import {
-  Package, ChevronRight, Clock, Truck, CheckCircle, XCircle,
-  ShoppingBag, Search, SlidersHorizontal, CreditCard, RotateCcw,
-  CheckCircle2, MapPin, ArrowLeftCircle,
-} from 'lucide-react';
+import { Package, ChevronRight, CreditCard, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { ORDER_STATUS_CONFIG, ORDER_PROGRESS_STEPS } from '@/constants/order-status';
 
 type ProgressStatusKey = typeof ORDER_PROGRESS_STEPS[number];
-
-const FILTER_TABS: { value: string; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { value: '', label: 'All', icon: SlidersHorizontal },
-  { value: 'pending', label: 'Pending', icon: Clock },
-  { value: 'confirmed', label: 'Confirmed', icon: CheckCircle2 },
-  { value: 'processing', label: 'Processing', icon: Package },
-  { value: 'shipped', label: 'Shipped', icon: Truck },
-  { value: 'out_for_delivery', label: 'Out for Delivery', icon: MapPin },
-  { value: 'delivered', label: 'Delivered', icon: CheckCircle },
-  { value: 'cancelled', label: 'Cancelled', icon: XCircle },
-  { value: 'return_requested', label: 'Return', icon: RotateCcw },
-];
 
 const PAYMENT_BADGE: Record<string, { label: string; className: string }> = {
   pending: { label: 'Payment pending', className: 'bg-amber-50 text-amber-800 border-amber-200/80' },
@@ -214,62 +197,16 @@ function OrderCard({ order, index }: { order: Order; index: number }) {
 
 export default function ProfileOrdersPage() {
   const { isAuthenticated } = useAppSelector((state) => state.auth);
-  const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: ordersResponse, isLoading, isFetching } = useGetOrdersQuery(
-    { status: statusFilter || undefined, page, limit: 8 },
-    { skip: !isAuthenticated }
-  );
-
-  const { data: summaryResponse } = useGetOrdersQuery(
-    { limit: 100, page: 1 },
+    { page, limit: 8 },
     { skip: !isAuthenticated }
   );
 
   const orders = (ordersResponse as OrdersResponse | undefined)?.data || [];
   const pagination = (ordersResponse as OrdersResponse | undefined)?.pagination;
-  const totalOrders = pagination?.total ?? orders.length;
   const totalPages = pagination?.totalPages ?? 1;
-
-  const summaryOrders = (summaryResponse as OrdersResponse | undefined)?.data || [];
-  const summaryTotal = (summaryResponse as OrdersResponse | undefined)?.pagination?.total ?? summaryOrders.length;
-
-  const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { '': summaryTotal };
-    for (const o of summaryOrders) {
-      counts[o.status] = (counts[o.status] ?? 0) + 1;
-    }
-    return counts;
-  }, [summaryOrders, summaryTotal]);
-
-  const inProgressCount =
-    (statusCounts.pending ?? 0) + (statusCounts.confirmed ?? 0) +
-    (statusCounts.processing ?? 0) + (statusCounts.shipped ?? 0) +
-    (statusCounts.out_for_delivery ?? 0);
-
-  const filteredOrders = useMemo(() => {
-    if (!searchQuery.trim()) return orders;
-    const q = searchQuery.trim().toLowerCase();
-    return orders.filter(
-      (o) => String(o.id).includes(q) ||
-        getOrderItems(o).some((item) => (item.productName || item.variant?.product?.name || '').toLowerCase().includes(q))
-    );
-  }, [orders, searchQuery]);
-
-  const handleFilterChange = (value: string) => {
-    setStatusFilter(value);
-    setPage(1);
-    setSearchQuery('');
-  };
-
-  const summaryCards = [
-    { label: 'Total orders', value: summaryTotal, hint: 'All time', filter: '' as string | null, clickable: true },
-    { label: 'In progress', value: inProgressCount, hint: 'Confirmed · processing · shipped', filter: null, clickable: false },
-    { label: 'Delivered', value: statusCounts.delivered ?? 0, hint: 'Completed', filter: 'delivered', clickable: true },
-    { label: 'Cancelled', value: statusCounts.cancelled ?? 0, hint: 'Not fulfilled', filter: 'cancelled', clickable: true },
-  ];
 
   return (
     <div className="space-y-8">
@@ -277,64 +214,11 @@ export default function ProfileOrdersPage() {
         <div>
           <p className="text-xs font-semibold tracking-[0.2em] uppercase text-accent mb-1">Orders</p>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">My orders</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {totalOrders} order{totalOrders !== 1 ? 's' : ''}
-            {statusFilter ? ` · showing ${ORDER_STATUS_CONFIG[statusFilter]?.label ?? statusFilter}` : ''}
-          </p>
         </div>
         <Link href="/products" className="shrink-0 self-start sm:self-auto">
           <Button size="sm" className="rounded-full"><ShoppingBag className="h-3.5 w-3.5" />Continue shopping</Button>
         </Link>
       </header>
-
-      {/* Summary cards */}
-      <section aria-label="Order summary" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {summaryCards.map((card, i) => {
-          const isSelected = card.filter !== null && statusFilter === card.filter;
-          const Wrapper = card.clickable ? 'button' : 'div';
-          return (
-            <Wrapper key={card.label} type={card.clickable ? 'button' : undefined}
-              onClick={card.clickable && card.filter !== null ? () => handleFilterChange(card.filter!) : undefined}
-              className={`text-left rounded-2xl border p-4 transition-all bg-card border-border ${card.clickable ? 'hover:border-accent/40 hover:shadow-sm cursor-pointer' : ''} ${isSelected ? 'ring-2 ring-accent/30 border-accent/40' : ''}`}>
-              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                <p className="text-2xl font-bold tabular-nums text-foreground">{card.value}</p>
-                <p className="text-sm font-medium text-foreground mt-1">{card.label}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">{card.hint}</p>
-              </motion.div>
-            </Wrapper>
-          );
-        })}
-      </section>
-
-      {/* Toolbar */}
-      <div className="space-y-4">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input type="search" placeholder="Search by order # or product name…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 h-10 rounded-full bg-card" aria-label="Search orders" />
-        </div>
-
-        <div className="relative -mx-1 px-1">
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" role="tablist" aria-label="Filter orders by status">
-            {FILTER_TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = statusFilter === tab.value;
-              const count = tab.value === '' ? totalOrders : statusCounts[tab.value];
-              return (
-                <button key={tab.value || 'all'} role="tab" aria-selected={isActive} onClick={() => handleFilterChange(tab.value)}
-                  className={`inline-flex items-center gap-1.5 shrink-0 px-4 py-2 rounded-full text-sm font-medium border transition-all ${isActive ? 'bg-primary text-primary-foreground border-primary shadow-sm' : 'bg-card text-muted-foreground border-border hover:border-accent/40 hover:text-foreground'}`}>
-                  <Icon className="h-3.5 w-3.5" />
-                  {tab.label}
-                  {typeof count === 'number' && count > 0 && tab.value !== '' && (
-                    <span className={`ml-0.5 min-w-5 px-1.5 py-0.5 rounded-full text-[10px] font-bold tabular-nums ${isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                      {count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
 
       {/* Orders list */}
       <section aria-label="Order list" aria-busy={isLoading || isFetching}>
@@ -342,26 +226,17 @@ export default function ProfileOrdersPage() {
           <ul className="space-y-4">
             {[...Array(4)].map((_, i) => <li key={i} className="h-36 rounded-2xl bg-muted/50 animate-pulse border border-border/50" />)}
           </ul>
-        ) : filteredOrders.length === 0 ? (
+        ) : orders.length === 0 ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-2xl border border-border bg-card px-6 py-16 text-center">
             <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-              {searchQuery ? <Search className="h-7 w-7 text-muted-foreground/50" /> : <Package className="h-7 w-7 text-muted-foreground/50" />}
+              <Package className="h-7 w-7 text-muted-foreground/50" />
             </div>
-            <h2 className="text-base font-semibold text-foreground mb-1">
-              {searchQuery ? 'No matching orders' : statusFilter ? `No ${ORDER_STATUS_CONFIG[statusFilter]?.label?.toLowerCase() ?? statusFilter} orders` : 'No orders yet'}
-            </h2>
+            <h2 className="text-base font-semibold text-foreground mb-1">No orders yet</h2>
             <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
-              {searchQuery ? 'Try a different search term.' : statusFilter ? 'Orders with this status will appear here.' : 'When you place an order, it will show up here with tracking and details.'}
+              When you place an order, it will show up here with tracking and details.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
-              {(searchQuery || statusFilter) && (
-                <Button variant="outline" size="sm" className="rounded-full" onClick={() => { setSearchQuery(''); handleFilterChange(''); }}>
-                  <RotateCcw className="h-3.5 w-3.5" />Clear filters
-                </Button>
-              )}
-              {!statusFilter && !searchQuery && (
-                <Link href="/products"><Button size="sm" className="rounded-full"><ShoppingBag className="h-3.5 w-3.5" />Browse products</Button></Link>
-              )}
+              <Link href="/products"><Button size="sm" className="rounded-full"><ShoppingBag className="h-3.5 w-3.5" />Browse products</Button></Link>
             </div>
           </motion.div>
         ) : (
@@ -373,11 +248,11 @@ export default function ProfileOrdersPage() {
             )}
             <ul className="space-y-4">
               <AnimatePresence mode="popLayout">
-                {filteredOrders.map((order, idx) => <OrderCard key={order.id} order={order} index={idx} />)}
+                {orders.map((order, idx) => <OrderCard key={order.id} order={order} index={idx} />)}
               </AnimatePresence>
             </ul>
 
-            {!searchQuery && totalPages > 1 && (
+            {totalPages > 1 && (
               <nav className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4" aria-label="Orders pagination">
                 <Button variant="outline" size="sm" className="rounded-full min-w-28" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
                 <div className="flex items-center gap-2">
