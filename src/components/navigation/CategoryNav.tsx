@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGetCategoryTreeQuery, CategoryTreeItem } from '@/services/api/categoriesApi';
+import { useGetProductsQuery } from '@/services/api/productsApi';
 import { cn } from '@/lib/utils';
 import {
   ShoppingCart, User, Menu, X, Heart, Package,
@@ -78,6 +79,7 @@ export default function CategoryNav({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
 
   const notificationsRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -93,6 +95,18 @@ export default function CategoryNav({
 
   // Wishlist count (hook handles auth + fetching internally)
   const { count: wishlistCount } = useWishlist({ skip: !isAuthenticated });
+
+  // Live typeahead search — debounce the input before querying the API.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 250);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  const { data: searchData, isFetching: isSearching } = useGetProductsQuery(
+    { search: debouncedQuery, limit: 6 },
+    { skip: debouncedQuery.length < 2 },
+  );
+  const searchResults = ((searchData as { data?: any[] } | undefined)?.data ?? []) as any[];
 
   // Cleanup timeout
   useEffect(() => () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); }, []);
@@ -554,8 +568,52 @@ export default function CategoryNav({
                       </button>
                     )}
                   </form>
-                  <div className="px-4 py-4 text-sm text-muted-foreground text-center">
-                    Start typing to search…
+                  <div className="max-h-[60vh] overflow-y-auto">
+                    {debouncedQuery.length < 2 ? (
+                      <div className="px-4 py-6 text-sm text-muted-foreground text-center">
+                        Start typing to search…
+                      </div>
+                    ) : isSearching ? (
+                      <div className="px-4 py-6 text-sm text-muted-foreground text-center">
+                        Searching…
+                      </div>
+                    ) : searchResults.length === 0 ? (
+                      <div className="px-4 py-6 text-sm text-muted-foreground text-center">
+                        No products found for &ldquo;{debouncedQuery}&rdquo;
+                      </div>
+                    ) : (
+                      <>
+                        {searchResults.map((p) => {
+                          const img = p.images?.[0] ?? p.media?.[0]?.url;
+                          return (
+                            <Link
+                              key={p.id}
+                              href={`/products/${p.slug}`}
+                              onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+                              className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors"
+                            >
+                              <div className="relative h-11 w-11 shrink-0 rounded-lg overflow-hidden bg-muted">
+                                {img && (
+                                  <Image src={img} alt={p.name} fill sizes="44px" className="object-cover" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
+                                <p className="text-xs text-muted-foreground">{formatINR(p.price)}</p>
+                              </div>
+                            </Link>
+                          );
+                        })}
+                        <button
+                          type="button"
+                          onClick={() => { onSearch(debouncedQuery); setSearchOpen(false); setSearchQuery(''); }}
+                          className="w-full flex items-center justify-center gap-1.5 px-4 py-3 text-sm font-medium text-mono-terracotta hover:bg-muted/50 transition-colors border-t border-border/50"
+                        >
+                          View all results for &ldquo;{debouncedQuery}&rdquo;
+                          <ArrowRight className="h-4 w-4" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </motion.div>
