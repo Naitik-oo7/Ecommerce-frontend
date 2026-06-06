@@ -2,11 +2,13 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useRef, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '@/lib/redux/hooks';
 import { clearUser } from '@/lib/redux/authSlice';
+import { clearGuestCart } from '@/lib/redux/guestCartSlice';
 import { motion } from 'framer-motion';
 import { FacebookIcon, InstagramIcon, TwitterIcon } from '@/components/icons/SocialIcons';
-import { useGetCartQuery } from '@/services/api/cartApi';
+import { useGetCartQuery, useAddToCartMutation } from '@/services/api/cartApi';
 import { useGetSettingQuery } from '@/services/api/settingsApi';
 import { useLogoutMutation } from '@/services/api/authApi';
 import { clearAuthTokens } from '@/lib/authTokens';
@@ -47,6 +49,31 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   const [markAsRead] = useMarkAsReadByIdMutation();
   const [markAllAsRead] = useMarkAsReadMutation();
   const [logoutMutation] = useLogoutMutation();
+  const [addToCartMutation] = useAddToCartMutation();
+
+  const guestItems = useAppSelector((state) => state.guestCart.items);
+  const wasAuthenticated = useRef(isAuthenticated);
+  useEffect(() => {
+    const justLoggedIn = !wasAuthenticated.current && isAuthenticated;
+    wasAuthenticated.current = isAuthenticated;
+    if (justLoggedIn && guestItems.length > 0) {
+      const snapshot = [...guestItems];
+      const merge = async () => {
+        for (const item of snapshot) {
+          try {
+            await addToCartMutation({
+              variantId: item.variantId,
+              size: item.size,
+              quantity: item.quantity,
+            }).unwrap();
+          } catch {}
+        }
+        dispatch(clearGuestCart());
+      };
+      merge();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   interface CartResponse {
     data?: {
@@ -67,7 +94,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
 
   const cartRaw = (cart as CartResponse | undefined)?.data ?? (cart as CartResponse | undefined);
   const cartItems = (cartRaw?.cart?.items ?? cartRaw?.items ?? []) as unknown[];
-  const cartCount = cartItems.length;
+  const cartCount = isAuthenticated ? cartItems.length : guestItems.length;
 
   const notifications = (notificationsData as NotificationData | undefined)?.data ?? [];
   const unreadCount = (unreadCountData as UnreadCountData | undefined)?.unreadCount ?? 0;

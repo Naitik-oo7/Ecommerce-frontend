@@ -394,7 +394,18 @@ export default function ProductDetailPage() {
               setQuantity={setQuantity}
               selectedVariant={selectedVariant}
               onAddToCart={() =>
-                selectedVariant && handleAddToCart(selectedVariant.id, selectedVariant.size)
+                selectedVariant &&
+                handleAddToCart(selectedVariant.id, selectedVariant.size, {
+                  productName: product.name,
+                  productSlug: product.slug,
+                  price: Number(selectedVariant.price ?? product.price),
+                  comparePrice: product.comparePrice != null ? Number(product.comparePrice) : null,
+                  imageUrl:
+                    product.media?.find((m) => m.isPrimary)?.url ??
+                    product.media?.[0]?.url ??
+                    null,
+                  category: product.category?.name,
+                })
               }
               onBuyNow={() =>
                 selectedVariant && handleBuyNow(selectedVariant.id, selectedVariant.size)

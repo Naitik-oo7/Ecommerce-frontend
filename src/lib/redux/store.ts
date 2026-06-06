@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import authReducer from './authSlice';
+import guestCartReducer from './guestCartSlice';
 import { authApi } from '../../services/api/authApi';
 import { productsApi } from '../../services/api/productsApi';
 import { cartApi } from '../../services/api/cartApi';
@@ -31,6 +32,7 @@ const apis = [
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    guestCart: guestCartReducer,
     ...Object.fromEntries(apis.map((api) => [api.reducerPath, api.reducer])),
   },
   middleware: (getDefaultMiddleware) =>

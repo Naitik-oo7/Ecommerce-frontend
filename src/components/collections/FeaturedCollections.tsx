@@ -22,7 +22,7 @@ interface CollectionItem {
   href: string;
 }
 
-// ─── Card positions in the 3-col layout ───────────────────────────────────────
+// ─── Card positions in the 3-col desktop bento layout ────────────────────────
 // pos 0 → left tall   (col 1, row 1–2)
 // pos 1 → mid top     (col 2, row 1)
 // pos 2 → mid bottom  (col 2, row 2)
@@ -35,6 +35,11 @@ const GRID_STYLES: React.CSSProperties[] = [
   { gridColumn: '3', gridRow: '1 / 3' },   // right tall
 ];
 
+const DESKTOP_GRID_STYLE: React.CSSProperties = {
+  gridTemplateColumns: 'repeat(3, 1fr)',
+  gridTemplateRows: 'clamp(180px, 22vw, 290px) clamp(180px, 22vw, 290px)',
+};
+
 // ─── Single collection card ────────────────────────────────────────────────────
 const CollectionCard = ({
   title,
@@ -42,14 +47,15 @@ const CollectionCard = ({
   image,
   href,
   index,
-}: CollectionItem & { index: number }) => (
+  mobile = false,
+}: CollectionItem & { index: number; mobile?: boolean }) => (
   <motion.div
     initial={{ opacity: 0, y: 24 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
     transition={{ duration: 0.72, ease: [0.16, 1, 0.3, 1], delay: index * 0.09 }}
-    style={GRID_STYLES[index] ?? {}}
-    className="relative overflow-hidden rounded-2xl cursor-pointer group"
+    style={mobile ? {} : (GRID_STYLES[index] ?? {})}
+    className={`relative overflow-hidden rounded-2xl cursor-pointer group${mobile ? ' aspect-3/4' : ''}`}
   >
     <Link href={href} className="block w-full h-full">
       {/* Background image */}
@@ -103,7 +109,7 @@ const CollectionCard = ({
             fontFamily: 'var(--font-body, Jost, sans-serif)',
           }}
         >
-          Explore Collection <ArrowRight className="h-3 w-3 flex-shrink-0" />
+          Explore Collection <ArrowRight className="h-3 w-3 shrink-0" />
         </span>
       </div>
     </Link>
@@ -111,10 +117,10 @@ const CollectionCard = ({
 );
 
 // ─── Loading skeleton ──────────────────────────────────────────────────────────
-const Skeleton = ({ style }: { style: React.CSSProperties }) => (
+const Skeleton = ({ style, className }: { style?: React.CSSProperties; className?: string }) => (
   <div
-    className="animate-pulse rounded-2xl"
-    style={{ ...style, background: '#E8E0D4', minHeight: '260px' }}
+    className={`animate-pulse rounded-2xl${className ? ` ${className}` : ''}`}
+    style={{ ...style, background: '#E8E0D4', minHeight: className ? '0' : '260px' }}
   />
 );
 
@@ -148,31 +154,37 @@ const STATIC_COLLECTIONS: (CollectionItem & { subtitle: string })[] = [
 
 // ─── Grid renderer ─────────────────────────────────────────────────────────────
 const CollectionsGrid = ({ collections }: { collections: (CollectionItem & { subtitle: string })[] }) => (
-  <div
-    className="grid gap-3"
-    style={{
-      gridTemplateColumns: 'repeat(3, 1fr)',
-      gridTemplateRows: 'clamp(180px, 22vw, 290px) clamp(180px, 22vw, 290px)',
-    }}
-  >
-    {collections.slice(0, 4).map((col, i) => (
-      <CollectionCard key={col.title} {...col} index={i} />
-    ))}
-  </div>
+  <>
+    {/* Mobile: 2×2 equal grid */}
+    <div className="grid grid-cols-2 gap-3 lg:hidden">
+      {collections.slice(0, 4).map((col, i) => (
+        <CollectionCard key={col.title} {...col} index={i} mobile />
+      ))}
+    </div>
+    {/* Desktop: bento layout */}
+    <div className="hidden lg:grid gap-3" style={DESKTOP_GRID_STYLE}>
+      {collections.slice(0, 4).map((col, i) => (
+        <CollectionCard key={col.title} {...col} index={i} />
+      ))}
+    </div>
+  </>
 );
 
 const SkeletonGrid = () => (
-  <div
-    className="grid gap-3"
-    style={{
-      gridTemplateColumns: 'repeat(3, 1fr)',
-      gridTemplateRows: 'clamp(180px, 22vw, 290px) clamp(180px, 22vw, 290px)',
-    }}
-  >
-    {GRID_STYLES.map((style, i) => (
-      <Skeleton key={i} style={style} />
-    ))}
-  </div>
+  <>
+    {/* Mobile skeleton: 2×2 */}
+    <div className="grid grid-cols-2 gap-3 lg:hidden">
+      {[0, 1, 2, 3].map((i) => (
+        <Skeleton key={i} className="aspect-3/4" />
+      ))}
+    </div>
+    {/* Desktop skeleton: bento */}
+    <div className="hidden lg:grid gap-3" style={DESKTOP_GRID_STYLE}>
+      {GRID_STYLES.map((style, i) => (
+        <Skeleton key={i} style={style} />
+      ))}
+    </div>
+  </>
 );
 
 // ─── Main export ───────────────────────────────────────────────────────────────
@@ -196,7 +208,7 @@ export const FeaturedCollections = () => {
 
   return (
     <section className="py-10 md:py-14" style={{ background: '#F8F5F0' }}>
-      <div className="max-w-[1320px] mx-auto px-6 md:px-12 xl:px-20">
+      <div className="max-w-330 mx-auto px-6 md:px-12 xl:px-20">
 
         {/* ── Section header ── */}
         <motion.div

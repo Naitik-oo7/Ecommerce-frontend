@@ -20,7 +20,7 @@ interface ProductGridProps {
 }
 
 const GRID_CLASS =
-  'grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-2 md:grid-cols-3 md:gap-x-6 md:gap-y-9 xl:grid-cols-4';
+  'grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 md:grid-cols-3 md:gap-x-4 md:gap-y-6 xl:grid-cols-5';
 
 /** Skeleton card matching the real ProductCard footprint. */
 function GridCardSkeleton() {

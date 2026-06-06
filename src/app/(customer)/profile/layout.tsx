@@ -36,8 +36,8 @@ function ProfileLayoutContent({ children }: { children: React.ReactNode }) {
       <div className="container-mono py-8 md:py-12">
         <div className="flex flex-col lg:flex-row gap-8">
 
-          {/* Sidebar */}
-          <aside className="lg:w-64 flex-shrink-0">
+          {/* Desktop Sidebar — hidden on mobile */}
+          <aside className="hidden lg:block lg:w-64 shrink-0">
             {/* Profile card */}
             <div className="bg-card rounded-2xl border border-border p-6 mb-4">
               <div className="flex flex-col items-center text-center">
@@ -92,7 +92,7 @@ function ProfileLayoutContent({ children }: { children: React.ReactNode }) {
                         className="absolute left-0 top-0 bottom-0 w-0.5 bg-[#C7A27C] rounded-r"
                       />
                     )}
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                       isActive ? 'bg-accent/10' : 'bg-muted'
                     }`}>
                       <Icon className={`h-4 w-4 ${isActive ? 'text-accent' : 'text-muted-foreground'}`} />
@@ -103,9 +103,55 @@ function ProfileLayoutContent({ children }: { children: React.ReactNode }) {
                 );
               })}
             </nav>
-
-            {/* Mobile-only horizontal strip — shown on mobile above main content */}
           </aside>
+
+          {/* Mobile profile bar — hidden on desktop */}
+          <div className="lg:hidden -mt-2 mb-2">
+            {/* Compact user row */}
+            <div className="flex items-center gap-3 px-1 mb-3">
+              {user?.avatar ? (
+                <Image
+                  src={user.avatar}
+                  alt={user.name ?? ''}
+                  width={36}
+                  height={36}
+                  className="w-9 h-9 rounded-full object-cover ring-2 ring-border shrink-0"
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center shrink-0">
+                  <span className="text-sm font-bold text-white">{initials}</span>
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="text-sm font-semibold truncate text-foreground">{user?.name}</p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              </div>
+            </div>
+
+            {/* Horizontal scrollable pill nav */}
+            <nav className="flex gap-1 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = item.exact
+                  ? pathname === item.href
+                  : pathname.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-1.5 shrink-0 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                      isActive
+                        ? 'bg-muted text-foreground'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
 
           {/* Main content */}
           <main className="flex-1 min-w-0">

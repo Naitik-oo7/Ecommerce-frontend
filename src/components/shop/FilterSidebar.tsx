@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown,
@@ -48,6 +48,8 @@ interface FilterSidebarProps {
   meta?: FilterMeta;
   productCount?: number;
   hideSort?: boolean;
+  categories?: { id: number; name: string; slug: string }[];
+  categoryCounts?: Map<number, number>;
 }
 
 // Sorts the backend actually supports (name, price, createdAt, avgRating).
@@ -225,13 +227,29 @@ function CheckRow({
 
 // ── Sidebar content ───────────────────────────────────────────────────────
 
-function FilterSidebarContent({ filters, onChange, meta, hideSort }: FilterSidebarProps) {
+function FilterSidebarContent({ filters, onChange, meta, hideSort, categories, categoryCounts }: FilterSidebarProps) {
   const sizes = meta?.sizes ?? [];
   const materials = meta?.materials ?? [];
   const genders = (meta?.genders ?? []).filter((g) => g.gender);
   const tags = (meta?.tags ?? []).filter(
     (t) => t.name && !RESERVED_TAGS.has(t.name.toLowerCase()) && t.type !== 'sustainability'
   );
+  const priceFloor = meta?.priceRange?.min ?? 0;
+  const priceCeil = meta?.priceRange?.max ?? 50000;
+
+  const [localMin, setLocalMin] = useState(
+    filters.minPrice !== undefined ? String(Math.round(filters.minPrice)) : ''
+  );
+  const [localMax, setLocalMax] = useState(
+    filters.maxPrice !== undefined ? String(Math.round(filters.maxPrice)) : ''
+  );
+  const [showMore, setShowMore] = useState(false);
+
+  // Sync price inputs when filters are cleared externally
+  useEffect(() => {
+    setLocalMin(filters.minPrice !== undefined ? String(Math.round(filters.minPrice)) : '');
+    setLocalMax(filters.maxPrice !== undefined ? String(Math.round(filters.maxPrice)) : '');
+  }, [filters.minPrice, filters.maxPrice]);
 
   const toggleArray = (key: 'sizes' | 'materials' | 'tags', value: string) => {
     const current = filters[key] ?? [];
@@ -241,11 +259,21 @@ function FilterSidebarContent({ filters, onChange, meta, hideSort }: FilterSideb
     onChange({ ...filters, [key]: next.length ? next : undefined });
   };
 
+  const commitPrice = () => {
+    const min = localMin !== '' ? Number(localMin) : undefined;
+    const max = localMax !== '' ? Number(localMax) : undefined;
+    onChange({ ...filters, minPrice: min, maxPrice: max });
+  };
+
   const sortIndex = SORT_OPTIONS.findIndex(
     (o) =>
       (o.value === 'relevance' && !filters.sortBy) ||
       (o.value === filters.sortBy && o.order === filters.sortOrder)
   );
+
+  const moreActiveCount =
+    [filters.inStock, filters.isBestseller, filters.isNewArrival, filters.isSustainable, filters.gender, filters.minRating].filter(Boolean).length +
+    (filters.tags?.length ?? 0);
 
   return (
     <div>
@@ -280,61 +308,44 @@ function FilterSidebarContent({ filters, onChange, meta, hideSort }: FilterSideb
         </Section>
       )}
 
-      {/* Highlights */}
-      <Section title="Highlights" defaultOpen={false}>
-        <div className="space-y-2">
-          <ToggleRow
-            label="In Stock Only"
-            icon={PackageCheck}
-            checked={!!filters.inStock}
-            onToggle={() => onChange({ ...filters, inStock: filters.inStock ? undefined : true })}
-          />
-          <ToggleRow
-            label="New Arrivals"
-            icon={Sparkles}
-            checked={!!filters.isNewArrival}
-            onToggle={() => onChange({ ...filters, isNewArrival: filters.isNewArrival ? undefined : true })}
-          />
-          <ToggleRow
-            label="Bestsellers"
-            icon={Award}
-            checked={!!filters.isBestseller}
-            onToggle={() => onChange({ ...filters, isBestseller: filters.isBestseller ? undefined : true })}
-          />
-          <ToggleRow
-            label="Sustainable"
-            icon={Leaf}
-            checked={!!filters.isSustainable}
-            onToggle={() => onChange({ ...filters, isSustainable: filters.isSustainable ? undefined : true })}
-          />
-        </div>
-      </Section>
-
-      {/* Size */}
-      {sizes.length > 0 && (
+      {/* Category */}
+      {categories && categories.length > 0 && (
         <Section
-          title="Size"
-          count={filters.sizes?.length ?? 0}
-          onClear={() => onChange({ ...filters, sizes: undefined })}
-          defaultOpen={false}
+          title="Category"
+          count={filters.categoryId ? 1 : 0}
+          onClear={() => onChange({ ...filters, categoryId: undefined })}
+          defaultOpen={true}
         >
-          <div className="flex flex-wrap gap-2">
-            {sizes.map(({ size, count }) => {
-              const active = filters.sizes?.includes(size) ?? false;
+          <div className="space-y-0.5">
+            {[{ id: undefined as number | undefined, name: 'All' }, ...categories].map((cat) => {
+              const active = cat.id === undefined ? !filters.categoryId : filters.categoryId === cat.id;
+              const count =
+                cat.id === undefined
+                  ? Array.from(categoryCounts?.values() ?? []).reduce((a, b) => a + b, 0) || undefined
+                  : categoryCounts?.get(cat.id);
               return (
                 <button
-                  key={size}
-                  onClick={() => toggleArray('sizes', size)}
-                  disabled={count === 0}
-                  className={`flex h-9 min-w-[44px] items-center justify-center rounded-lg border-2 px-2.5 text-[13px] font-medium uppercase transition-all duration-150 ${
-                    active
-                      ? 'border-mono-charcoal bg-mono-charcoal text-white'
-                      : count === 0
-                        ? 'cursor-not-allowed border-[#F0ECE6] text-[#D4CCC2]'
-                        : 'border-[#ECE7E0] text-mono-charcoal hover:border-mono-charcoal'
-                  }`}
+                  key={cat.id ?? 'all'}
+                  onClick={() => onChange({ ...filters, categoryId: cat.id })}
+                  aria-pressed={active}
+                  className="group flex w-full items-center gap-2.5 py-1.5 text-left"
+                  style={{ fontFamily: 'var(--font-body, Jost, sans-serif)' }}
                 >
-                  {size}
+                  <span
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                      active ? 'border-mono-terracotta bg-mono-terracotta' : 'border-[#CFC7BD] group-hover:border-mono-stone'
+                    }`}
+                  >
+                    {active && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                  </span>
+                  <span
+                    className={`flex-1 text-[13px] transition-colors ${
+                      active ? 'font-semibold text-mono-charcoal' : 'text-mono-stone group-hover:text-mono-charcoal'
+                    }`}
+                  >
+                    {cat.name}
+                  </span>
+                  {count !== undefined && <span className="text-[11px] tabular-nums text-[#C2BAB0]">{count}</span>}
                 </button>
               );
             })}
@@ -342,13 +353,49 @@ function FilterSidebarContent({ filters, onChange, meta, hideSort }: FilterSideb
         </Section>
       )}
 
+      {/* Price */}
+      <Section
+        title="Price"
+        count={filters.minPrice !== undefined || filters.maxPrice !== undefined ? 1 : 0}
+        onClear={() => { setLocalMin(''); setLocalMax(''); onChange({ ...filters, minPrice: undefined, maxPrice: undefined }); }}
+        defaultOpen={true}
+      >
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px] text-mono-stone">₹</span>
+            <input
+              type="number"
+              placeholder={String(Math.round(priceFloor))}
+              value={localMin}
+              onChange={(e) => setLocalMin(e.target.value)}
+              onBlur={commitPrice}
+              onKeyDown={(e) => e.key === 'Enter' && commitPrice()}
+              className="w-full rounded-lg border border-[#ECE7E0] bg-white py-2 pl-6 pr-2 text-[12px] text-mono-charcoal placeholder:text-[#C8C0B8] focus:border-mono-stone focus:outline-none"
+            />
+          </div>
+          <span className="shrink-0 text-[11px] text-[#C8C0B8]">–</span>
+          <div className="relative flex-1">
+            <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px] text-mono-stone">₹</span>
+            <input
+              type="number"
+              placeholder={String(Math.round(priceCeil))}
+              value={localMax}
+              onChange={(e) => setLocalMax(e.target.value)}
+              onBlur={commitPrice}
+              onKeyDown={(e) => e.key === 'Enter' && commitPrice()}
+              className="w-full rounded-lg border border-[#ECE7E0] bg-white py-2 pl-6 pr-2 text-[12px] text-mono-charcoal placeholder:text-[#C8C0B8] focus:border-mono-stone focus:outline-none"
+            />
+          </div>
+        </div>
+      </Section>
+
       {/* Material */}
       {materials.length > 0 && (
         <Section
           title="Material"
           count={filters.materials?.length ?? 0}
           onClear={() => onChange({ ...filters, materials: undefined })}
-          defaultOpen={false}
+          defaultOpen={true}
         >
           <div className="space-y-0.5">
             {materials.map(({ name, count }) => (
@@ -364,29 +411,31 @@ function FilterSidebarContent({ filters, onChange, meta, hideSort }: FilterSideb
         </Section>
       )}
 
-      {/* Gender */}
-      {genders.length > 1 && (
+      {/* Size */}
+      {sizes.length > 0 && (
         <Section
-          title="Gender"
-          count={filters.gender ? 1 : 0}
-          onClear={() => onChange({ ...filters, gender: undefined })}
-          defaultOpen={false}
+          title="Size"
+          count={filters.sizes?.length ?? 0}
+          onClear={() => onChange({ ...filters, sizes: undefined })}
+          defaultOpen={true}
         >
-          <div className="grid grid-cols-3 gap-1.5">
-            {genders.map(({ gender }) => {
-              const active = filters.gender === gender;
+          <div className="flex flex-wrap gap-2">
+            {sizes.map(({ size, count }) => {
+              const active = filters.sizes?.includes(size) ?? false;
               return (
                 <button
-                  key={gender}
-                  onClick={() => onChange({ ...filters, gender: active ? undefined : gender })}
-                  className={`rounded-lg border py-2 text-[12px] font-medium capitalize transition-colors ${
+                  key={size}
+                  onClick={() => toggleArray('sizes', size)}
+                  disabled={count === 0}
+                  className={`flex h-8 min-w-[40px] items-center justify-center rounded-lg border-2 px-2.5 text-[12px] font-medium uppercase transition-all duration-150 ${
                     active
                       ? 'border-mono-charcoal bg-mono-charcoal text-white'
-                      : 'border-[#ECE7E0] text-mono-stone hover:border-[#D8CFC4]'
+                      : count === 0
+                        ? 'cursor-not-allowed border-[#F0ECE6] text-[#D4CCC2]'
+                        : 'border-[#ECE7E0] text-mono-charcoal hover:border-mono-charcoal'
                   }`}
-                  style={{ fontFamily: 'var(--font-body, Jost, sans-serif)' }}
                 >
-                  {GENDER_LABELS[gender] ?? gender}
+                  {size}
                 </button>
               );
             })}
@@ -394,76 +443,168 @@ function FilterSidebarContent({ filters, onChange, meta, hideSort }: FilterSideb
         </Section>
       )}
 
-      {/* Rating */}
-      <Section
-        title="Rating"
-        count={filters.minRating ? 1 : 0}
-        onClear={() => onChange({ ...filters, minRating: undefined })}
-        defaultOpen={false}
+      {/* More Filters toggle */}
+      <button
+        onClick={() => setShowMore((v) => !v)}
+        className="flex w-full items-center gap-2 py-3 text-left"
+        style={{ fontFamily: 'var(--font-body, Jost, sans-serif)' }}
       >
-        <div className="space-y-0.5">
-          {[4, 3, 2, 1].map((stars) => {
-            const active = filters.minRating === stars;
-            return (
-              <button
-                key={stars}
-                onClick={() => onChange({ ...filters, minRating: active ? undefined : stars })}
-                className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors ${
-                  active ? 'bg-[#FDF7F2]' : 'hover:bg-[#F6F3EE]'
-                }`}
-              >
-                <span className="flex">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <Star
-                      key={s}
-                      className={`h-3.5 w-3.5 ${
-                        s <= stars ? 'fill-mono-terracotta text-mono-terracotta' : 'fill-[#E8E2DA] text-[#E8E2DA]'
-                      }`}
-                    />
-                  ))}
-                </span>
-                <span
-                  className={`text-[12px] ${active ? 'font-semibold text-mono-charcoal' : 'text-mono-stone'}`}
-                  style={{ fontFamily: 'var(--font-body, Jost, sans-serif)' }}
-                >
-                  &amp; up
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </Section>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-mono-stone">
+          {showMore ? 'Fewer Filters' : 'More Filters'}
+        </span>
+        {moreActiveCount > 0 && !showMore && (
+          <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-mono-terracotta px-1 text-[9px] font-bold text-white">
+            {moreActiveCount}
+          </span>
+        )}
+        <ChevronDown
+          className={`ml-auto h-3.5 w-3.5 text-[#C8C0B8] transition-transform duration-300 ${showMore ? 'rotate-180' : ''}`}
+        />
+      </button>
 
-      {/* Tags */}
-      {tags.length > 0 && (
-        <Section
-          title="Tags"
-          count={filters.tags?.length ?? 0}
-          onClear={() => onChange({ ...filters, tags: undefined })}
-          defaultOpen={false}
-        >
-          <div className="flex flex-wrap gap-1.5">
-            {tags.map(({ name, count }) => {
-              const active = filters.tags?.includes(name) ?? false;
-              return (
-                <button
-                  key={name}
-                  onClick={() => toggleArray('tags', name)}
-                  className={`rounded-full border px-3 py-1.5 text-[11px] font-medium capitalize transition-colors ${
-                    active
-                      ? 'border-mono-charcoal bg-mono-charcoal text-white'
-                      : 'border-[#ECE7E0] text-mono-stone hover:border-[#D8CFC4]'
-                  }`}
-                  style={{ fontFamily: 'var(--font-body, Jost, sans-serif)' }}
-                >
-                  {name}
-                  <span className={`ml-1 ${active ? 'text-white/60' : 'text-[#C2BAB0]'}`}>{count}</span>
-                </button>
-              );
-            })}
-          </div>
-        </Section>
-      )}
+      {/* Hidden filters — revealed by More Filters */}
+      <AnimatePresence initial={false}>
+        {showMore && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            {/* Highlights */}
+            <Section title="Highlights" defaultOpen={false}>
+              <div className="space-y-2">
+                <ToggleRow
+                  label="In Stock Only"
+                  icon={PackageCheck}
+                  checked={!!filters.inStock}
+                  onToggle={() => onChange({ ...filters, inStock: filters.inStock ? undefined : true })}
+                />
+                <ToggleRow
+                  label="New Arrivals"
+                  icon={Sparkles}
+                  checked={!!filters.isNewArrival}
+                  onToggle={() => onChange({ ...filters, isNewArrival: filters.isNewArrival ? undefined : true })}
+                />
+                <ToggleRow
+                  label="Bestsellers"
+                  icon={Award}
+                  checked={!!filters.isBestseller}
+                  onToggle={() => onChange({ ...filters, isBestseller: filters.isBestseller ? undefined : true })}
+                />
+                <ToggleRow
+                  label="Sustainable"
+                  icon={Leaf}
+                  checked={!!filters.isSustainable}
+                  onToggle={() => onChange({ ...filters, isSustainable: filters.isSustainable ? undefined : true })}
+                />
+              </div>
+            </Section>
+
+            {/* Gender */}
+            {genders.length > 1 && (
+              <Section
+                title="Gender"
+                count={filters.gender ? 1 : 0}
+                onClear={() => onChange({ ...filters, gender: undefined })}
+                defaultOpen={false}
+              >
+                <div className="grid grid-cols-3 gap-1.5">
+                  {genders.map(({ gender }) => {
+                    const active = filters.gender === gender;
+                    return (
+                      <button
+                        key={gender}
+                        onClick={() => onChange({ ...filters, gender: active ? undefined : gender })}
+                        className={`rounded-lg border py-2 text-[12px] font-medium capitalize transition-colors ${
+                          active
+                            ? 'border-mono-charcoal bg-mono-charcoal text-white'
+                            : 'border-[#ECE7E0] text-mono-stone hover:border-[#D8CFC4]'
+                        }`}
+                        style={{ fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                      >
+                        {GENDER_LABELS[gender] ?? gender}
+                      </button>
+                    );
+                  })}
+                </div>
+              </Section>
+            )}
+
+            {/* Rating */}
+            <Section
+              title="Rating"
+              count={filters.minRating ? 1 : 0}
+              onClear={() => onChange({ ...filters, minRating: undefined })}
+              defaultOpen={false}
+            >
+              <div className="space-y-0.5">
+                {[4, 3, 2, 1].map((stars) => {
+                  const active = filters.minRating === stars;
+                  return (
+                    <button
+                      key={stars}
+                      onClick={() => onChange({ ...filters, minRating: active ? undefined : stars })}
+                      className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors ${
+                        active ? 'bg-[#FDF7F2]' : 'hover:bg-[#F6F3EE]'
+                      }`}
+                    >
+                      <span className="flex">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            className={`h-3.5 w-3.5 ${
+                              s <= stars ? 'fill-mono-terracotta text-mono-terracotta' : 'fill-[#E8E2DA] text-[#E8E2DA]'
+                            }`}
+                          />
+                        ))}
+                      </span>
+                      <span
+                        className={`text-[12px] ${active ? 'font-semibold text-mono-charcoal' : 'text-mono-stone'}`}
+                        style={{ fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                      >
+                        &amp; up
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Section>
+
+            {/* Tags */}
+            {tags.length > 0 && (
+              <Section
+                title="Tags"
+                count={filters.tags?.length ?? 0}
+                onClear={() => onChange({ ...filters, tags: undefined })}
+                defaultOpen={false}
+              >
+                <div className="flex flex-wrap gap-1.5">
+                  {tags.map(({ name, count }) => {
+                    const active = filters.tags?.includes(name) ?? false;
+                    return (
+                      <button
+                        key={name}
+                        onClick={() => toggleArray('tags', name)}
+                        className={`rounded-full border px-3 py-1.5 text-[11px] font-medium capitalize transition-colors ${
+                          active
+                            ? 'border-mono-charcoal bg-mono-charcoal text-white'
+                            : 'border-[#ECE7E0] text-mono-stone hover:border-[#D8CFC4]'
+                        }`}
+                        style={{ fontFamily: 'var(--font-body, Jost, sans-serif)' }}
+                      >
+                        {name}
+                        <span className={`ml-1 ${active ? 'text-white/60' : 'text-[#C2BAB0]'}`}>{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </Section>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

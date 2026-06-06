@@ -2,14 +2,14 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { loginRedirectUrl } from '@/lib/loginRedirect';
 import { X, Heart, ShoppingBag, Star, Check, ArrowRight, Minus, Plus } from 'lucide-react';
 
 import { useGetProductBySlugQuery } from '@/services/api/productsApi';
 import { useAddToCartMutation } from '@/services/api/cartApi';
-import { useAppSelector } from '@/lib/redux/hooks';
+import { useAppSelector, useAppDispatch } from '@/lib/redux/hooks';
+import { addGuestItem } from '@/lib/redux/guestCartSlice';
 import type { Product, ProductVariant } from '@/types';
 
 interface QuickViewModalProps {
@@ -30,8 +30,8 @@ export function QuickViewModal({
   onToggleWishlist,
 }: QuickViewModalProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
 
   // Fetch full product (variants + all images) lazily when opened.
   const { data: fetched, isFetching } = useGetProductBySlugQuery(seed?.slug ?? '', {
@@ -98,12 +98,27 @@ export function QuickViewModal({
   const canAdd = !!selectedVariant && selectedVariant.stock > 0;
 
   const handleAddToCart = async (buyNow = false) => {
+    if (!selectedVariant) return;
+
     if (!isAuthenticated) {
-      onClose();
-      router.push(loginRedirectUrl(pathname));
+      const primaryImage = images[0] ?? null;
+      dispatch(
+        addGuestItem({
+          variantId: selectedVariant.id,
+          size: selectedVariant.size,
+          quantity,
+          productName: product?.name ?? seed?.name ?? '',
+          productSlug: product?.slug ?? seed?.slug ?? '',
+          price: Number(price),
+          comparePrice: compare ? Number(compare) : null,
+          imageUrl: primaryImage,
+          category: (product as { category?: { name?: string } } | undefined)?.category?.name,
+        })
+      );
+      setJustAdded(true);
+      setTimeout(() => setJustAdded(false), 2200);
       return;
     }
-    if (!selectedVariant) return;
     setAdding(true);
     try {
       await addToCart({

@@ -330,87 +330,39 @@ function ShopPageInner() {
     >
       {/* ── Page Header ─────────────────────────────────────────────────── */}
       <div style={{ background: "#F0ECE4", borderBottom: "1px solid #E2D9CE" }}>
-        <div className="container-plp pt-8 pb-6 md:pt-10 md:pb-8">
-          {/* Breadcrumbs */}
-          <nav
-            className="flex items-center gap-1.5 mb-5"
-            style={{ fontSize: "11px", color: "#C8C0B8", fontFamily: "var(--font-body, Jost, sans-serif)" }}
-          >
-            <Link href="/" className="flex items-center gap-1 hover:text-mono-charcoal transition-colors">
-              <Home className="h-3 w-3" />
-              Home
-            </Link>
-            <ChevronRight className="h-3 w-3" />
-            <span style={{ color: "#1A1A18", fontWeight: 600 }}>
-              {filters.categoryId ?
-                (categories.find((c) => c.id === filters.categoryId)?.name ?? "Products")
-              : "All Products"}
-            </span>
-          </nav>
-
-          {/* Title block */}
-          <div className="mb-6">
-            <span
-              className="text-xs font-semibold tracking-[0.2em] uppercase mb-2 block"
-              style={{ color: "#C8703A", fontFamily: "var(--font-body, Jost, sans-serif)" }}
+        <div className="container-plp py-4 md:py-5">
+          <div className="flex items-baseline gap-3">
+            {/* Breadcrumb inline with title */}
+            <nav
+              className="flex items-center gap-1.5 shrink-0"
+              style={{ fontSize: "11px", color: "#C8C0B8", fontFamily: "var(--font-body, Jost, sans-serif)" }}
             >
-              Collections
-            </span>
+              <Link href="/" className="flex items-center gap-1 hover:text-mono-charcoal transition-colors">
+                <Home className="h-3 w-3" />
+              </Link>
+              <ChevronRight className="h-3 w-3" />
+            </nav>
             <h1
-              className="leading-tight"
               style={{
                 fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
-                fontSize: "clamp(1.6rem, 2.8vw, 2.2rem)",
+                fontSize: "clamp(1.1rem, 1.8vw, 1.35rem)",
                 fontWeight: 700,
                 color: "#1A1A18",
+                lineHeight: 1.2,
               }}
             >
-              {filters.categoryId ?
-                (categories.find((c) => c.id === filters.categoryId)?.name ?? "Shop All")
-              : <>
-                  Shop{" "}
-                  <em className="font-normal italic" style={{ color: "#6B6560" }}>
-                    all products
-                  </em>
-                </>
-              }
+              {filters.categoryId
+                ? (categories.find((c) => c.id === filters.categoryId)?.name ?? "Products")
+                : "All Products"}
             </h1>
-          </div>
-
-          {/* Category pills — single source of truth for category selection */}
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
-            {(() => {
-              const allCount = Array.from(categoryCounts.values()).reduce((a, b) => a + b, 0);
-              const pills: { id: number | undefined; name: string; count?: number }[] = [
-                { id: undefined, name: "All", count: allCount || undefined },
-                ...categories.map((cat) => ({ id: cat.id, name: cat.name, count: categoryCounts.get(cat.id) })),
-              ];
-              return pills.map((pill) => {
-                const active = filters.categoryId === pill.id;
-                return (
-                  <button
-                    key={pill.id ?? "all"}
-                    onClick={() => updateFilters({ ...filters, categoryId: pill.id })}
-                    aria-pressed={active}
-                    className={`group shrink-0 inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-medium transition-all duration-200 ${
-                      active ?
-                        "border-mono-charcoal bg-mono-charcoal text-mono-cream shadow-sm"
-                      : "border-[#D8CFC4] bg-white/40 text-mono-stone hover:border-mono-charcoal hover:text-mono-charcoal"
-                    }`}
-                    style={{ fontFamily: "var(--font-body, Jost, sans-serif)", letterSpacing: "0.03em" }}
-                  >
-                    {pill.name}
-                    {pill.count !== undefined && (
-                      <span
-                        className={`tabular-nums text-[10px] ${active ? "text-mono-cream/60" : "text-[#C2BAB0] group-hover:text-mono-stone"}`}
-                      >
-                        {pill.count}
-                      </span>
-                    )}
-                  </button>
-                );
-              });
-            })()}
+            {totalCount !== undefined && !isLoading && (
+              <span
+                className="shrink-0"
+                style={{ fontSize: "12px", color: "#C8C0B8", fontFamily: "var(--font-body, Jost, sans-serif)" }}
+              >
+                {totalCount} products
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -491,8 +443,14 @@ function ShopPageInner() {
             </div>
 
             {/* Sort dropdown — desktop only */}
-            <div className="hidden lg:flex items-center gap-1.5 shrink-0">
-              <ArrowUpDown className="h-3.5 w-3.5 shrink-0" style={{ color: "#6B6560" }} />
+            <div className="hidden lg:flex items-center gap-2 shrink-0 rounded-full border border-[#E5E2DD] bg-mono-cream px-3.5 py-1.5">
+              <ArrowUpDown className="h-3.5 w-3.5 shrink-0 text-mono-stone" />
+              <span
+                className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mono-stone whitespace-nowrap"
+                style={{ fontFamily: "var(--font-body, Jost, sans-serif)" }}
+              >
+                Sort:
+              </span>
               <select
                 value={SORT_OPTIONS.findIndex(
                   (o) =>
@@ -508,7 +466,7 @@ function ShopPageInner() {
                     sortOrder: opt.value === "relevance" ? undefined : opt.order,
                   });
                 }}
-                className="text-xs border-0 bg-transparent focus:outline-none cursor-pointer"
+                className="border-0 bg-transparent text-xs font-medium focus:outline-none cursor-pointer"
                 style={{ color: "#1A1A18", fontFamily: "var(--font-body, Jost, sans-serif)" }}
               >
                 {SORT_OPTIONS.map((opt, i) => (
@@ -546,7 +504,14 @@ function ShopPageInner() {
       <div className="container-plp py-8 md:py-10">
         <div className="flex gap-4 lg:gap-6">
           {/* Desktop Sidebar */}
-          <FilterSidebar filters={filters} onChange={updateFilters} meta={meta} productCount={totalCount} />
+          <FilterSidebar
+            filters={filters}
+            onChange={updateFilters}
+            meta={meta}
+            productCount={totalCount}
+            categories={categories}
+            categoryCounts={categoryCounts}
+          />
 
           {/* Main content */}
           <div className="flex-1 min-w-0">
@@ -642,6 +607,8 @@ function ShopPageInner() {
         }}
         meta={meta}
         productCount={totalCount}
+        categories={categories}
+        categoryCounts={categoryCounts}
       />
 
       {/* Quick View modal */}
