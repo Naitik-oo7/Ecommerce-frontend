@@ -148,25 +148,6 @@ export default function CategoryNav({
     exit:    { opacity: 0, scale: 0.96, y: -6, transition: { duration: 0.14 } },
   };
 
-  if (isLoading) {
-    return (
-      <div className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background h-14 md:h-16 flex items-center">
-        <div className="container-mono w-full flex items-center justify-between">
-          <div className="h-6 w-20 bg-muted animate-pulse rounded" />
-          <div className="flex gap-8">
-            <div className="h-4 w-16 bg-muted animate-pulse rounded" />
-            <div className="h-4 w-20 bg-muted animate-pulse rounded" />
-            <div className="h-4 w-24 bg-muted animate-pulse rounded" />
-          </div>
-          <div className="flex gap-3">
-            <div className="h-8 w-8 bg-muted animate-pulse rounded-full" />
-            <div className="h-8 w-8 bg-muted animate-pulse rounded-full" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
       {/* ── Single unified navbar ─────────────────────────────────────────── */}
@@ -214,6 +195,14 @@ export default function CategoryNav({
                 ))}
 
                 <li className="px-2"><span className="block w-px h-4 bg-border" /></li>
+
+                {isLoading
+                  ? Array.from({ length: 3 }).map((_, i) => (
+                      <li key={`cat-skel-${i}`} className="px-2 lg:px-4 py-2">
+                        <span className="block h-4 w-16 bg-muted animate-pulse rounded" />
+                      </li>
+                    ))
+                  : null}
 
                 {categories.map((category) => (
                   <li key={category.id}>

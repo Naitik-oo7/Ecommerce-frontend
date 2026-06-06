@@ -10,6 +10,7 @@ import { useLoginMutation } from '@/services/api/authApi';
 import { loginSchema, type LoginFormData } from '@/lib/validators/auth';
 import { setUser } from '@/lib/redux/authSlice';
 import { useAppDispatch } from '@/lib/redux/hooks';
+import { useMergeGuestCart } from '@/lib/redux/useMergeGuestCart';
 import { setAuthTokens } from '@/lib/authTokens';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ export default function LoginPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [loginMutation, { isLoading }] = useLoginMutation();
+  const mergeGuestCart = useMergeGuestCart();
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -38,6 +40,9 @@ export default function LoginPage() {
       const response = await loginMutation(data).unwrap();
       setAuthTokens(response.accessToken, response.refreshToken, rememberMe);
       dispatch(setUser(response.user));
+
+      // Transfer any items added while browsing as a guest into the server cart.
+      await mergeGuestCart();
 
       // Return the user to where they were headed before being bounced to /login.
       // Only same-origin relative paths are honored (open-redirect safe).

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useGoogleAuthMutation } from '@/services/api/authApi';
 import { setUser } from '@/lib/redux/authSlice';
 import { useAppDispatch } from '@/lib/redux/hooks';
+import { useMergeGuestCart } from '@/lib/redux/useMergeGuestCart';
 import { setAuthTokens } from '@/lib/authTokens';
 
 declare global {
@@ -30,10 +31,15 @@ export default function GoogleAuthButton({ onError }: GoogleAuthButtonProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [googleAuthMutation] = useGoogleAuthMutation();
+  const mergeGuestCart = useMergeGuestCart();
   const buttonRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
   const onErrorRef = useRef(onError);
   useEffect(() => { onErrorRef.current = onError; }, [onError]);
+  // Kept in a ref because the GSI callback below is registered once and would
+  // otherwise close over a stale merge function.
+  const mergeGuestCartRef = useRef(mergeGuestCart);
+  useEffect(() => { mergeGuestCartRef.current = mergeGuestCart; }, [mergeGuestCart]);
 
   const initGoogle = () => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -49,6 +55,8 @@ export default function GoogleAuthButton({ onError }: GoogleAuthButtonProps) {
             const result = await googleAuthMutation({ idToken: response.credential }).unwrap();
             setAuthTokens(result.accessToken, result.refreshToken, true);
             dispatch(setUser(result.user));
+            // Transfer any guest-cart items into the server cart before leaving.
+            await mergeGuestCartRef.current();
             router.push('/');
           } catch (err: unknown) {
             const error = err as { data?: { message?: string } };

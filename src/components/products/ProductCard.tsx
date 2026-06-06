@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Heart, Eye, ShoppingBag, Star } from 'lucide-react';
+import { memo, useMemo } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { Heart, ShoppingBag, Star } from 'lucide-react';
 import Link from 'next/link';
 
 import type { Product, ProductVariant } from '@/types';
@@ -21,6 +21,7 @@ interface ProductCardProps {
 }
 
 const EASE = [0.16, 1, 0.3, 1] as const;
+const CUBIC = 'cubic-bezier(0.16, 1, 0.3, 1)';
 
 /** Unique colour swatches derived from a product's variants. */
 function useColorSwatches(variants: ProductVariant[] | undefined) {
@@ -41,7 +42,7 @@ function useColorSwatches(variants: ProductVariant[] | undefined) {
   }, [variants]);
 }
 
-export const ProductCard = ({
+export const ProductCard = memo(function ProductCard({
   product,
   index = 0,
   view = 'grid',
@@ -49,8 +50,7 @@ export const ProductCard = ({
   isAddingToCart = false,
   onQuickView,
   onToggleWishlist,
-}: ProductCardProps) => {
-  const [isHovered, setIsHovered] = useState(false);
+}: ProductCardProps) {
   const prefersReducedMotion = useReducedMotion();
 
   const hasSecondaryImage = (product.images?.length ?? 0) > 1;
@@ -71,9 +71,18 @@ export const ProductCard = ({
     onQuickView?.(product);
   };
 
+  // Entrance fires once at mount (not on every scroll via IntersectionObserver).
+  // Use index % 12 so each infinite-scroll batch also gets a per-page stagger.
+  const localIndex = index % 12;
   const entrance = prefersReducedMotion
-    ? { initial: { opacity: 0 }, whileInView: { opacity: 1 } }
-    : { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 } };
+    ? { initial: { opacity: 0 }, animate: { opacity: 1 } }
+    : { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } };
+
+  const entranceTransition = {
+    duration: 0.45,
+    delay: Math.min(localIndex * 0.04, 0.28),
+    ease: EASE,
+  };
 
   // ── Shared sub-elements ────────────────────────────────────────────────
   const Badges = (
@@ -159,32 +168,31 @@ export const ProductCard = ({
     </div>
   );
 
+  // Pure CSS hover — no JS state, no re-renders as cards scroll past the cursor.
   const ImageStack = (
     <>
       {product.images?.[0] ? (
         <>
-          <motion.img
+          <img
             src={product.images[0]}
             alt={product.name}
             loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover"
-            animate={{ scale: isHovered && !prefersReducedMotion ? 1.07 : 1 }}
-            transition={{ duration: 0.7, ease: EASE }}
+            decoding="async"
+            className={`absolute inset-0 h-full w-full object-cover transition-transform duration-700 ${
+              prefersReducedMotion ? '' : 'group-hover:scale-[1.07]'
+            }`}
+            style={{ transitionTimingFunction: CUBIC }}
           />
-          <AnimatePresence>
-            {isHovered && hasSecondaryImage && (
-              <motion.img
-                src={product.images[1]}
-                alt=""
-                aria-hidden
-                className="absolute inset-0 h-full w-full object-cover"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.5 }}
-              />
-            )}
-          </AnimatePresence>
+          {hasSecondaryImage && !prefersReducedMotion && (
+            <img
+              src={product.images[1]}
+              alt=""
+              aria-hidden
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+            />
+          )}
         </>
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-mono-sand text-[#A8A199]">
@@ -199,10 +207,7 @@ export const ProductCard = ({
     return (
       <motion.article
         {...entrance}
-        viewport={{ once: true, margin: '-40px' }}
-        transition={{ duration: 0.5, delay: Math.min(index * 0.04, 0.3), ease: EASE }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        transition={entranceTransition}
         className="group relative flex gap-4 rounded-2xl border border-[#E8E2DA] bg-white p-3 shadow-sm transition-shadow duration-300 hover:shadow-md sm:gap-6 sm:p-4"
       >
         <div className="relative aspect-square w-28 shrink-0 overflow-hidden rounded-xl bg-mono-cream sm:w-40 md:w-48">
@@ -217,9 +222,7 @@ export const ProductCard = ({
             </h3>
           </div>
           <div className="flex flex-wrap items-end justify-between gap-3 pt-2">
-            <div>
-              {PriceBlock}
-            </div>
+            <div>{PriceBlock}</div>
             <div className="z-20 flex items-center gap-2">
               {WishlistButton}
               {onQuickView && (
@@ -250,16 +253,15 @@ export const ProductCard = ({
   return (
     <motion.article
       {...entrance}
-      viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.55, delay: Math.min(index * 0.05, 0.35), ease: EASE }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      transition={entranceTransition}
       className="group relative"
     >
-      <motion.div
-        animate={{ y: isHovered && !prefersReducedMotion ? -6 : 0 }}
-        transition={{ duration: 0.4, ease: EASE }}
-        className="relative overflow-hidden rounded-2xl border border-[#E8E2DA] bg-white shadow-sm transition-shadow duration-500 group-hover:shadow-xl"
+      {/* CSS lift + shadow — no JS animation loop, no re-render on hover */}
+      <div
+        className={`relative overflow-hidden rounded-2xl border border-[#E8E2DA] bg-white shadow-sm transition-[transform,box-shadow] duration-300 group-hover:shadow-xl ${
+          prefersReducedMotion ? '' : 'group-hover:-translate-y-1.5'
+        }`}
+        style={{ transitionTimingFunction: CUBIC }}
       >
         {/* Image */}
         <div className="relative aspect-[3/4] overflow-hidden bg-mono-cream">
@@ -295,7 +297,7 @@ export const ProductCard = ({
 
         {/* Info */}
         <div className="space-y-1.5 px-4 py-3.5">
-          <h3 className="text-sm font-medium leading-snug text-mono-charcoal transition-colors group-hover:text-mono-terracotta line-clamp-2">
+          <h3 className="text-sm font-medium leading-snug text-mono-charcoal transition-colors group-hover:text-mono-terracotta truncate">
             {product.name}
           </h3>
           {PriceBlock}
@@ -307,9 +309,9 @@ export const ProductCard = ({
           aria-label={product.name}
           className="absolute inset-0 z-10 rounded-2xl"
         />
-      </motion.div>
+      </div>
     </motion.article>
   );
-};
+});
 
 export default ProductCard;

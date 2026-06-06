@@ -14,7 +14,7 @@ export const CinematicHero = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mousePosition = useMouseParallax({ intensity: 15, smoothing: 0.08 });
 
-  const { data: heroSettings } = useGetSettingQuery('hero');
+  const { data: heroSettings, isLoading: heroLoading } = useGetSettingQuery('hero');
   const { data: newestProductData } = useGetProductsQuery({
     sortBy: 'createdAt',
     sortOrder: 'desc',
@@ -23,6 +23,12 @@ export const CinematicHero = () => {
 
   const hero = heroSettings as any;
   const newestProduct = (newestProductData as any)?.data?.[0] || null;
+
+  const FALLBACK_HERO_IMAGE =
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80';
+  // Only resolve the image source once the hero setting has loaded — this avoids
+  // painting the static fallback first and then swapping to the dynamic image.
+  const heroImage = heroLoading ? null : hero?.backgroundImage || FALLBACK_HERO_IMAGE;
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -189,14 +195,13 @@ export const CinematicHero = () => {
                 transition: 'transform 0.5s ease-out',
               }}
             >
-              <img
-                src={
-                  hero?.backgroundImage ||
-                  'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80'
-                }
-                alt="Editorial lifestyle"
-                className="w-full h-full object-cover object-top"
-              />
+              {heroImage && (
+                <img
+                  src={heroImage}
+                  alt="Editorial lifestyle"
+                  className="w-full h-full object-cover object-top"
+                />
+              )}
               {/* left-edge fade to match hero bg */}
               <div
                 className="absolute inset-0"

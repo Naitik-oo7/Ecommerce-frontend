@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { PackageSearch } from 'lucide-react';
+import { PackageSearch, Loader2 } from 'lucide-react';
 import { ProductCard, type ProductCardView } from '@/components/products/ProductCard';
 import { EmptyState } from '@/components/common/EmptyState';
 import type { Product } from '@/types';
@@ -17,6 +16,8 @@ interface ProductGridProps {
   isFetchingMore: boolean;
   hasMore: boolean;
   onLoadMore: () => void;
+  /** Total number of products matching the current filters (for the count summary). */
+  totalCount?: number;
 }
 
 const GRID_CLASS =
@@ -65,34 +66,18 @@ export function ProductGrid({
   isFetchingMore,
   hasMore,
   onLoadMore,
+  totalCount,
 }: ProductGridProps) {
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  const handleIntersect = useCallback(
-    (entries: IntersectionObserverEntry[]) => {
-      if (entries[0].isIntersecting && hasMore && !isFetchingMore && !isLoading) {
-        onLoadMore();
-      }
-    },
-    [hasMore, isFetchingMore, isLoading, onLoadMore]
-  );
-
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(handleIntersect, { rootMargin: '600px' });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [handleIntersect]);
-
   const isList = view === 'list';
   const containerClass = isList ? 'flex flex-col gap-4' : GRID_CLASS;
   const Skeleton = isList ? ListCardSkeleton : GridCardSkeleton;
 
   if (isLoading) {
+    // Match a full first page: 10 list rows, or 10 grid cards (2 full rows at xl /
+    // fills 2-col & 5-col cleanly) so the skeleton mirrors the real layout density.
     return (
       <div className={containerClass}>
-        {Array.from({ length: isList ? 6 : 9 }).map((_, i) => (
+        {Array.from({ length: isList ? 6 : 10 }).map((_, i) => (
           <Skeleton key={i} />
         ))}
       </div>
@@ -110,6 +95,8 @@ export function ProductGrid({
     );
   }
 
+  const total = totalCount ?? products.length;
+
   return (
     <div>
       <div className={containerClass}>
@@ -126,35 +113,60 @@ export function ProductGrid({
         ))}
       </div>
 
-      {/* Skeletons while fetching the next page */}
+      {/* Skeletons while fetching the next page — 5 cards = one full row at xl,
+          and fills the 5-col / 2-col rows cleanly so there's no ragged placeholder. */}
       {isFetchingMore && (
         <div className={`${containerClass} mt-7 md:mt-9`}>
-          {Array.from({ length: isList ? 2 : 4 }).map((_, i) => (
+          {Array.from({ length: isList ? 2 : 5 }).map((_, i) => (
             <Skeleton key={i} />
           ))}
         </div>
       )}
 
-      {/* Infinite scroll sentinel */}
-      <div ref={sentinelRef} className="h-1" />
+      {/* ── Load More / progress ──────────────────────────────────────────── */}
+      <div className="flex flex-col items-center gap-4 pb-2 pt-12">
+        {/* Count summary — "Showing X of Y" */}
+        <p className="text-[11px] uppercase tracking-[0.2em] text-mono-stone">
+          Showing {products.length} of {total}
+        </p>
 
-      {/* End of results */}
-      {!hasMore && products.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4 }}
-          className="pb-4 pt-14 text-center"
-        >
-          <div className="inline-flex items-center gap-3">
-            <div className="h-px w-16 bg-[#E5E2DD]" />
+        {/* Thin progress bar */}
+        <div className="h-px w-40 overflow-hidden rounded-full bg-[#E5E2DD]">
+          <div
+            className="h-full bg-mono-terracotta transition-[width] duration-500 ease-out"
+            style={{ width: `${total > 0 ? Math.min(100, (products.length / total) * 100) : 100}%` }}
+          />
+        </div>
+
+        {hasMore ? (
+          <button
+            type="button"
+            onClick={onLoadMore}
+            disabled={isFetchingMore}
+            className="inline-flex items-center gap-2 rounded-full border border-mono-charcoal bg-transparent px-8 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-mono-charcoal transition-colors duration-200 hover:bg-mono-charcoal hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isFetchingMore ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Loading
+              </>
+            ) : (
+              'Load More'
+            )}
+          </button>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            className="text-center"
+          >
             <span className="text-[11px] uppercase tracking-[0.2em] text-mono-stone">
               You&apos;ve seen it all
             </span>
-            <div className="h-px w-16 bg-[#E5E2DD]" />
-          </div>
-        </motion.div>
-      )}
+          </motion.div>
+        )}
+      </div>
     </div>
   );
 }

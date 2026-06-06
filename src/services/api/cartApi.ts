@@ -19,6 +19,15 @@ export const cartApi = createApi({
       }),
       invalidatesTags: ['Cart'],
     }),
+    // Merge a guest (localStorage) cart into the server cart after login.
+    mergeCart: builder.mutation({
+      query: (items: { variantId: number; size: string; quantity: number }[]) => ({
+        url: '/api/v1/cart/merge',
+        method: 'POST',
+        data: { items },
+      }),
+      invalidatesTags: ['Cart'],
+    }),
     // Updated: Now uses cart item ID instead of productId
     updateCartItem: builder.mutation({
       query: ({ itemId, quantity }: { itemId: number; quantity: number }) => ({
@@ -58,6 +67,7 @@ export const cartApi = createApi({
 export const {
   useGetCartQuery,
   useAddToCartMutation,
+  useMergeCartMutation,
   useUpdateCartItemMutation,
   useRemoveFromCartMutation,
   useClearCartMutation,

@@ -63,9 +63,9 @@ export function RelatedProducts({ slug }: RelatedProductsProps) {
         <div className="flex items-end justify-between gap-4 mb-8">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold text-mono-charcoal tracking-tight">
-              Complete the look
+              You may also like
             </h2>
-            <p className="text-sm text-mono-stone mt-1">Curated picks you might love</p>
+            <p className="text-sm text-mono-stone mt-1">More from this category</p>
           </div>
           <div className="hidden sm:flex items-center gap-2">
             <button

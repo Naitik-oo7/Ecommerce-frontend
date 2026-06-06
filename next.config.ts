@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'cdn.shopify.com',
+      },
     ],
   },
   async headers() {
@@ -28,7 +32,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com https://checkout.razorpay.com",
               "style-src 'self' 'unsafe-inline' https://accounts.google.com",
-              "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://lh3.googleusercontent.com https://*.googleusercontent.com",
+              "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://lh3.googleusercontent.com https://*.googleusercontent.com https://cdn.shopify.com",
               "font-src 'self' data:",
               `connect-src 'self' https://accounts.google.com http://localhost:5555 ${process.env.NEXT_PUBLIC_API_URL ?? ''} https://api.razorpay.com https://lumberjack.razorpay.com`,
               "frame-src https://accounts.google.com https://api.razorpay.com https://checkout.razorpay.com",

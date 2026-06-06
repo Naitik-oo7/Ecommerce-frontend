@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef, Suspense } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { SlidersHorizontal, Search, X, ChevronRight, Home, ArrowUpDown, LayoutGrid, Rows3 } from "lucide-react";
+import { SlidersHorizontal, Search, X, ChevronRight, Home, ArrowUpDown, LayoutGrid, Rows3, ChevronDown } from "lucide-react";
 import Link from "next/link";
 
 import { useGetProductsQuery, useGetFilterMetadataQuery } from "@/services/api/productsApi";
@@ -27,7 +27,10 @@ const GENDER_LABELS: Record<string, string> = { men: "Men", women: "Women", unis
 
 type ViewMode = "grid" | "list";
 
-const PAGE_SIZE = 12;
+// 30 = LCM of the grid column counts (2 / 3 / 5), so a full page fills every
+// breakpoint with zero orphan slots. Also a healthier first load on wide screens
+// (6 full rows at xl) than the previous 12.
+const PAGE_SIZE = 30;
 
 // ── URL ↔ Filters helpers ──────────────────────────────────────────────────
 
@@ -89,12 +92,14 @@ function ShopPageInner() {
   // View mode + quick view
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [sortOpen, setSortOpen] = useState(false);
 
   // Infinite scroll page accumulation
   const [page, setPage] = useState(1);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState<number | undefined>(undefined);
   const prevFiltersRef = useRef<string>("");
+  const sortRef = useRef<HTMLDivElement>(null);
 
   const { wishlistIds, toggleWishlist } = useWishlist();
 
@@ -155,6 +160,11 @@ function ShopPageInner() {
       return;
     }
 
+    // While a page-1 request is in flight, RTK Query still hands back the
+    // PREVIOUS query's cached data. Committing it here causes a flash of the old
+    // category's products before the new ones arrive. Skip until it settles.
+    if (page === 1 && isFetching) return;
+
     const newItems: any[] = (productsResponse as any)?.data || [];
     const total: number = (productsResponse as any)?.pagination?.total ?? newItems.length;
     setTotalCount(total);
@@ -168,7 +178,7 @@ function ShopPageInner() {
         return [...prev, ...deduped];
       });
     }
-  }, [productsResponse, page, filters, searchQuery]);
+  }, [productsResponse, isFetching, page, filters, searchQuery]);
 
   // ── Sync URL when filters change ─────────────────────────────────────────
 
@@ -180,6 +190,8 @@ function ShopPageInner() {
       setFilters(newFilters);
       setPage(1);
       setAllProducts([]);
+      // Start the new result set from the top — don't strand the user mid-scroll.
+      window.scrollTo({ top: 0, behavior: "smooth" });
 
       const params = buildSearchParams(newFilters, searchQuery);
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
@@ -187,13 +199,44 @@ function ShopPageInner() {
     [router, pathname, searchQuery],
   );
 
-  // Resolve legacy ?category=slug links once categories are loaded.
+  // ── Sync filters FROM the URL whenever it changes ────────────────────────
+  // The URL is the source of truth: nav clicks (e.g. ?category=women) and
+  // browser back/forward all change searchParams, and this re-derives the
+  // filter state from it. Resolves the ?category=<slug> alias to a categoryId.
   useEffect(() => {
+    const next = paramsToFilters(searchParams);
+
+    // Resolve the ?category=<slug> alias used by the nav links.
     const slug = searchParams.get("category");
-    if (!slug || filters.categoryId || categories.length === 0) return;
-    const match = categories.find((c) => c.slug === slug);
-    if (match) updateFilters({ ...filters, categoryId: match.id });
-  }, [categories, searchParams, filters, filters.categoryId, updateFilters]);
+    if (slug && !next.categoryId) {
+      const match = categories.find((c) => c.slug === slug);
+      if (match) {
+        next.categoryId = match.id;
+      } else if (categories.length === 0) {
+        // Categories not loaded yet — wait for them before committing.
+        return;
+      }
+    }
+
+    const nextSearch = searchParams.get("search") || "";
+
+    // Only act when the URL actually differs from current state, to avoid loops
+    // (updateFilters itself writes to the URL). Compare via canonical params so
+    // key order can't cause a false "changed".
+    const sameFilters =
+      buildSearchParams(next).toString() === buildSearchParams(filters).toString();
+    const sameSearch = nextSearch === searchQuery;
+    if (sameFilters && sameSearch) return;
+
+    // Reset pagination + accumulated products and scroll back to the top.
+    prevFiltersRef.current = JSON.stringify({ filters: next, searchQuery: nextSearch });
+    setFilters(next);
+    setSearchQuery(nextSearch);
+    setSearchInput(nextSearch);
+    setPage(1);
+    setAllProducts([]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [searchParams, categories]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearch = useCallback(
     (q: string) => {
@@ -201,6 +244,7 @@ function ShopPageInner() {
       setSearchQuery(q);
       setPage(1);
       setAllProducts([]);
+      window.scrollTo({ top: 0, behavior: "smooth" });
 
       const params = buildSearchParams(filters, q);
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
@@ -317,6 +361,21 @@ function ShopPageInner() {
 
     return chips;
   }, [filters, searchQuery, updateFilters, handleSearch, categories, meta]);
+
+  useEffect(() => {
+    if (!sortOpen) return;
+    function handleOutside(e: MouseEvent) {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false);
+    }
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [sortOpen]);
+
+  const activeSortIdx = SORT_OPTIONS.findIndex(
+    (o) =>
+      (o.value === "relevance" && !filters.sortBy) ||
+      (o.value === filters.sortBy && o.order === filters.sortOrder),
+  );
 
   const hasMore = allProducts.length < (totalCount ?? 0);
 
@@ -443,38 +502,53 @@ function ShopPageInner() {
             </div>
 
             {/* Sort dropdown — desktop only */}
-            <div className="hidden lg:flex items-center gap-2 shrink-0 rounded-full border border-[#E5E2DD] bg-mono-cream px-3.5 py-1.5">
-              <ArrowUpDown className="h-3.5 w-3.5 shrink-0 text-mono-stone" />
-              <span
-                className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mono-stone whitespace-nowrap"
-                style={{ fontFamily: "var(--font-body, Jost, sans-serif)" }}
+            <div ref={sortRef} className="hidden lg:block relative shrink-0">
+              <button
+                onClick={() => setSortOpen((v) => !v)}
+                className="flex items-center gap-1.5 rounded-full border border-[#E5E2DD] bg-mono-cream px-3.5 py-1.5 hover:border-mono-terracotta transition-colors"
               >
-                Sort:
-              </span>
-              <select
-                value={SORT_OPTIONS.findIndex(
-                  (o) =>
-                    (o.value === "relevance" && !filters.sortBy) ||
-                    (o.value === filters.sortBy && o.order === filters.sortOrder),
-                ).toString()}
-                onChange={(e) => {
-                  const idx = Number(e.target.value);
-                  const opt = SORT_OPTIONS[idx];
-                  updateFilters({
-                    ...filters,
-                    sortBy: opt.value === "relevance" ? undefined : opt.value,
-                    sortOrder: opt.value === "relevance" ? undefined : opt.order,
-                  });
-                }}
-                className="border-0 bg-transparent text-xs font-medium focus:outline-none cursor-pointer"
-                style={{ color: "#1A1A18", fontFamily: "var(--font-body, Jost, sans-serif)" }}
-              >
-                {SORT_OPTIONS.map((opt, i) => (
-                  <option key={i} value={i}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                <ArrowUpDown className="h-3.5 w-3.5 shrink-0 text-mono-stone" />
+                <span
+                  className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mono-stone whitespace-nowrap"
+                  style={{ fontFamily: "var(--font-body, Jost, sans-serif)" }}
+                >
+                  Sort:
+                </span>
+                <span
+                  className="text-xs font-medium whitespace-nowrap"
+                  style={{ color: "#1A1A18", fontFamily: "var(--font-body, Jost, sans-serif)" }}
+                >
+                  {SORT_OPTIONS[activeSortIdx]?.label ?? "Featured"}
+                </span>
+                <ChevronDown
+                  className={`h-3.5 w-3.5 text-mono-stone transition-transform duration-200 ${sortOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              {sortOpen && (
+                <div className="absolute right-0 top-full mt-1.5 z-50 min-w-[192px] rounded-xl border border-[#E5E2DD] bg-white py-1 shadow-lg overflow-hidden">
+                  {SORT_OPTIONS.map((opt, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        updateFilters({
+                          ...filters,
+                          sortBy: opt.value === "relevance" ? undefined : opt.value,
+                          sortOrder: opt.value === "relevance" ? undefined : opt.order,
+                        });
+                        setSortOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2.5 text-xs transition-colors hover:bg-[#F6F3EE] ${
+                        i === activeSortIdx
+                          ? "font-semibold text-mono-terracotta bg-[#F6F3EE]"
+                          : "font-medium text-mono-charcoal"
+                      }`}
+                      style={{ fontFamily: "var(--font-body, Jost, sans-serif)" }}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* View toggle — grid / list */}
@@ -522,10 +596,11 @@ function ShopPageInner() {
               wishlistIds={wishlistIds}
               onToggleWishlist={toggleWishlist}
               onQuickView={setQuickViewProduct}
-              isLoading={isLoading && page === 1}
+              isLoading={page === 1 && (isLoading || isFetching)}
               isFetchingMore={isFetching && page > 1}
               hasMore={hasMore}
               onLoadMore={handleLoadMore}
+              totalCount={totalCount}
             />
           </div>
         </div>

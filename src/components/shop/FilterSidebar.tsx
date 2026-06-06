@@ -640,7 +640,10 @@ export function FilterSidebar(props: FilterSidebarProps) {
             </button>
           )}
         </div>
-        <div className="max-h-[calc(100vh-9rem)] overflow-y-auto rounded-2xl border border-[#ECE7E0] bg-white px-4 py-1 shadow-sm scrollbar-hide">
+        <div
+          data-lenis-prevent
+          className="max-h-[calc(100vh-7.5rem)] overflow-y-auto overscroll-contain scrollbar-hide rounded-2xl border border-[#ECE7E0] bg-white px-4 py-1 shadow-sm"
+        >
           <FilterSidebarContent {...props} hideSort />
         </div>
       </div>
@@ -704,7 +707,7 @@ export function MobileFilterDrawer({ isOpen, onClose, ...props }: MobileFilterDr
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-5 py-1">
+            <div data-lenis-prevent className="flex-1 overflow-y-auto overscroll-contain px-5 py-1">
               <FilterSidebarContent {...props} />
             </div>
 
