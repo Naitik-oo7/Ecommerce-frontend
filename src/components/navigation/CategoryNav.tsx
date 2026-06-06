@@ -84,6 +84,11 @@ export default function CategoryNav({
   const notificationsRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
+  // Adaptive category fit — render only as many categories as fit the row.
+  const centerNavRef = useRef<HTMLElement>(null);
+  const measureRef = useRef<HTMLUListElement>(null);
+  const [visibleCatCount, setVisibleCatCount] = useState(99);
+
   const { data: categoryTree, isLoading } = useGetCategoryTreeQuery({
     limit: 10,
     withProducts: true,
@@ -108,6 +113,19 @@ export default function CategoryNav({
   );
   const searchResults = ((searchData as { data?: any[] } | undefined)?.data ?? []) as any[];
 
+  // Close the search overlay on Escape regardless of which element has focus.
+  useEffect(() => {
+    if (!searchOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSearchOpen(false);
+        setSearchQuery('');
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [searchOpen]);
+
   // Cleanup timeout
   useEffect(() => () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); }, []);
 
@@ -122,6 +140,37 @@ export default function CategoryNav({
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  // Measure how many category items fit in the available row and trim the rest.
+  const catKey = categories.map((c) => c.id).join(',');
+  useEffect(() => {
+    const compute = () => {
+      const nav = centerNavRef.current;
+      const measure = measureRef.current;
+      if (!nav || !measure) return;
+      const avail = nav.clientWidth - 8; // small safety margin
+      let fixed = 0;
+      const catWidths: number[] = [];
+      Array.from(measure.children).forEach((el) => {
+        const li = el as HTMLElement;
+        const w = li.getBoundingClientRect().width + 4; // + gap-1
+        if (li.dataset.kind === 'cat') catWidths.push(w);
+        else fixed += w;
+      });
+      let remaining = avail - fixed;
+      let count = 0;
+      for (const w of catWidths) {
+        if (remaining - w < 0) break;
+        remaining -= w;
+        count++;
+      }
+      setVisibleCatCount(count);
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    if (centerNavRef.current) ro.observe(centerNavRef.current);
+    return () => ro.disconnect();
+  }, [catKey]);
 
   // Category hover / focus
   const handleNavMouseEnter = (category: CategoryTreeItem) => {
@@ -199,7 +248,34 @@ export default function CategoryNav({
             </Link>
 
             {/* ── CENTER: Category nav ─────────────────────────────────────── */}
-            <nav className="hidden md:flex flex-1 items-center justify-center overflow-x-auto scrollbar-hide">
+            <nav ref={centerNavRef} className="hidden md:flex flex-1 items-center justify-center overflow-hidden">
+              {/* Hidden measurer: full item set, off-screen, used to compute fit */}
+              <ul
+                ref={measureRef}
+                aria-hidden
+                className="absolute -left-[9999px] top-0 flex items-center gap-1 pointer-events-none invisible"
+              >
+                {staticNavItems.map((item) => (
+                  <li key={`m-${item.label}`} data-kind="fixed" className="px-2 lg:px-4 py-2 text-xs lg:text-sm font-semibold tracking-wider whitespace-nowrap">
+                    {item.label}
+                  </li>
+                ))}
+                <li data-kind="fixed" className="px-2"><span className="block w-px h-4" /></li>
+                {categories.map((category) => (
+                  <li key={`m-${category.id}`} data-kind="cat" className="px-2 lg:px-4 py-2 text-xs lg:text-sm font-semibold tracking-wider whitespace-nowrap">
+                    {category.name.toUpperCase()}
+                  </li>
+                ))}
+                {promoNavItems.length > 0 && (
+                  <li data-kind="fixed" className="px-2"><span className="block w-px h-4" /></li>
+                )}
+                {promoNavItems.map((item) => (
+                  <li key={`m-${item.label}`} data-kind="fixed" className="px-2 lg:px-4 py-2 text-xs lg:text-sm font-bold tracking-wider whitespace-nowrap">
+                    {item.label}
+                  </li>
+                ))}
+              </ul>
+
               <ul className="flex items-center gap-1">
                 {staticNavItems.map((item) => (
                   <li key={item.label}>
@@ -222,7 +298,7 @@ export default function CategoryNav({
                     ))
                   : null}
 
-                {categories.map((category) => (
+                {categories.slice(0, visibleCatCount).map((category) => (
                   <li key={category.id}>
                     <Link
                       href={`/products?category=${category.slug}`}
@@ -553,7 +629,14 @@ export default function CategoryNav({
                       placeholder="Search products..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="flex-1 bg-transparent outline-none border-none text-base placeholder:text-muted-foreground/60 py-1"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          e.preventDefault();
+                          setSearchOpen(false);
+                          setSearchQuery('');
+                        }
+                      }}
+                      className="flex-1 bg-transparent border-none text-base placeholder:text-muted-foreground/60 py-1 outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0"
                       autoFocus
                     />
                     {searchQuery ? (
