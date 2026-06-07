@@ -134,7 +134,7 @@ export function ProductTable({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 gap-1.5 text-xs text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                        className="h-7 gap-1.5 text-xs text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-950/40"
                         onClick={() => onMarkOutOfStock(product)}
                         disabled={updatingStockIds.has(product.id)}
                       >

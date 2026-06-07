@@ -10,9 +10,10 @@ import { clearAuthTokens } from '@/lib/authTokens';
 import {
   LayoutDashboard, Package, ShoppingCart, Users, Tag,
   MessageSquare, Settings, LogOut, Menu, FolderTree, BarChart3,
-  FileText, Mail,
+  FileText, Mail, Sun, Moon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useDarkMode } from '@/hooks';
 
 const menuItems = [
   { href: '/admin/dashboard',   icon: LayoutDashboard, label: 'Dashboard' },
@@ -97,6 +98,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, isLoading } = useAppSelector((state) => state.auth);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [logoutMutation] = useLogoutMutation();
+  const { theme, toggleTheme, isMounted } = useDarkMode();
 
   useEffect(() => {
     if (!isLoading && (!user || user.role !== 'admin')) {
@@ -147,12 +149,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Menu className="h-5 w-5" />
             </Button>
             <div className="flex-1" />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              aria-label="Toggle dark mode"
+              title="Toggle dark mode"
+            >
+              {isMounted && theme === 'dark' ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+            </Button>
             <span className="text-sm text-muted-foreground hidden sm:block">
               Welcome, {user?.name || 'Admin'}
             </span>
           </div>
         </header>
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 p-4 sm:p-6">
+          <div className="mx-auto w-full max-w-[1600px]">{children}</div>
+        </main>
       </div>
     </div>
   );

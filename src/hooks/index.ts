@@ -1,3 +1,5 @@
+export { useDarkMode } from './useDarkMode';
+export { useDebounce } from './useDebounce';
 export { useWishlist } from './useWishlist';
 export { useHoverReveal } from './useHoverReveal';
 export { useInView } from './useInView';

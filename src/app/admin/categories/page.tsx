@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useGetCategoriesQuery, useCreateCategoryMutation, useUpdateCategoryMutation, useDeleteCategoryMutation } from '@/services/api/categoriesApi';
 import { useUploadImageMutation } from '@/services/api/uploadApi';
 import { Card, CardContent } from '@/components/ui/card';
@@ -80,7 +81,6 @@ const StatusToggle = ({ category, onToggle, isToggling }: { category: Category; 
 
 export default function AdminCategoriesPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'featured'>('all');
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
@@ -101,15 +101,8 @@ export default function AdminCategoriesPage() {
   
   const [uploadImage, { isLoading: isUploading }] = useUploadImageMutation();
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      setSearch(searchTerm);
-      setPage(1);
-    }, 400);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [searchTerm]);
+  const search = useDebounce(searchTerm.trim(), 400);
+  useEffect(() => { setPage(1); }, [search]);
 
   const { data: categoriesResponse, isLoading, isFetching } = useGetCategoriesQuery({
     search: search || undefined,
@@ -243,7 +236,6 @@ export default function AdminCategoriesPage() {
   }, [updateCategory]);
 
   const clearFilters = () => {
-    setSearch('');
     setSearchTerm('');
     setStatusFilter('all');
     setSortBy('name');
@@ -251,7 +243,7 @@ export default function AdminCategoriesPage() {
     setPage(1);
   };
 
-  const hasActiveFilters = !!(search || statusFilter !== 'all' || sortBy !== 'name');
+  const hasActiveFilters = !!(searchTerm || statusFilter !== 'all' || sortBy !== 'name');
   const isValidUrl = (url: string) => {
     try { new URL(url); return true; } catch { return false; }
   };
@@ -314,8 +306,8 @@ export default function AdminCategoriesPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: 'Total', value: stats.total, color: 'text-foreground', bg: 'bg-card', icon: FolderTree, active: statusFilter === 'all', key: 'all' as const },
-          { label: 'Active', value: stats.active, color: 'text-green-700', bg: 'bg-green-50', icon: CheckCircle2, active: statusFilter === 'active', key: 'active' as const },
-          { label: 'Featured', value: stats.featured, color: 'text-amber-700', bg: 'bg-amber-50', icon: Star, active: statusFilter === 'featured', key: 'featured' as const },
+          { label: 'Active', value: stats.active, color: 'text-green-700 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-950/40', icon: CheckCircle2, active: statusFilter === 'active', key: 'active' as const },
+          { label: 'Featured', value: stats.featured, color: 'text-amber-700 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/40', icon: Star, active: statusFilter === 'featured', key: 'featured' as const },
           { label: 'Inactive', value: stats.inactive, color: 'text-destructive', bg: 'bg-destructive/5', icon: XCircle, active: statusFilter === 'inactive', key: 'inactive' as const },
         ].map(({ label, value, color, bg, icon: Icon, active, key }) => (
           <button
@@ -474,7 +466,7 @@ export default function AdminCategoriesPage() {
                           <div className="min-w-0">
                             <p className="font-medium truncate max-w-[200px]">{category.name}</p>
                             {category.isFeatured && (
-                              <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium mt-1">
+                              <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 font-medium mt-1">
                                 <Star className="h-3 w-3 fill-current" /> Featured
                               </span>
                             )}
@@ -496,7 +488,7 @@ export default function AdminCategoriesPage() {
                           className={cn(
                             "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer",
                             category.isFeatured
-                              ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                              ? "bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/60"
                               : "bg-muted text-muted-foreground hover:bg-muted-foreground/20",
                             (togglingIds.has(category.id) || !category.isActive) && "opacity-50 cursor-not-allowed"
                           )}
@@ -827,12 +819,12 @@ export default function AdminCategoriesPage() {
                       onClick={() => setForm({ ...form, isActive: !form.isActive })}
                       className={cn(
                         "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all",
-                        form.isActive ? "border-green-200 bg-green-50/20" : "border-muted bg-muted/20"
+                        form.isActive ? "border-green-200 bg-green-50/20 dark:border-green-900 dark:bg-green-950/20" : "border-muted bg-muted/20"
                       )}
                     >
                       <div className={cn(
                         "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
-                        form.isActive ? "bg-green-100 text-green-600" : "bg-muted text-muted-foreground"
+                        form.isActive ? "bg-green-100 text-green-600 dark:bg-green-950/40 dark:text-green-400" : "bg-muted text-muted-foreground"
                       )}>
                         {form.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                       </div>
@@ -861,14 +853,14 @@ export default function AdminCategoriesPage() {
                       onClick={() => form.isActive && setForm({ ...form, isFeatured: !form.isFeatured })}
                       className={cn(
                         "flex items-center gap-3 p-3 rounded-lg border transition-all",
-                        form.isFeatured && form.isActive ? "border-amber-200 bg-amber-50/20 cursor-pointer" : 
+                        form.isFeatured && form.isActive ? "border-amber-200 bg-amber-50/20 dark:border-amber-900 dark:bg-amber-950/20 cursor-pointer" :
                         form.isActive ? "border-muted bg-muted/20 cursor-pointer hover:border-amber-200/50" : 
                         "border-muted bg-muted/10 opacity-50 cursor-not-allowed"
                       )}
                     >
                       <div className={cn(
                         "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
-                        form.isFeatured && form.isActive ? "bg-amber-100 text-amber-600" : "bg-muted text-muted-foreground"
+                        form.isFeatured && form.isActive ? "bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400" : "bg-muted text-muted-foreground"
                       )}>
                         <Star className={cn("h-4 w-4", form.isFeatured && form.isActive && "fill-current")} />
                       </div>
@@ -878,7 +870,7 @@ export default function AdminCategoriesPage() {
                             {form.isFeatured && form.isActive ? 'Featured' : 'Not Featured'}
                           </span>
                           {form.isFeatured && form.isActive && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">HOME</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 font-medium">HOME</span>
                           )}
                         </div>
                         <p className="text-[11px] text-muted-foreground">

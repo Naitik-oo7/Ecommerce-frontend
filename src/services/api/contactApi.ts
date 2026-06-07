@@ -35,7 +35,7 @@ export const contactApi = createApi({
     submitContact: builder.mutation<{ id: number }, SubmitContactPayload>({
       query: (data) => ({ url: '/api/v1/contact', method: 'POST', data }),
     }),
-    getContacts: builder.query<{ data: ContactMessage[]; pagination: { total: number; page: number; limit: number; totalPages: number } }, { status?: string; page?: number; limit?: number }>({
+    getContacts: builder.query<{ data: ContactMessage[]; pagination: { total: number; page: number; limit: number; totalPages: number } }, { status?: string; search?: string; page?: number; limit?: number }>({
       query: (params) => ({ url: '/api/v1/contact', method: 'GET', params }),
       providesTags: ['Contact'],
     }),

@@ -1,16 +1,18 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useGetOrdersQuery, useUpdateOrderStatusMutation } from '@/services/api/ordersApi';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
-  Search, Eye, Loader2, Package, Clock, Truck, CheckCircle,
-  XCircle, CreditCard, Banknote, AlertTriangle, RefreshCw,
-  TrendingUp, ShoppingBag, CircleDollarSign, CheckCircle2,
-  MapPin, RotateCcw, ArrowLeftCircle,
+  Search, Eye, Loader2, Package, CreditCard, Banknote, AlertTriangle, RefreshCw,
+  TrendingUp, ShoppingBag, CircleDollarSign,
+  X, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 import { ORDER_STATUS_CONFIG } from '@/constants/order-status';
 
 // ─── types ───────────────────────────────────────────────────────────────────
@@ -26,10 +28,10 @@ interface Order {
 }
 
 const PAYMENT_STATUS: Record<string, { label: string; color: string; bg: string }> = {
-  pending:  { label: 'Unpaid',    color: 'text-amber-700',  bg: 'bg-amber-50 border border-amber-200' },
-  paid:     { label: 'Paid',      color: 'text-green-700',  bg: 'bg-green-50 border border-green-200' },
-  failed:   { label: 'Failed',    color: 'text-red-700',    bg: 'bg-red-50 border border-red-200' },
-  refunded: { label: 'Refunded',  color: 'text-slate-600',  bg: 'bg-slate-50 border border-slate-200' },
+  pending:  { label: 'Unpaid',    color: 'text-amber-700 dark:text-amber-400',  bg: 'bg-amber-50 border border-amber-200 dark:bg-amber-950/40 dark:border-amber-900' },
+  paid:     { label: 'Paid',      color: 'text-green-700 dark:text-green-400',  bg: 'bg-green-50 border border-green-200 dark:bg-green-950/40 dark:border-green-900' },
+  failed:   { label: 'Failed',    color: 'text-red-700 dark:text-red-400',    bg: 'bg-red-50 border border-red-200 dark:bg-red-950/40 dark:border-red-900' },
+  refunded: { label: 'Refunded',  color: 'text-slate-600 dark:text-slate-400',  bg: 'bg-slate-50 border border-slate-200 dark:bg-slate-800/40 dark:border-slate-700' },
 };
 
 // Allowed next statuses from current for inline quick-change
@@ -62,16 +64,24 @@ function hoursUntilExpiry(dateStr?: string) {
 
 // ─── component ───────────────────────────────────────────────────────────────
 export default function AdminOrdersPage() {
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('');
   const [methodFilter, setMethodFilter] = useState('');
   const [page, setPage] = useState(1);
   const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());
+  const [actionError, setActionError] = useState('');
 
-  const { data: ordersResponse, isLoading } = useGetOrdersQuery({
+  const search = useDebounce(searchInput.trim(), 400);
+
+  // Reset to page 1 whenever the (debounced) search term changes
+  useEffect(() => { setPage(1); }, [search]);
+
+  const { data: ordersResponse, isLoading, isFetching } = useGetOrdersQuery({
     status: statusFilter || undefined,
     paymentStatus: paymentFilter || undefined,
+    search: search || undefined,
+    paymentMethod: methodFilter || undefined,
     page,
     limit: 20,
     isAdmin: true,
@@ -82,43 +92,33 @@ export default function AdminOrdersPage() {
     data?: Order[];
     pagination?: { total?: number; totalPages?: number; page?: number };
   }
-  const allOrders: Order[] = (ordersResponse as OrdersResponse | undefined)?.data || [];
+  const orders: Order[] = (ordersResponse as OrdersResponse | undefined)?.data || [];
   const pagination = (ordersResponse as OrdersResponse | undefined)?.pagination;
 
-  const orders = useMemo(() => {
-    let result = allOrders;
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (o) =>
-          String(o.id).includes(q) ||
-          o.user?.name?.toLowerCase().includes(q) ||
-          o.user?.email?.toLowerCase().includes(q),
-      );
-    }
-    if (methodFilter) result = result.filter((o) => o.paymentMethod === methodFilter);
-    return result;
-  }, [allOrders, search, methodFilter]);
-
   const stats = useMemo(() => ({
-    total: pagination?.total ?? allOrders.length,
-    urgent: allOrders.filter(isPaymentUrgent).length,
-    inProgress: allOrders.filter((o) => ['confirmed', 'processing', 'shipped', 'out_for_delivery'].includes(o.status)).length,
-    delivered: allOrders.filter((o) => o.status === 'delivered').length,
-  }), [allOrders, pagination]);
+    total: pagination?.total ?? orders.length,
+    urgent: orders.filter(isPaymentUrgent).length,
+    inProgress: orders.filter((o) => ['confirmed', 'processing', 'shipped', 'out_for_delivery'].includes(o.status)).length,
+    delivered: orders.filter((o) => o.status === 'delivered').length,
+  }), [orders, pagination]);
 
   const handleStatusChange = async (orderId: number, status: string) => {
+    setActionError('');
     setUpdatingIds((prev) => new Set(prev).add(orderId));
     try {
       await updateStatus({ id: orderId, status, isAdmin: true }).unwrap();
-    } catch {}
-    setUpdatingIds((prev) => { const n = new Set(prev); n.delete(orderId); return n; });
+    } catch (err: unknown) {
+      const e = err as { data?: { message?: string } };
+      setActionError(e?.data?.message || 'Failed to update order status');
+    } finally {
+      setUpdatingIds((prev) => { const n = new Set(prev); n.delete(orderId); return n; });
+    }
   };
 
   const resetFilters = () => {
-    setSearch(''); setStatusFilter(''); setPaymentFilter(''); setMethodFilter(''); setPage(1);
+    setSearchInput(''); setStatusFilter(''); setPaymentFilter(''); setMethodFilter(''); setPage(1);
   };
-  const hasActiveFilters = search || statusFilter || paymentFilter || methodFilter;
+  const hasActiveFilters = searchInput || statusFilter || paymentFilter || methodFilter;
 
   return (
     <div className="space-y-6">
@@ -134,23 +134,52 @@ export default function AdminOrdersPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard icon={<ShoppingBag className="h-4 w-4" />} label="Total Orders" value={stats.total} color="text-foreground" bg="bg-muted/40" />
-        <StatCard icon={<AlertTriangle className="h-4 w-4" />} label="Awaiting Payment" value={stats.urgent} color="text-amber-700" bg="bg-amber-50" highlight={stats.urgent > 0} />
-        <StatCard icon={<TrendingUp className="h-4 w-4" />} label="In Progress" value={stats.inProgress} color="text-blue-700" bg="bg-blue-50" />
-        <StatCard icon={<CircleDollarSign className="h-4 w-4" />} label="Delivered" value={stats.delivered} color="text-green-700" bg="bg-green-50" />
+        <button onClick={() => { setStatusFilter(''); setPage(1); }} className={cn('rounded-xl border p-4 text-left transition-all hover:shadow-sm bg-muted/40', !statusFilter ? 'ring-2 ring-primary/30 border-primary/40' : 'border-border')}>
+          <div className="flex items-center justify-between mb-2"><span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Orders</span><ShoppingBag className="h-4 w-4 text-foreground" /></div>
+          <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+        </button>
+        <button onClick={() => { setPaymentFilter('pending'); setMethodFilter('online'); setPage(1); }} className={cn('rounded-xl border p-4 text-left transition-all hover:shadow-sm bg-amber-50 dark:bg-amber-950/40', stats.urgent > 0 ? 'border-amber-300 ring-1 ring-amber-200 dark:border-amber-700' : 'border-border')}>
+          <div className="flex items-center justify-between mb-2"><span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Awaiting Payment</span><AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-400" /></div>
+          <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{stats.urgent}</p>
+        </button>
+        <button onClick={() => { setStatusFilter('processing'); setPage(1); }} className={cn('rounded-xl border p-4 text-left transition-all hover:shadow-sm bg-blue-50 dark:bg-blue-950/40', statusFilter === 'processing' ? 'ring-2 ring-primary/30 border-primary/40' : 'border-border')}>
+          <div className="flex items-center justify-between mb-2"><span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">In Progress</span><TrendingUp className="h-4 w-4 text-blue-700 dark:text-blue-400" /></div>
+          <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">{stats.inProgress}</p>
+        </button>
+        <button onClick={() => { setStatusFilter('delivered'); setPage(1); }} className={cn('rounded-xl border p-4 text-left transition-all hover:shadow-sm bg-green-50 dark:bg-green-950/40', statusFilter === 'delivered' ? 'ring-2 ring-primary/30 border-primary/40' : 'border-border')}>
+          <div className="flex items-center justify-between mb-2"><span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Delivered</span><CircleDollarSign className="h-4 w-4 text-green-700 dark:text-green-400" /></div>
+          <p className="text-2xl font-bold text-green-700 dark:text-green-400">{stats.delivered}</p>
+        </button>
       </div>
 
-      {/* Filters */}
-      <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+      {/* Error banner */}
+      {actionError && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2.5 text-sm text-destructive">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            {actionError}
+          </div>
+          <button onClick={() => setActionError('')} className="text-destructive/60 hover:text-destructive">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Filters + Table */}
+      <Card>
+      <div className="p-4 border-b space-y-3">
         <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="Search by order ID, name, or email…"
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="pl-9 h-9"
+              placeholder="Search by order ID, name, email, or tracking number…"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-9 pr-8 h-9"
             />
+            {isFetching && search && (
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin text-muted-foreground" />
+            )}
           </div>
 
           <select
@@ -199,8 +228,8 @@ export default function AdminOrdersPage() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <CardContent className="p-0">
+      <div className="overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
@@ -321,31 +350,36 @@ export default function AdminOrdersPage() {
 
             {/* Pagination */}
             {pagination && (pagination.totalPages ?? 0) > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/20">
-                <p className="text-xs text-muted-foreground">Page {page} of {pagination.totalPages} · {pagination.total} orders</p>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setPage((p) => p - 1)} disabled={page === 1}>Previous</Button>
-                  <Button variant="outline" size="sm" onClick={() => setPage((p) => p + 1)} disabled={page >= (pagination.totalPages ?? 1)}>Next</Button>
+              <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                <p className="text-sm text-muted-foreground">
+                  Page <span className="font-medium text-foreground">{page}</span> of{' '}
+                  <span className="font-medium text-foreground">{pagination.totalPages}</span>
+                  <span className="ml-2 text-xs">({pagination.total} total)</span>
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  {Array.from({ length: Math.min(5, pagination.totalPages ?? 0) }, (_, i) => {
+                    const pageNum = Math.max(1, Math.min((pagination.totalPages ?? 0) - 4, page - 2)) + i;
+                    return pageNum <= (pagination.totalPages ?? 0) ? (
+                      <Button key={pageNum} variant={pageNum === page ? 'default' : 'outline'} size="icon" className="h-8 w-8 text-xs" onClick={() => setPage(pageNum)}>
+                        {pageNum}
+                      </Button>
+                    ) : null;
+                  })}
+                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setPage((p) => p + 1)} disabled={page >= (pagination.totalPages ?? 1)}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             )}
           </>
         )}
       </div>
+      </CardContent>
+      </Card>
     </div>
   );
 }
 
-function StatCard({ icon, label, value, color, bg, highlight }: {
-  icon: React.ReactNode; label: string; value: number; color: string; bg: string; highlight?: boolean;
-}) {
-  return (
-    <div className={`rounded-xl border p-4 ${bg} ${highlight ? 'border-amber-300 ring-1 ring-amber-200' : 'border-border'}`}>
-      <div className={`flex items-center gap-2 mb-2 ${color}`}>
-        {icon}
-        <span className="text-xs font-medium">{label}</span>
-      </div>
-      <p className={`text-2xl font-bold ${color}`}>{value}</p>
-    </div>
-  );
-}

@@ -14,6 +14,14 @@ interface PaginatedProductsResponse {
   [key: string]: unknown;
 }
 
+export interface ProductStats {
+  total: number;
+  active: number;
+  inactive: number;
+  lowStock: number;
+  outOfStock: number;
+}
+
 // Sort primary image first and parse numeric fields that the API may return as strings
 const mapImages = (p: RawProduct): Product => {
   const media: ProductMedia[] = p.media ?? [];
@@ -80,11 +88,11 @@ export const productsApi = createApi({
     }),
     updateProduct: builder.mutation<unknown, { id: string | number; data: unknown }>({
       query: ({ id, data }) => ({ url: `/api/v1/products/${id}`, method: 'PATCH', data }),
-      invalidatesTags: (_result, _error, { id }) => [{ type: 'Products', id }],
+      invalidatesTags: (_result, _error, { id }) => ['Products', { type: 'Products', id }],
     }),
     deleteProduct: builder.mutation<unknown, string | number>({
       query: (id) => ({ url: `/api/v1/products/${id}`, method: 'DELETE' }),
-      invalidatesTags: (_result, _error, id) => [{ type: 'Products', id }],
+      invalidatesTags: (_result, _error, id) => ['Products', { type: 'Products', id }],
     }),
     updateStock: builder.mutation({
       query: ({ id, variantId, stock }: { id: number; variantId: number; stock: number }) => ({
@@ -92,10 +100,18 @@ export const productsApi = createApi({
         method: 'PATCH',
         data: { variantId, stock },
       }),
-      invalidatesTags: (_result, _error, { id }) => [{ type: 'Products', id }],
+      invalidatesTags: (_result, _error, { id }) => ['Products', { type: 'Products', id }],
     }),
     getFilterMetadata: builder.query({
       query: (params = {}) => ({ url: '/api/v1/products/filters/meta', method: 'GET', params }),
+      providesTags: ['Products'],
+    }),
+    getProductStats: builder.query<ProductStats, void>({
+      query: () => ({ url: '/api/v1/products/stats', method: 'GET' }),
+      transformResponse: (response: unknown) => {
+        const r = response as { data?: ProductStats } | ProductStats;
+        return ((r as { data?: ProductStats }).data ?? r) as ProductStats;
+      },
       providesTags: ['Products'],
     }),
     getRelatedProducts: builder.query<Product[], { slug: string; limit?: number }>({
@@ -126,4 +142,5 @@ export const {
   useUpdateStockMutation,
   useGetFilterMetadataQuery,
   useGetRelatedProductsQuery,
+  useGetProductStatsQuery,
 } = productsApi;

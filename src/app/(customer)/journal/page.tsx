@@ -22,9 +22,7 @@ export default function JournalPage() {
     category: category || undefined,
   });
 
-  const pagination = postsResponse
-    ? { total: postsResponse.total, totalPages: postsResponse.totalPages }
-    : undefined;
+  const pagination = postsResponse?.pagination;
 
   const filteredPosts = useMemo(() => {
     const posts = postsResponse?.data || [];

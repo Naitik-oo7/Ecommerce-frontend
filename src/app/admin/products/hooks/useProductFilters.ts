@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export type ViewMode = 'table' | 'grid';
 export type StatusFilter = 'all' | 'active' | 'inactive' | 'low_stock' | 'out_of_stock';
 
 export function useProductFilters() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [search, setSearch] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [genderFilter, setGenderFilter] = useState('');
@@ -22,21 +22,11 @@ export function useProductFilters() {
   const [page, setPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const search = useDebounce(searchTerm.trim(), 400);
 
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      setSearch(searchTerm);
-      setPage(1);
-    }, 400);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [searchTerm]);
+  useEffect(() => { setPage(1); }, [search]);
 
   const clearFilters = () => {
-    setSearch('');
     setSearchTerm('');
     setCategoryId('');
     setGenderFilter('');
@@ -52,7 +42,7 @@ export function useProductFilters() {
   };
 
   const hasActiveFilters = !!(
-    search ||
+    searchTerm ||
     categoryId ||
     genderFilter ||
     statusFilter !== 'all' ||

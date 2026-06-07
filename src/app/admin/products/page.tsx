@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
-import { useGetProductsQuery, useDeleteProductMutation, useUpdateProductMutation, useUpdateStockMutation } from '@/services/api/productsApi';
+import { useGetProductsQuery, useGetProductStatsQuery, useDeleteProductMutation, useUpdateProductMutation, useUpdateStockMutation } from '@/services/api/productsApi';
 import { useGetCategoriesQuery } from '@/services/api/categoriesApi';
 import { useGetTagsQuery } from '@/services/api/tagsApi';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Search, Loader2, Package, LayoutGrid, List, ChevronLeft, ChevronRight, AlertTriangle, X, Filter } from 'lucide-react';
 
-import { getTotalStock } from '@/lib/admin-utils';
 import { extractPaginatedData, extractData } from '@/lib/api-utils';
 import { useProductFilters } from './hooks/useProductFilters';
 import { ProductStats } from './components/ProductStats';
@@ -44,9 +43,11 @@ export default function AdminProductsPage() {
     gender: filters.genderFilter || undefined,
     minPrice: filters.minPrice || undefined,
     maxPrice: filters.maxPrice || undefined,
-    inStock: filters.statusFilter === 'out_of_stock' ? 'false' : (filters.inStock === 'true' || filters.statusFilter === 'low_stock') ? 'true' : undefined,
+    inStock: filters.inStock === 'true' ? 'true' : undefined,
+    stockStatus: filters.statusFilter === 'low_stock' ? 'low_stock' : filters.statusFilter === 'out_of_stock' ? 'out_of_stock' : undefined,
   });
 
+  const { data: statsResponse } = useGetProductStatsQuery();
   const { data: categoriesResponse } = useGetCategoriesQuery({});
   const { data: tagsResponse } = useGetTagsQuery({});
   const [deleteProduct] = useDeleteProductMutation();
@@ -58,22 +59,17 @@ export default function AdminProductsPage() {
   const allTags = extractData<{ id: number; name: string; type: string }[]>(tagsResponse) ?? [];
 
   const products = allProducts.filter((p) => {
-    const stock = getTotalStock(p.variants);
     if (filters.statusFilter === 'active') return p.isActive;
     if (filters.statusFilter === 'inactive') return !p.isActive;
-    if (filters.statusFilter === 'low_stock') return stock > 0 && p.variants?.some((v) => v.stock <= 5);
     return true;
   });
 
   const stats = {
-    total: pagination?.total ?? allProducts.length,
-    active: allProducts.filter((p) => p.isActive).length,
-    inactive: allProducts.filter((p) => !p.isActive).length,
-    outOfStock: allProducts.filter((p) => getTotalStock(p.variants) === 0).length,
-    lowStock: allProducts.filter((p) => {
-      const s = getTotalStock(p.variants);
-      return s > 0 && p.variants?.some((v) => v.stock <= 5);
-    }).length,
+    total: statsResponse?.total ?? 0,
+    active: statsResponse?.active ?? 0,
+    inactive: statsResponse?.inactive ?? 0,
+    lowStock: statsResponse?.lowStock ?? 0,
+    outOfStock: statsResponse?.outOfStock ?? 0,
   };
 
   const handleDelete = useCallback(async (id: number, name: string) => {

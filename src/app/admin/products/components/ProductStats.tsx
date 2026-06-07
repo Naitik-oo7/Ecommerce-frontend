@@ -1,10 +1,11 @@
 'use client';
 
-import { Package, CheckCircle2, TrendingDown, XCircle } from 'lucide-react';
+import { Package, CheckCircle2, Ban, TrendingDown, XCircle } from 'lucide-react';
 
 interface Stats {
   total: number;
   active: number;
+  inactive: number;
   lowStock: number;
   outOfStock: number;
 }
@@ -12,7 +13,7 @@ interface Stats {
 interface ProductStatsProps {
   stats: Stats;
   activeFilter: string;
-  onFilterChange: (filter: 'all' | 'active' | 'low_stock' | 'out_of_stock') => void;
+  onFilterChange: (filter: 'all' | 'active' | 'inactive' | 'low_stock' | 'out_of_stock') => void;
 }
 
 export function ProductStats({ stats, activeFilter, onFilterChange }: ProductStatsProps) {
@@ -25,20 +26,28 @@ export function ProductStats({ stats, activeFilter, onFilterChange }: ProductSta
       bg: 'bg-card',
       key: 'all' as const
     },
-    { 
-      label: 'Active', 
-      value: stats.active, 
-      icon: CheckCircle2, 
-      color: 'text-green-700', 
-      bg: 'bg-green-50',
+    {
+      label: 'Active',
+      value: stats.active,
+      icon: CheckCircle2,
+      color: 'text-green-700 dark:text-green-400',
+      bg: 'bg-green-50 dark:bg-green-950/40',
       key: 'active' as const
     },
-    { 
-      label: 'Low Stock', 
-      value: stats.lowStock, 
-      icon: TrendingDown, 
-      color: 'text-orange-700', 
-      bg: 'bg-orange-50',
+    {
+      label: 'Inactive',
+      value: stats.inactive,
+      icon: Ban,
+      color: 'text-muted-foreground',
+      bg: 'bg-muted',
+      key: 'inactive' as const
+    },
+    {
+      label: 'Low Stock',
+      value: stats.lowStock,
+      icon: TrendingDown,
+      color: 'text-orange-700 dark:text-orange-400',
+      bg: 'bg-orange-50 dark:bg-orange-950/40',
       key: 'low_stock' as const
     },
     { 
@@ -52,7 +61,7 @@ export function ProductStats({ stats, activeFilter, onFilterChange }: ProductSta
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
       {statItems.map(({ label, value, color, bg, icon: Icon, key }) => (
         <button
           key={key}

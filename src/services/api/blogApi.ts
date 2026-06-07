@@ -20,7 +20,7 @@ export const blogApi = createApi({
   baseQuery: axiosBaseQuery(),
   tagTypes: ['BlogPosts'],
   endpoints: (builder) => ({
-    getBlogPosts: builder.query<{ data: BlogPost[]; page: number; limit: number; total: number; totalPages: number }, { limit?: number; isFeatured?: string; category?: string; page?: number }>({
+    getBlogPosts: builder.query<{ data: BlogPost[]; pagination?: { total: number; page: number; limit: number; totalPages: number } }, { limit?: number; isFeatured?: string; category?: string; search?: string; page?: number; includeUnpublished?: string }>({
       query: (params = {}) => ({ url: '/api/v1/blog', method: 'GET', params }),
       providesTags: ['BlogPosts'],
     }),

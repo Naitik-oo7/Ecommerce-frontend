@@ -378,6 +378,19 @@
     width: 100%;
   }
 
+  /* Indeterminate top loading bar (dashboard re-fetch indicator) */
+  @keyframes loadingbar {
+    0% {
+      transform: translateX(-100%);
+    }
+    50% {
+      transform: translateX(150%);
+    }
+    100% {
+      transform: translateX(400%);
+    }
+  }
+
   /* Skeleton shimmer */
   .skeleton-shimmer {
     background: linear-gradient(90deg, var(--muted) 25%, var(--background) 50%, var(--muted) 75%);
