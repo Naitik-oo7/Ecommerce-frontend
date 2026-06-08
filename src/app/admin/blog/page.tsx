@@ -211,12 +211,27 @@ export default function AdminBlogPage() {
   }, [showForm, onFormKeyDown]);
 
   // Lock background scroll while any modal is open so the wheel scrolls the modal, not the page.
+  // Lock both <html> and <body>: depending on the document, either one can be the scrolling
+  // element, so locking only body lets the page keep scrolling behind the overlay.
   useEffect(() => {
     const open = showForm || deleteConfirm !== null;
     if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    const { documentElement, body } = document;
+    const scrollBarWidth = window.innerWidth - documentElement.clientWidth;
+    const prev = {
+      htmlOverflow: documentElement.style.overflow,
+      bodyOverflow: body.style.overflow,
+      bodyPaddingRight: body.style.paddingRight,
+    };
+    documentElement.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    // Compensate for the removed scrollbar so the layout doesn't shift.
+    if (scrollBarWidth > 0) body.style.paddingRight = `${scrollBarWidth}px`;
+    return () => {
+      documentElement.style.overflow = prev.htmlOverflow;
+      body.style.overflow = prev.bodyOverflow;
+      body.style.paddingRight = prev.bodyPaddingRight;
+    };
   }, [showForm, deleteConfirm]);
 
   return (
@@ -471,15 +486,18 @@ export default function AdminBlogPage() {
         {showForm && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 overflow-y-auto overscroll-contain flex items-start sm:items-center justify-center p-4"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             onClick={handleCloseForm}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.97, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-3xl my-auto"
+              className="w-full max-w-3xl max-h-[calc(100dvh-2rem)] flex flex-col min-h-0"
             >
-              <Card className="max-h-[90vh] overflow-hidden flex flex-col">
+              {/* data-lenis-prevent: the global Lenis smooth-scroll (see providers.tsx) hijacks
+                  the wheel and scrolls the page; this marks the modal so Lenis ignores it and
+                  the inner content scrolls natively. */}
+              <Card className="min-h-0 flex-1 overflow-hidden flex flex-col" data-lenis-prevent>
                 {/* Header */}
                 <div className="flex items-center justify-between p-5 border-b bg-card">
                   <div className="flex items-center gap-3 min-w-0">

@@ -99,7 +99,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, isLoading } = useAppSelector((state) => state.auth);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [logoutMutation] = useLogoutMutation();
-  const { theme, toggleTheme, isMounted } = useDarkMode();
+  const [isMounted, setIsMounted] = useState(false);
+  const { theme, toggleTheme } = useDarkMode();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!isLoading && (!user || user.role !== 'admin')) {
@@ -107,7 +112,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [isLoading, user, router]);
 
-  if (isLoading || !user || user.role !== 'admin') {
+  if (!isMounted || isLoading || !user || user.role !== 'admin') {
     return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
   }
 
