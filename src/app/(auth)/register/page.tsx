@@ -78,10 +78,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="w-full max-w-5xl bg-card rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
+    <div className="w-full max-w-5xl bg-card rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row md:min-h-150">
 
       {/* ── Left panel — Form ── */}
-      <div className="flex flex-col justify-center px-8 md:px-12 py-10 md:w-[52%]">
+      <div className="flex flex-col justify-center px-6 sm:px-8 md:px-12 py-8 sm:py-10 md:w-[52%]">
         <div className="max-w-sm w-full mx-auto">
           {/* Brand mark */}
           <div className="flex items-center gap-2.5 mb-8">
@@ -227,8 +227,8 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      {/* ── Right panel — Branding ── */}
-      <div className="relative flex flex-col justify-between p-8 md:p-10 bg-background md:w-[48%] overflow-hidden">
+      {/* ── Right panel — Branding (hidden on mobile) ── */}
+      <div className="relative hidden md:flex flex-col justify-between p-8 md:p-10 bg-background md:w-[48%] overflow-hidden">
         {/* Headline */}
         <div className="mt-8 md:mt-12">
           <h1 className="text-3xl font-bold text-foreground leading-tight">

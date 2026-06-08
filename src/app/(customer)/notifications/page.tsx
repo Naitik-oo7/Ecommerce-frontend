@@ -75,28 +75,28 @@ export default function NotificationsPage() {
   const handleClearAll = async () => { if (confirm('Clear all notifications?')) await clearAll(); };
 
   return (
-    <div className="container-mono py-8">
+    <div className="container-mono py-4 sm:py-8">
       <div className="max-w-4xl mx-auto">
         <Card>
           <CardHeader className="bg-muted/30 border-b">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Bell className="h-5 w-5 text-mono-terracotta" />
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Bell className="h-5 w-5 shrink-0 text-mono-terracotta" />
                 Notifications
               </CardTitle>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={handleMarkAllAsRead} disabled={isMarkingAll || notifications.every((n: any) => n.isRead)}>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={handleMarkAllAsRead} disabled={isMarkingAll || notifications.every((n: any) => n.isRead)}>
                   {isMarkingAll ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Check className="h-4 w-4 mr-1" />}
                   Mark all read
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleClearAll} disabled={isClearing || notifications.length === 0}>
+                <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={handleClearAll} disabled={isClearing || notifications.length === 0}>
                   {isClearing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Trash2 className="h-4 w-4 mr-1" />}
                   Clear all
                 </Button>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex gap-2 mb-6">
               <Button variant={filter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => { setFilter('all'); setPage(1); }}>All</Button>
               <Button variant={filter === 'unread' ? 'default' : 'outline'} size="sm" onClick={() => { setFilter('unread'); setPage(1); }}>Unread</Button>
@@ -116,17 +116,17 @@ export default function NotificationsPage() {
                     const Icon = notificationIcons[notification.type as keyof typeof notificationIcons] || Info;
                     return (
                       <motion.div key={notification.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }} layout>
-                        <div className={`p-4 border rounded-xl transition-colors ${notification.isRead ? 'bg-background' : 'bg-mono-terracotta/5 border-mono-terracotta/20'}`}>
+                        <div className={`p-3 sm:p-4 border rounded-xl transition-colors ${notification.isRead ? 'bg-background' : 'bg-mono-terracotta/5 border-mono-terracotta/20'}`}>
                           <div className="flex items-start gap-3">
-                            <div className={`p-2 rounded-full ${notificationColors[notification.type as keyof typeof notificationColors]} text-white`}><Icon className="h-4 w-4" /></div>
+                            <div className={`p-2 rounded-full shrink-0 ${notificationColors[notification.type as keyof typeof notificationColors]} text-white`}><Icon className="h-4 w-4" /></div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1">
-                                  <p className="font-medium">{notification.title}</p>
-                                  <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium break-words">{notification.title}</p>
+                                  <p className="text-sm text-muted-foreground mt-1 break-words">{notification.message}</p>
                                   <p className="text-xs text-muted-foreground mt-2">{new Date(notification.createdAt).toLocaleDateString()}</p>
                                 </div>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1 shrink-0">
                                   {!notification.isRead && <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleMarkAsRead(notification.id)} disabled={isMarking}><Check className="h-4 w-4" /></Button>}
                                   <Button variant="ghost" size="icon" className="h-8 w-8 text-mono-rose" onClick={() => handleDelete(notification.id)} disabled={isDeleting}><Trash2 className="h-4 w-4" /></Button>
                                 </div>
@@ -142,7 +142,7 @@ export default function NotificationsPage() {
             )}
 
             {pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6 pt-6 border-t">
+              <div className="flex flex-wrap items-center justify-between gap-3 mt-6 pt-6 border-t">
                 <p className="text-sm text-muted-foreground">Page {pagination.page} of {pagination.totalPages}</p>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>

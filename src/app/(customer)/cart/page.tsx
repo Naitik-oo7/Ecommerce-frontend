@@ -130,9 +130,9 @@ function GuestCartView({
                   transition={{ duration: 0.2 }}
                   className="group rounded-3xl border border-border/60 bg-card p-4 sm:p-5 shadow-sm hover:shadow-lg hover:border-border transition-all duration-300"
                 >
-                  <div className="flex gap-4 sm:gap-5">
+                  <div className="flex gap-3 sm:gap-5">
                     <Link href={`/products/${item.productSlug}`} className="shrink-0">
-                      <div className="relative w-28 h-28 sm:w-32 sm:h-32 bg-muted rounded-2xl overflow-hidden ring-1 ring-black/[0.04]">
+                      <div className="relative w-24 h-24 sm:w-32 sm:h-32 bg-muted rounded-2xl overflow-hidden ring-1 ring-black/[0.04]">
                         {item.imageUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -186,7 +186,7 @@ function GuestCartView({
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between gap-3 mt-auto pt-4">
+                      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 mt-auto pt-4">
                         <div className="inline-flex items-center rounded-full border border-border bg-background">
                           <button
                             aria-label="Decrease quantity"
@@ -264,7 +264,7 @@ function GuestCartView({
               </div>
 
               <div className="space-y-3">
-                <Link href={`/login?redirect=${encodeURIComponent('/cart')}`}>
+                <Link href={`/login?redirect=${encodeURIComponent('/cart')}`} className="block">
                   <Button
                     className="group w-full h-14 text-base rounded-2xl bg-mono-charcoal hover:bg-mono-charcoal/90"
                     size="lg"
@@ -587,10 +587,10 @@ export default function CartPage() {
                   transition={{ duration: 0.2 }}
                   className="group rounded-3xl border border-border/60 bg-card p-4 sm:p-5 shadow-sm hover:shadow-lg hover:border-border transition-all duration-300"
                 >
-                  <div className="flex gap-4 sm:gap-5">
+                  <div className="flex gap-3 sm:gap-5">
                     {/* Product Image */}
                     <Link href={`/products/${product.slug}`} className="shrink-0">
-                      <div className="relative w-28 h-28 sm:w-32 sm:h-32 bg-muted rounded-2xl overflow-hidden ring-1 ring-black/[0.04]">
+                      <div className="relative w-24 h-24 sm:w-32 sm:h-32 bg-muted rounded-2xl overflow-hidden ring-1 ring-black/[0.04]">
                         {product.primaryImage ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -664,7 +664,7 @@ export default function CartPage() {
                       </div>
 
                       {/* Bottom row: stepper + actions */}
-                      <div className="flex items-center justify-between gap-3 mt-auto pt-4">
+                      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 mt-auto pt-4">
                         <div className="inline-flex items-center rounded-full border border-border bg-background">
                           <button
                             aria-label="Decrease quantity"
@@ -840,7 +840,7 @@ export default function CartPage() {
 
               {/* CTA */}
               <div className="space-y-3">
-                <Link href="/checkout">
+                <Link href="/checkout" className="block">
                   <Button
                     className="group w-full h-14 text-base rounded-2xl bg-mono-charcoal hover:bg-mono-charcoal/90"
                     size="lg"

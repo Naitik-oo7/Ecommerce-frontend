@@ -18,7 +18,7 @@ export function ActiveFilterChips({ filters, onClearAll }: ActiveFilterChipsProp
   if (filters.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-nowrap items-center gap-2 lg:flex-wrap">
       <AnimatePresence mode="popLayout">
         {filters.map((filter) => (
           <motion.button
@@ -29,7 +29,7 @@ export function ActiveFilterChips({ filters, onClearAll }: ActiveFilterChipsProp
             exit={{ opacity: 0, scale: 0.85 }}
             transition={{ duration: 0.15 }}
             onClick={filter.onRemove}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-mono-cream text-mono-charcoal border border-mono-terracotta/40 text-xs font-medium rounded-full hover:border-mono-terracotta hover:bg-[#EDE8E0] transition-colors group"
+            className="inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 bg-mono-cream text-mono-charcoal border border-mono-terracotta/40 text-xs font-medium rounded-full hover:border-mono-terracotta hover:bg-[#EDE8E0] transition-colors group"
           >
             <span>{filter.label}</span>
             <X className="h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity" />
@@ -44,7 +44,7 @@ export function ActiveFilterChips({ filters, onClearAll }: ActiveFilterChipsProp
             exit={{ opacity: 0, scale: 0.85 }}
             transition={{ duration: 0.15 }}
             onClick={onClearAll}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-[#E5E2DD] text-mono-stone text-xs font-medium rounded-full hover:border-mono-charcoal hover:text-mono-charcoal transition-colors"
+            className="inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 bg-transparent border border-[#E5E2DD] text-mono-stone text-xs font-medium rounded-full hover:border-mono-charcoal hover:text-mono-charcoal transition-colors"
           >
             Clear all
           </motion.button>

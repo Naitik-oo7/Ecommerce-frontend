@@ -88,7 +88,7 @@ export const CinematicHero = () => {
 
         {/* ── LEFT: text panel ── */}
         <motion.div
-          className="flex-1 flex flex-col justify-center px-8 sm:px-12 lg:px-16 xl:px-24 py-12 md:py-16 lg:py-0 lg:pr-8"
+          className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-16 xl:px-24 py-12 md:py-16 lg:py-0 lg:pr-8"
           style={{ y: textY }}
         >
           <motion.div
@@ -111,20 +111,20 @@ export const CinematicHero = () => {
             <motion.h1 variants={textVariants} className="mb-8" style={{ fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)' }}>
               <span
                 className="block leading-[1.05]"
-                style={{ fontSize: 'clamp(2.8rem, 5vw, 4.8rem)', fontWeight: 700, color: '#1A1A18' }}
+                style={{ fontSize: 'clamp(2.4rem, 8vw, 4.8rem)', fontWeight: 700, color: '#1A1A18' }}
               >
                 {hero?.headline?.[0] || 'Designed for'}
               </span>
               <span
                 className="block leading-[1.05]"
-                style={{ fontSize: 'clamp(2.8rem, 5vw, 4.8rem)', fontWeight: 700, color: '#1A1A18' }}
+                style={{ fontSize: 'clamp(2.4rem, 8vw, 4.8rem)', fontWeight: 700, color: '#1A1A18' }}
               >
                 {hero?.headline?.[1] || 'modern living.'}
               </span>
               <em
                 className="block leading-[1.05]"
                 style={{
-                  fontSize: 'clamp(2.8rem, 5vw, 4.8rem)',
+                  fontSize: 'clamp(2.4rem, 8vw, 4.8rem)',
                   fontWeight: 400,
                   fontStyle: 'italic',
                   color: '#1A1A18',
@@ -182,8 +182,8 @@ export const CinematicHero = () => {
           </motion.div>
         </motion.div>
 
-        {/* ── RIGHT: image panel ── */}
-        <div className="flex-1 relative h-[45vh] lg:h-auto overflow-hidden">
+        {/* ── RIGHT: image panel (hidden on mobile) ── */}
+        <div className="hidden lg:block flex-1 relative h-[45vh] lg:h-auto overflow-hidden">
           <motion.div className="absolute inset-0">
             <motion.div
               initial={{ scale: 1.2, opacity: 0 }}

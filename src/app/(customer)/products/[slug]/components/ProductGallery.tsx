@@ -96,7 +96,7 @@ export function ProductGallery({
         {/* Thumbnails — horizontal on mobile, vertical on desktop */}
         {hasMultiple && (
           <div
-            className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory lg:flex-col lg:overflow-x-visible lg:overflow-y-auto lg:pb-0 lg:w-[76px] lg:shrink-0 lg:max-h-[min(calc(100vh-10rem),480px)] lg:order-1"
+            className="order-2 flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory lg:flex-col lg:overflow-x-visible lg:overflow-y-auto lg:pb-0 lg:w-[76px] lg:shrink-0 lg:max-h-[min(calc(100vh-10rem),480px)] lg:order-1"
             role="tablist"
             aria-label="Product images"
           >
@@ -124,7 +124,7 @@ export function ProductGallery({
         )}
 
         {/* Main image — constrained to viewport */}
-        <div className="relative flex-1 min-w-0 lg:order-2">
+        <div className="relative flex-1 min-w-0 order-1 lg:order-2">
           <div
             className="relative flex h-[calc(100vh-8rem)] w-full items-center justify-center overflow-hidden rounded-xl bg-mono-cream ring-1 ring-border/30"
             onTouchStart={handleTouchStart}

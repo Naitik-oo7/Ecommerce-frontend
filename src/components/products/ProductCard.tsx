@@ -273,9 +273,9 @@ export const ProductCard = memo(function ProductCard({
             {WishlistButton}
           </div>
 
-          {/* Quick Add button — slides up on hover (desktop), always visible (mobile) */}
+          {/* Quick Add — full-width bar slides up on hover (desktop ≥md). */}
           {onQuickView && (
-            <div className="absolute inset-x-0 bottom-0 z-20 p-3 opacity-100 md:translate-y-3 md:opacity-0 md:transition-all md:duration-300 md:group-hover:translate-y-0 md:group-hover:opacity-100">
+            <div className="absolute inset-x-0 bottom-0 z-20 hidden p-3 md:block md:translate-y-3 md:opacity-0 md:transition-all md:duration-300 md:group-hover:translate-y-0 md:group-hover:opacity-100">
               <button
                 type="button"
                 onClick={handleQuickView}
@@ -289,6 +289,25 @@ export const ProductCard = memo(function ProductCard({
                     <ShoppingBag className="h-4 w-4" />
                     {isSoldOut ? 'Sold Out' : 'Quick Add'}
                   </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Quick Add — compact icon button on mobile/touch (<md), matches wishlist size. */}
+          {onQuickView && !isSoldOut && (
+            <div className="absolute bottom-3 right-3 z-20 md:hidden">
+              <button
+                type="button"
+                onClick={handleQuickView}
+                disabled={isAddingToCart}
+                aria-label={`Quick add ${product.name} to bag`}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-mono-charcoal text-white shadow-md transition-colors duration-200 active:bg-[#2A2A26] disabled:opacity-60"
+              >
+                {isAddingToCart ? (
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                ) : (
+                  <ShoppingBag className="h-[15px] w-[15px]" />
                 )}
               </button>
             </div>

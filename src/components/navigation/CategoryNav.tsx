@@ -378,7 +378,7 @@ export default function CategoryNav({
                           className="fixed inset-0 z-40" onClick={() => setNotificationsOpen(false)} />
                         <motion.div
                           variants={dropdownMenu} initial="hidden" animate="visible" exit="exit"
-                          className="absolute right-0 top-10 z-50 w-80 bg-card border border-border/50 rounded-xl shadow-2xl overflow-hidden"
+                          className="fixed left-2 right-2 top-14 z-50 w-auto sm:absolute sm:left-auto sm:right-0 sm:top-10 sm:w-80 bg-card border border-border/50 rounded-xl shadow-2xl overflow-hidden"
                         >
                           <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between bg-muted/30">
                             <p className="font-semibold text-sm">Notifications</p>
