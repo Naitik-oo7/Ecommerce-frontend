@@ -542,7 +542,7 @@ export default function AdminDashboardPage() {
   const rangeLabel = RANGE_LABELS[range.preset];
   const rangeShort = range.preset === 'custom' ? 'range' : range.preset.toUpperCase();
 
-  interface LowStockProduct { id?: number; variantId?: number; name?: string; sku?: string; size?: string; stock?: number; }
+  interface LowStockProduct { id?: number; variantId?: number; slug?: string; name?: string; sku?: string; size?: string; stock?: number; }
   interface RecentOrder { id?: number; user?: { name?: string; email?: string }; total?: string; status?: string; }
   interface Overview { totalRevenue?: string | number; totalOrders?: number; totalUsers?: number; totalProducts?: number }
   interface DashStats {
@@ -1068,16 +1068,21 @@ export default function AdminDashboardPage() {
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <GlassSectionCard title="Low Stock Products" icon={AlertTriangle} iconColor="#B54A4A">
+          <GlassSectionCard
+            title="Low / Out of Stock Variants"
+            icon={AlertTriangle}
+            iconColor="#B54A4A"
+            action={<Link href="/admin/products?status=low_stock" className="text-sm text-primary font-medium hover:underline">View all</Link>}
+          >
             {lowStockProducts.length === 0 ? (
               <div className="h-[200px] flex flex-col items-center justify-center text-muted-foreground">
                 <Package className="h-12 w-12 mb-2 opacity-50" />
-                <p>All products well stocked</p>
+                <p>All variants well stocked</p>
               </div>
             ) : (
-              <div className="space-y-2.5 max-h-[220px] overflow-y-auto overflow-x-hidden">
-                {lowStockProducts.map((p: LowStockProduct) => (
-                  <Link key={`${p.id}-${p.variantId}`} href={`/admin/products/${p.id}`} className="block">
+              <div className="space-y-2.5">
+                {lowStockProducts.slice(0, 5).map((p: LowStockProduct) => (
+                  <Link key={`${p.id}-${p.variantId}`} href={`/admin/products/${p.slug}/edit?variant=${p.variantId}`} className="block">
                     <div className="flex items-center justify-between gap-2 py-2 px-2 rounded-lg hover:bg-muted/40 transition-colors cursor-pointer">
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium truncate">{p.name}</p>

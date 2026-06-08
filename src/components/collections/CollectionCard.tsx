@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface CollectionCardProps {
   title: string;
@@ -84,10 +85,12 @@ export const CollectionCard = ({ title, subtitle, image, href, index }: Collecti
             y: isHovered ? imageY : 0,
           }}
         >
-          <img
+          <Image
             src={image}
             alt={title}
-            className="w-full h-full object-cover scale-110"
+            fill
+            sizes="(max-width: 1024px) 50vw, 33vw"
+            className="object-cover scale-110"
           />
         </motion.div>
 

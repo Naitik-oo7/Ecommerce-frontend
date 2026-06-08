@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Star, Trash2, Package, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
 
 export default function ReviewsPage() {
@@ -71,9 +72,9 @@ export default function ReviewsPage() {
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+                    <div className="relative w-12 h-12 bg-muted rounded-lg overflow-hidden flex-shrink-0">
                       {review.product?.images?.[0] ? (
-                        <img src={review.product.images[0]} alt={review.product.name} className="object-cover w-full h-full" />
+                        <Image src={review.product.images[0]} alt={review.product.name} fill sizes="48px" className="object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center"><Package className="h-6 w-6 text-muted-foreground" /></div>
                       )}

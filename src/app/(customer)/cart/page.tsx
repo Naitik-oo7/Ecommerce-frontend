@@ -32,6 +32,7 @@ import {
   Check,
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { AuthLoading } from '@/components/auth/RequireAuth';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -134,11 +135,12 @@ function GuestCartView({
                     <Link href={`/products/${item.productSlug}`} className="shrink-0">
                       <div className="relative w-24 h-24 sm:w-32 sm:h-32 bg-muted rounded-2xl overflow-hidden ring-1 ring-black/[0.04]">
                         {item.imageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
+                          <Image
                             src={item.imageUrl}
                             alt={item.productName}
-                            className="object-cover w-full h-full transition-transform duration-700 ease-out group-hover:scale-105"
+                            fill
+                            sizes="(max-width: 640px) 96px, 128px"
+                            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
@@ -592,11 +594,12 @@ export default function CartPage() {
                     <Link href={`/products/${product.slug}`} className="shrink-0">
                       <div className="relative w-24 h-24 sm:w-32 sm:h-32 bg-muted rounded-2xl overflow-hidden ring-1 ring-black/[0.04]">
                         {product.primaryImage ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
+                          <Image
                             src={product.primaryImage}
                             alt={product.name}
-                            className="object-cover w-full h-full transition-transform duration-700 ease-out group-hover:scale-105"
+                            fill
+                            sizes="(max-width: 640px) 96px, 128px"
+                            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -107,6 +107,7 @@ const VariantEditor = ({
   onChange,
   onRemove,
   onDuplicate,
+  highlight = false,
 }: {
   variant: VariantRow;
   index: number;
@@ -114,12 +115,27 @@ const VariantEditor = ({
   onChange: (v: VariantRow) => void;
   onRemove: () => void;
   onDuplicate: () => void;
+  highlight?: boolean;
 }) => {
-  const [open, setOpen] = useState(index === 0);
+  const [open, setOpen] = useState(index === 0 || highlight);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [flash, setFlash] = useState(false);
   const u = (field: keyof VariantRow, value: VariantRow[keyof VariantRow]) => onChange({ ...variant, [field]: value } as VariantRow);
 
+  useEffect(() => {
+    if (!highlight) return;
+    setOpen(true);
+    rootRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setFlash(true);
+    const t = setTimeout(() => setFlash(false), 2500);
+    return () => clearTimeout(t);
+  }, [highlight]);
+
   return (
-    <div className="border border-border rounded-xl overflow-hidden">
+    <div
+      ref={rootRef}
+      className={`rounded-xl overflow-hidden border transition-shadow duration-500 ${flash ? 'border-orange-400 ring-2 ring-orange-400/70' : 'border-border'}`}
+    >
       <div
         className="flex items-center gap-3 px-4 py-3 bg-muted/30 cursor-pointer select-none hover:bg-muted/50 transition-colors"
         onClick={() => setOpen(!open)}
@@ -259,6 +275,7 @@ interface ProductFormProps {
   isSubmitting: boolean;
   submitError?: string;
   onSubmit: (values: ProductFormValues) => void;
+  highlightVariantId?: number;
 }
 
 export default function ProductForm({
@@ -267,6 +284,7 @@ export default function ProductForm({
   isSubmitting,
   submitError,
   onSubmit,
+  highlightVariantId,
 }: ProductFormProps) {
   const router = useRouter();
   const { data: categoriesResponse } = useGetCategoriesQuery({});
@@ -702,6 +720,7 @@ export default function ProductForm({
                       onChange={(v) => updateVariant(i, v)}
                       onRemove={() => removeVariant(i)}
                       onDuplicate={() => duplicateVariant(i)}
+                      highlight={highlightVariantId != null && variant.id === highlightVariantId}
                     />
                     {(errors[`variant_${i}_sku`] || errors[`variant_${i}_stock`]) && (
                       <div className="mt-1 px-4">

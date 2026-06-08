@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface JournalCardProps {
   title: string;
@@ -45,7 +46,7 @@ export const JournalCard = ({
               whileHover={{ scale: 1.08 }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }}
             >
-              <img src={image} alt={title} className="w-full h-full object-cover" />
+              <Image src={image} alt={title} fill sizes="96px" className="object-cover" />
             </motion.div>
           </div>
 
@@ -93,10 +94,12 @@ export const JournalCard = ({
             whileHover={{ scale: 1.04 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const }}
           >
-            <img
+            <Image
               src={image}
               alt={title}
-              className="w-full h-full object-cover"
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
             />
           </motion.div>
 

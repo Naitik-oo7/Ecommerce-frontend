@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { AlertCircle, CheckCircle, XCircle, Clock, Package, ArrowRight, ShoppingBag, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useRef } from 'react';
 
 export default function OrderPlacedPage() {
@@ -216,9 +217,9 @@ export default function OrderPlacedPage() {
                 <div className="px-5 py-4 border-b border-border/50 space-y-3">
                   {items.slice(0, 3).map((item: any) => (
                       <div key={item.id} className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-muted overflow-hidden shrink-0 border border-border/40">
+                        <div className="relative w-10 h-10 rounded-lg bg-muted overflow-hidden shrink-0 border border-border/40">
                           {item.productImage
-                            ? <img src={item.productImage} alt={item.productName} className="w-full h-full object-cover" />
+                            ? <Image src={item.productImage} alt={item.productName} fill sizes="40px" className="object-cover" />
                             : <div className="w-full h-full flex items-center justify-center"><Package className="h-4 w-4 text-muted-foreground/40" /></div>
                           }
                         </div>

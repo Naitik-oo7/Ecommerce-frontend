@@ -4,6 +4,7 @@ import { memo, useMemo } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Heart, ShoppingBag, Star } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 import type { Product, ProductVariant } from '@/types';
 
@@ -173,24 +174,24 @@ export const ProductCard = memo(function ProductCard({
     <>
       {product.images?.[0] ? (
         <>
-          <img
+          <Image
             src={product.images[0]}
             alt={product.name}
-            loading="lazy"
-            decoding="async"
-            className={`absolute inset-0 h-full w-full object-cover transition-transform duration-700 ${
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className={`object-cover transition-transform duration-700 ${
               prefersReducedMotion ? '' : 'group-hover:scale-[1.07]'
             }`}
             style={{ transitionTimingFunction: CUBIC }}
           />
           {hasSecondaryImage && !prefersReducedMotion && (
-            <img
+            <Image
               src={product.images[1]}
               alt=""
               aria-hidden
-              loading="lazy"
-              decoding="async"
-              className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
             />
           )}
         </>

@@ -2,6 +2,7 @@
 
 import { useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Star, Heart, ArrowRight } from 'lucide-react';
 import { useGetRelatedProductsQuery } from '@/services/api/productsApi';
@@ -94,10 +95,12 @@ export function RelatedProducts({ slug }: RelatedProductsProps) {
                 <Link href={`/products/${product.slug}`} className="block">
                   <div className="relative aspect-[3/4] bg-white rounded-2xl overflow-hidden mb-3 ring-1 ring-border/30">
                     {product.images?.[0] ? (
-                      <img
+                      <Image
                         src={product.images[0]}
                         alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out"
+                        fill
+                        sizes="220px"
+                        className="object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-mono-stone/40 text-sm">

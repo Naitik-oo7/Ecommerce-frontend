@@ -5,8 +5,10 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { useGetProductsQuery } from '@/services/api/productsApi';
+import type { Product } from '@/types/product';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -21,10 +23,9 @@ interface GalleryItem {
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=800&q=80';
 
-function formatPrice(price: any): string {
-  const num = parseFloat(price);
-  if (isNaN(num)) return '—';
-  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(num);
+function formatPrice(price: number): string {
+  if (isNaN(price)) return '—';
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(price);
 }
 
 export const HorizontalGallery = () => {
@@ -34,12 +35,14 @@ export const HorizontalGallery = () => {
   const sectionRef = useRef<HTMLElement>(null);
 
   const { data: productsData, isLoading } = useGetProductsQuery({ limit: 6 });
-  const rawProducts: any[] = (productsData as any)?.data || [];
+  const rawProducts: Product[] = Array.isArray(productsData)
+    ? productsData
+    : productsData?.data || [];
 
-  const galleryItems: GalleryItem[] = rawProducts.map((p: any) => ({
+  const galleryItems: GalleryItem[] = rawProducts.map((p) => ({
     id: p.id,
     image: p.images?.[0] || FALLBACK_IMAGE,
-    category: p.category?.name || p.categoryName || 'Collection',
+    category: p.category?.name || 'Collection',
     title: p.name,
     price: formatPrice(p.price),
     link: `/products/${p.slug}`,
@@ -55,54 +58,89 @@ export const HorizontalGallery = () => {
 
     if (!container || !scrollContainer || !progress || !section) return;
 
-    const scrollWidth = scrollContainer.scrollWidth - window.innerWidth;
+    // Recomputed on every refresh so it stays correct after images load / resize.
+    const getScrollWidth = () =>
+      Math.max(0, scrollContainer.scrollWidth - window.innerWidth);
 
     const ctx = gsap.context(() => {
       const scrollTween = gsap.to(scrollContainer, {
-        x: () => -scrollWidth,
+        x: () => -getScrollWidth(),
         ease: 'none',
         scrollTrigger: {
           trigger: container,
           start: 'top top',
-          end: () => `+=${scrollWidth}`,
+          end: () => `+=${getScrollWidth()}`,
           pin: true,
           scrub: 1,
           anticipatePin: 1,
           invalidateOnRefresh: true,
           onUpdate: (self) => {
-            gsap.to(progress, {
-              scaleX: self.progress,
-              duration: 0.1,
-              ease: 'none',
-            });
+            gsap.set(progress, { scaleX: self.progress });
           },
         },
       });
 
-      const items = scrollContainer.querySelectorAll('.gallery-item');
+      // Reveal each card as it slides into the viewport DURING the horizontal
+      // scroll. Because the horizontal movement isn't a native scroll, the
+      // per-card triggers must use `containerAnimation: scrollTween` — that's
+      // GSAP's supported way to fire on horizontal position. (The earlier
+      // single `once` reveal fired before the pin engaged, so cards 4-6 were
+      // off-screen, got cleared, and then never re-revealed until the end.)
+      //
+      // We animate `.gallery-reveal` (a plain div), NOT `.gallery-item` —
+      // framer-motion owns the transform on `.gallery-item` (whileHover), and
+      // two libraries writing the same transform left cards stuck hidden.
+      const items = scrollContainer.querySelectorAll<HTMLElement>('.gallery-item');
       items.forEach((item) => {
+        const reveal = item.querySelector<HTMLElement>('.gallery-reveal');
+        if (!reveal) return;
         gsap.fromTo(
-          item,
-          { opacity: 0, y: 50, rotateY: 15 },
+          reveal,
+          { opacity: 0, y: 60 },
           {
             opacity: 1,
             y: 0,
-            rotateY: 0,
-            duration: 0.8,
+            duration: 1,
             ease: 'power2.out',
+            // Let ScrollTrigger resolve the at-rest state from the card's
+            // position FIRST. Without this, fromTo force-renders opacity:0 on
+            // every card up front — so cards already on-screen (whose trigger
+            // already passed) stay invisible until the very end of the scroll.
+            immediateRender: false,
             scrollTrigger: {
               trigger: item,
               containerAnimation: scrollTween,
-              start: 'left 80%',
-              end: 'left 50%',
-              toggleActions: 'play none none reverse',
+              // Reveal well before the card reaches center and keep it shown.
+              start: 'left 95%',
+              end: 'left 60%',
+              toggleActions: 'play none none none',
             },
           }
         );
       });
     }, section);
 
-    return () => ctx.revert();
+    // Images load after mount with no intrinsic height until then, so the
+    // pinned scroll distance is measured wrong (Lenis caches it) → the section
+    // pins on black and only resolves at the end. Refresh once each image loads.
+    const imgs = Array.from(scrollContainer.querySelectorAll('img'));
+    const refresh = () => ScrollTrigger.refresh();
+    const pending = imgs.filter((img) => !img.complete);
+    pending.forEach((img) => {
+      img.addEventListener('load', refresh, { once: true });
+      img.addEventListener('error', refresh, { once: true });
+    });
+    // Also refresh once after first paint to settle initial layout/fonts.
+    const raf = requestAnimationFrame(refresh);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      pending.forEach((img) => {
+        img.removeEventListener('load', refresh);
+        img.removeEventListener('error', refresh);
+      });
+      ctx.revert();
+    };
   }, [isLoading, galleryItems.length]);
 
   return (
@@ -151,7 +189,7 @@ export const HorizontalGallery = () => {
       <div ref={containerRef} className="relative h-screen">
         <div
           ref={scrollContainerRef}
-          className="flex items-center gap-6 md:gap-10 px-6 md:px-16 h-full will-change-transform"
+          className="flex items-center gap-6 md:gap-10 px-6 md:px-16 h-full"
           style={{ width: 'fit-content' }}
         >
           <div className="w-[10vw] md:w-[20vw] flex-shrink-0" />
@@ -177,16 +215,19 @@ export const HorizontalGallery = () => {
                 whileHover={{ y: -10 }}
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               >
+                <div className="gallery-reveal">
                 <div className="relative aspect-[3/4] overflow-hidden rounded-lg mb-6 bg-white/5">
                   <motion.div
                     className="absolute inset-0"
                     whileHover={{ scale: 1.08 }}
                     transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <img
+                    <Image
                       src={item.image}
                       alt={item.title}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 70vw, (max-width: 1024px) 35vw, 25vw"
                     />
                   </motion.div>
 
@@ -226,6 +267,7 @@ export const HorizontalGallery = () => {
                     {item.price}
                   </p>
                 </div>
+                </div>
               </motion.article>
             </Link>
           ))}
@@ -245,7 +287,7 @@ export const HorizontalGallery = () => {
             <div className="flex-1 h-px relative overflow-hidden" style={{ background: 'rgba(246,243,238,0.15)' }}>
               <div
                 ref={progressRef}
-                className="absolute inset-y-0 left-0 origin-left"
+                className="absolute inset-y-0 left-0 right-0 origin-left"
                 style={{ background: '#C8703A', transform: 'scaleX(0)' }}
               />
             </div>

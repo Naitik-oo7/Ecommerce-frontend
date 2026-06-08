@@ -10,6 +10,7 @@ import { useGetAddressesQuery } from '@/services/api/addressesApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import Image from 'next/image';
 import {
   User,
   Mail,
@@ -435,9 +436,9 @@ export default function ProfilePage() {
                     <li key={order.id}>
                       <Link href={`/profile/orders/${order.id}`} className="block group">
                         <div className="flex items-center gap-4 px-5 py-4 md:px-6 hover:bg-muted/40 transition-colors">
-                          <div className="w-14 h-14 rounded-xl bg-muted overflow-hidden shrink-0 border border-border/80">
+                          <div className="relative w-14 h-14 rounded-xl bg-muted overflow-hidden shrink-0 border border-border/80">
                             {firstImage ? (
-                              <img src={firstImage} alt="" className="w-full h-full object-cover" />
+                              <Image src={firstImage} alt="" fill sizes="56px" className="object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
                                 <Package className="h-5 w-5 text-muted-foreground/40" />

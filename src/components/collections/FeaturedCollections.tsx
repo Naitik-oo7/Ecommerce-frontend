@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { useGetCategoriesQuery } from '@/services/api/categoriesApi';
 
@@ -60,10 +61,12 @@ const CollectionCard = ({
     <Link href={href} className="block w-full h-full">
       {/* Background image */}
       <div className="absolute inset-0">
-        <img
+        <Image
           src={image}
           alt={title}
-          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+          fill
+          sizes="(max-width: 1024px) 50vw, 33vw"
+          className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
         />
       </div>
 
