@@ -15,3 +15,4 @@ export * from './settingsApi';
 export * from './blogApi';
 export * from './newsletterApi';
 export * from './contactApi';
+export * from './cacheApi';

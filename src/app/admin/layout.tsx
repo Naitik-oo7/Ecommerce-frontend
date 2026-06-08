@@ -10,7 +10,7 @@ import { clearAuthTokens } from '@/lib/authTokens';
 import {
   LayoutDashboard, Package, ShoppingCart, Users, Tag,
   MessageSquare, Settings, LogOut, Menu, FolderTree, BarChart3,
-  FileText, Mail, Sun, Moon,
+  FileText, Mail, Sun, Moon, DatabaseZap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDarkMode } from '@/hooks';
@@ -26,6 +26,7 @@ const menuItems = [
   { href: '/admin/blog',        icon: FileText,        label: 'Journal/Blog' },
   { href: '/admin/contacts',    icon: Mail,            label: 'Contact Inbox' },
   { href: '/admin/settings',    icon: Settings,        label: 'CMS Settings' },
+  { href: '/admin/cache',       icon: DatabaseZap,     label: 'Cache' },
 ];
 
 // SidebarContent component defined outside of AdminLayout to prevent recreation on every render
