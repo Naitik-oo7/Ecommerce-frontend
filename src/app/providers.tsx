@@ -10,6 +10,8 @@ import Lenis from "lenis";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { HealthPing } from "@/components/HealthPing";
+import { ConnectionProvider } from "@/context/ConnectionContext";
+import { ConnectionIndicator } from "@/components/ConnectionIndicator";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -93,12 +95,15 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
-      <SmoothScrollProvider>
-        <AuthInitializer>
-          <HealthPing />
-          {children}
-        </AuthInitializer>
-      </SmoothScrollProvider>
+      <ConnectionProvider>
+        <SmoothScrollProvider>
+          <AuthInitializer>
+            <HealthPing />
+            <ConnectionIndicator />
+            {children}
+          </AuthInitializer>
+        </SmoothScrollProvider>
+      </ConnectionProvider>
     </Provider>
   );
 }

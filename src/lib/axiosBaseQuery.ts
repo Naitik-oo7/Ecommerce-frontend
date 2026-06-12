@@ -57,8 +57,24 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean; _retryCount?: number };
     const requestUrl = originalRequest?.url ?? '';
+
+    // Handle cold start (connection timeout/503) with exponential backoff retry
+    if (
+      originalRequest &&
+      !originalRequest._retry &&
+      (error.code === 'ECONNABORTED' || error.code === 'ECONNREFUSED' || error.response?.status === 503)
+    ) {
+      originalRequest._retry = true;
+      originalRequest._retryCount = (originalRequest._retryCount || 0) + 1;
+
+      if (originalRequest._retryCount <= 3) {
+        const delay = Math.min(1000 * Math.pow(2, originalRequest._retryCount - 1), 5000);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return axiosInstance(originalRequest);
+      }
+    }
 
     if (
       error.response?.status !== 401 ||
