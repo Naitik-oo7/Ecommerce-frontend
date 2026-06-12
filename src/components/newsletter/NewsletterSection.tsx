@@ -95,7 +95,7 @@ export const NewsletterSection = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
-                className={`h-14 bg-white/10 border-white/20 text-white placeholder:text-white/40 rounded-full px-6 transition-all duration-300 ${
+                className={`h-14 bg-white/10 border-white/20 text-white placeholder:text-white/40 rounded-full px-6 transition-all duration-300 focus-visible:ring-0 focus-visible:ring-offset-0 ${
                   isFocused ? 'border-[#C8703A] shadow-[0_0_20px_rgba(200,112,58,0.25)]' : ''
                 }`}
                 style={{ fontFamily: 'var(--font-body, Jost, sans-serif)' }}
