@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, Mail, Lock, ShieldCheck, Tag, Truck, ShoppingBag, ArrowRight, Star } from 'lucide-react';
-import { useLoginMutation } from '@/services/api/authApi';
+import { useLoginMutation, useResendVerificationMutation } from '@/services/api/authApi';
 import { loginSchema, type LoginFormData } from '@/lib/validators/auth';
 import { setUser } from '@/lib/redux/authSlice';
 import { useAppDispatch } from '@/lib/redux/hooks';
@@ -21,8 +21,11 @@ export default function LoginPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [loginMutation, { isLoading }] = useLoginMutation();
+  const [resendVerificationMutation, { isLoading: isResending }] = useResendVerificationMutation();
   const mergeGuestCart = useMergeGuestCart();
   const [error, setError] = useState<string | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sent' | 'error'>('idle');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
@@ -34,9 +37,22 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
+  const handleResendVerification = async () => {
+    if (!unverifiedEmail) return;
+    setResendStatus('idle');
+    try {
+      await resendVerificationMutation({ email: unverifiedEmail }).unwrap();
+      setResendStatus('sent');
+    } catch {
+      setResendStatus('error');
+    }
+  };
+
   const onSubmit = async (data: LoginFormData) => {
     try {
       setError(null);
+      setUnverifiedEmail(null);
+      setResendStatus('idle');
       const response = await loginMutation(data).unwrap();
       setAuthTokens(response.accessToken, response.refreshToken, rememberMe);
       dispatch(setUser(response.user));
@@ -54,8 +70,12 @@ export default function LoginPage() {
       const destination = safeRedirect ?? (response.user.role === 'admin' ? '/admin/dashboard' : '/');
       router.push(destination);
     } catch (err: unknown) {
-      const error = err as { data?: { message?: string } };
-      setError(error.data?.message || 'Login failed. Please try again.');
+      const error = err as { data?: { message?: string }; status?: number };
+      const message = error.data?.message || 'Login failed. Please try again.';
+      setError(message);
+      if (error.status === 403 && message.toLowerCase().includes('verify')) {
+        setUnverifiedEmail(data.email);
+      }
     }
   };
 
@@ -195,8 +215,27 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
             {error && (
-              <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg border border-destructive/20">
-                {error}
+              <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg border border-destructive/20 space-y-2">
+                <p>{error}</p>
+                {unverifiedEmail && (
+                  resendStatus === 'sent' ? (
+                    <p className="text-xs text-green-600 dark:text-green-400 font-medium">
+                      Verification email sent — check your inbox.
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleResendVerification}
+                      disabled={isResending}
+                      className="text-xs font-semibold underline underline-offset-2 text-destructive hover:text-foreground transition-colors disabled:opacity-50"
+                    >
+                      {isResending ? 'Sending…' : 'Resend verification email'}
+                    </button>
+                  )
+                )}
+                {resendStatus === 'error' && (
+                  <p className="text-xs">Failed to send — please try again.</p>
+                )}
               </div>
             )}
 
