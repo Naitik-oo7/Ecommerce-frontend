@@ -83,7 +83,7 @@ export const authApi = createApi({
         data,
       }),
     }),
-    verifyEmail: builder.mutation<void, { token: string }>({
+    verifyEmail: builder.mutation<AuthResponse, { token: string }>({
       query: (data) => ({
         url: '/api/v1/auth/verify-email',
         method: 'POST',
