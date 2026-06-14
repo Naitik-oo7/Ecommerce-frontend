@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   useGetCartQuery,
   useUpdateCartItemMutation,
@@ -18,7 +18,6 @@ import {
   Trash2,
   Plus,
   Minus,
-  ShoppingBag,
   Tag,
   X,
   ArrowRight,
@@ -32,11 +31,12 @@ import {
   Check,
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { AuthLoading } from '@/components/auth/RequireAuth';
-import { motion, AnimatePresence } from 'framer-motion';
-import { staggerContainer, cartItem } from '@/lib/animations';
-import { EmptyState } from '@/components/common';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
+import { staggerContainer } from '@/lib/animations';
+import { EmptyCart } from '@/components/cart/EmptyCart';
 import { extractCart } from '@/lib/api-utils';
 import { formatCurrency } from '@/lib/currency';
 import type { Cart } from '@/types/order';
@@ -45,6 +45,14 @@ import type { Cart } from '@/types/order';
 // MONO Cart — editorial, premium shopping experience
 // Pricing is authoritative from the backend; this page never recomputes money.
 // ============================================
+
+// Transform/opacity only — the shared `cartItem` variant animates height,
+// which forces layout reflow every frame and makes removal feel laggy.
+const itemRow: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.25, ease: [0.25, 1, 0.5, 1] } },
+  exit: { opacity: 0, scale: 0.97, transition: { duration: 0.18, ease: [0.4, 0, 1, 1] } },
+};
 
 function GuestCartView({
   items,
@@ -57,51 +65,22 @@ function GuestCartView({
   const totalQuantity = items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
-    <div className="container-mono py-10">
+    <div className="container-mono pt-12 md:pt-16 pb-32 lg:pb-16">
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-10"
+        className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12 sm:mb-14"
       >
         <div>
-          <span className="label-caps mb-2 block" style={{ color: TERRA }}>
-            Shopping Bag
+          <span className="label-caps mb-2 block text-xs tracking-wider" style={{ color: TERRA }}>
+            Shopping Experience
           </span>
-          <h1 className="font-playfair text-4xl md:text-5xl text-mono-charcoal leading-none">Your Bag</h1>
-          <p className="text-muted-foreground mt-2">
-            {totalQuantity} {totalQuantity === 1 ? 'piece' : 'pieces'} saved
+          <h1 className="font-playfair text-4xl md:text-5xl lg:text-6xl text-mono-charcoal leading-none">Your Bag</h1>
+          <p className="text-sm text-muted-foreground mt-3 font-light">
+            {totalQuantity} {totalQuantity === 1 ? 'exquisite piece' : 'carefully selected pieces'}
           </p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => dispatch(clearGuestCart())}
-          className="group inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-mono-rose transition-colors self-start sm:self-auto"
-        >
-          <Trash2 className="h-4 w-4" />
-          Clear bag
-        </motion.button>
-      </motion.div>
-
-      {/* Sign-in banner */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8 rounded-2xl border p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-        style={{ backgroundColor: `${TERRA}0d`, borderColor: `${TERRA}33` }}
-      >
-        <div>
-          <p className="font-medium text-mono-charcoal">Sign in to checkout</p>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Your items are saved. Sign in to place your order and track delivery.
-          </p>
-        </div>
-        <Link href={`/login?redirect=${encodeURIComponent('/cart')}`} className="shrink-0">
-          <Button className="bg-mono-charcoal hover:bg-mono-charcoal/90 rounded-xl px-6">
-            Sign in
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </Link>
+        <ClearBagButton onClear={() => dispatch(clearGuestCart())} />
       </motion.div>
 
       <div className="grid lg:grid-cols-3 gap-8 lg:gap-14">
@@ -121,24 +100,23 @@ function GuestCartView({
               return (
                 <motion.div
                   key={`${item.variantId}-${item.size}`}
-                  layout
-                  variants={cartItem}
+                  layout="position"
+                  variants={itemRow}
                   initial="hidden"
                   animate="visible"
                   exit="exit"
-                  whileHover={{ y: -2 }}
-                  transition={{ duration: 0.2 }}
-                  className="group rounded-3xl border border-border/60 bg-card p-4 sm:p-5 shadow-sm hover:shadow-lg hover:border-border transition-all duration-300"
+                  className="group rounded-3xl border border-border/40 bg-card/80 backdrop-blur-sm p-5 sm:p-6 shadow-sm hover:shadow-md hover:border-border/80 transition-[box-shadow,border-color,background-color] duration-300 hover:bg-card"
                 >
-                  <div className="flex gap-4 sm:gap-5">
+                  <div className="flex gap-4 sm:gap-6">
                     <Link href={`/products/${item.productSlug}`} className="shrink-0">
-                      <div className="relative w-28 h-28 sm:w-32 sm:h-32 bg-muted rounded-2xl overflow-hidden ring-1 ring-black/[0.04]">
+                      <div className="relative w-28 h-28 sm:w-36 sm:h-36 bg-muted rounded-2xl overflow-hidden ring-1 ring-black/[0.05]">
                         {item.imageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
+                          <Image
                             src={item.imageUrl}
                             alt={item.productName}
-                            className="object-cover w-full h-full transition-transform duration-700 ease-out group-hover:scale-105"
+                            fill
+                            sizes="(max-width: 640px) 112px, 144px"
+                            className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.04]"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
@@ -147,80 +125,83 @@ function GuestCartView({
                         )}
                         {onSale && (
                           <span
-                            className="absolute top-2 left-2 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
+                            className="absolute top-3 left-3 rounded-full px-2.5 py-1 text-[10px] font-semibold text-white uppercase tracking-wider"
                             style={{ backgroundColor: ROSE }}
                           >
-                            Sale
+                            On Sale
                           </span>
                         )}
                       </div>
                     </Link>
 
-                    <div className="flex-1 min-w-0 flex flex-col">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          {item.category && (
-                            <p className="label-caps text-[11px] text-muted-foreground mb-1">{item.category}</p>
-                          )}
-                          <Link href={`/products/${item.productSlug}`}>
-                            <h3 className="font-medium text-base text-foreground hover:text-mono-terracotta transition-colors line-clamp-2 leading-snug">
-                              {item.productName}
-                            </h3>
-                          </Link>
-                          <div className="flex flex-wrap items-center gap-2 mt-2.5">
-                            <span className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-0.5 text-xs font-medium text-mono-charcoal">
-                              Size {item.size}
-                            </span>
-                          </div>
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                      <div className="space-y-3">
+                        {item.category && (
+                          <p className="label-caps text-[10px] text-muted-foreground uppercase tracking-wider">{item.category}</p>
+                        )}
+                        <Link href={`/products/${item.productSlug}`}>
+                          <h3 className="font-playfair text-lg text-foreground hover:text-mono-terracotta transition-colors line-clamp-2 leading-snug">
+                            {item.productName}
+                          </h3>
+                        </Link>
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <span className="inline-flex items-center rounded-full border border-border/60 bg-background/70 px-3 py-1 text-xs font-medium text-mono-charcoal">
+                            Size {item.size}
+                          </span>
                         </div>
-                        <div className="text-right shrink-0">
-                          <p className="font-semibold text-mono-charcoal tabular-nums">{formatCurrency(lineTotal)}</p>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 pt-4 border-t border-border/30">
+                        {/* Pricing */}
+                        <div className="space-y-1">
+                          <p className="font-semibold text-base text-mono-charcoal tabular-nums">{formatCurrency(lineTotal)}</p>
                           {onSale && (
                             <p className="text-xs text-muted-foreground line-through tabular-nums">
                               {formatCurrency(comparePrice! * item.quantity)}
                             </p>
                           )}
                           {item.quantity > 1 && (
-                            <p className="text-[11px] text-muted-foreground mt-0.5">{formatCurrency(unitPrice)} each</p>
+                            <p className="text-[11px] text-muted-foreground">{formatCurrency(unitPrice)} per item</p>
                           )}
                         </div>
-                      </div>
 
-                      <div className="flex items-center justify-between gap-3 mt-auto pt-4">
-                        <div className="inline-flex items-center rounded-full border border-border bg-background">
+                        {/* Controls */}
+                        <div className="flex items-center gap-2.5">
+                          <div className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/60">
+                            <button
+                              aria-label="Decrease quantity"
+                              className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+                              onClick={() =>
+                                dispatch(updateGuestItem({ variantId: item.variantId, size: item.size, quantity: item.quantity - 1 }))
+                              }
+                              disabled={item.quantity <= 1}
+                            >
+                              <Minus className="h-3.5 w-3.5" />
+                            </button>
+                            <span aria-live="polite" className="w-6 text-center text-xs font-semibold tabular-nums text-mono-charcoal">
+                              {item.quantity}
+                            </span>
+                            <button
+                              aria-label="Increase quantity"
+                              className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+                              onClick={() =>
+                                dispatch(updateGuestItem({ variantId: item.variantId, size: item.size, quantity: item.quantity + 1 }))
+                              }
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+
                           <button
-                            aria-label="Decrease quantity"
-                            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-90"
+                            aria-label="Remove item"
                             onClick={() =>
-                              dispatch(updateGuestItem({ variantId: item.variantId, size: item.size, quantity: item.quantity - 1 }))
+                              dispatch(removeGuestItem({ variantId: item.variantId, size: item.size }))
                             }
-                            disabled={item.quantity <= 1}
+                            className="h-9 w-9 flex items-center justify-center text-muted-foreground hover:text-mono-rose hover:bg-muted/80 transition-colors rounded-full"
                           >
-                            <Minus className="h-3.5 w-3.5" />
-                          </button>
-                          <span className="w-9 text-center text-sm font-semibold tabular-nums text-mono-charcoal">
-                            {item.quantity}
-                          </span>
-                          <button
-                            aria-label="Increase quantity"
-                            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-90"
-                            onClick={() =>
-                              dispatch(updateGuestItem({ variantId: item.variantId, size: item.size, quantity: item.quantity + 1 }))
-                            }
-                          >
-                            <Plus className="h-3.5 w-3.5" />
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
-
-                        <button
-                          aria-label="Remove item"
-                          onClick={() =>
-                            dispatch(removeGuestItem({ variantId: item.variantId, size: item.size }))
-                          }
-                          className="h-9 w-9 flex items-center justify-center text-muted-foreground hover:text-mono-rose hover:bg-muted transition-colors rounded-full"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -245,58 +226,90 @@ function GuestCartView({
           transition={{ duration: 0.5, delay: 0.15 }}
           className="lg:col-span-1"
         >
-          <div className="sticky top-24 rounded-3xl border border-border/60 bg-card shadow-sm overflow-hidden">
-            <div className="px-6 pt-6 pb-5 border-b border-border/50">
-              <span className="label-caps mb-1.5 block" style={{ color: TERRA }}>
-                Summary
-              </span>
-              <h2 className="font-playfair text-2xl text-mono-charcoal">Order Details</h2>
-            </div>
-            <div className="p-6 space-y-6">
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Subtotal ({totalQuantity} items)</span>
-                  <span className="font-medium tabular-nums">{formatCurrency(subtotal)}</span>
+          <div className="sticky top-24 space-y-6">
+            {/* Sign-in CTA Card - Premium Style */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="rounded-3xl overflow-hidden"
+              style={{
+                background: `linear-gradient(135deg, ${TERRA}08 0%, ${TERRA}04 100%)`,
+                border: `2px solid ${TERRA}1a`,
+              }}
+            >
+              <div className="p-8 space-y-6">
+                <div className="space-y-2">
+                  <h3 className="font-playfair text-xl text-mono-charcoal">Ready to checkout?</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Sign in to your account to complete your purchase, track your order, and access exclusive benefits.
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Shipping & taxes calculated at checkout after sign in.
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <Link href={`/login?redirect=${encodeURIComponent('/cart')}`}>
+                <Link href={`/login?redirect=${encodeURIComponent('/cart')}`} className="block">
                   <Button
-                    className="group w-full h-14 text-base rounded-2xl bg-mono-charcoal hover:bg-mono-charcoal/90"
-                    size="lg"
+                    className="group w-full h-12 text-sm font-medium rounded-2xl bg-mono-charcoal hover:bg-mono-charcoal/90 transition-all duration-300"
                   >
                     Sign in to checkout
                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
-                <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-                  <Lock className="h-3 w-3" />
-                  Secure, encrypted checkout
+                <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                  <Lock className="h-3.5 w-3.5" />
+                  <span>Secure, encrypted checkout</span>
                 </p>
               </div>
+            </motion.div>
 
-              <div className="grid grid-cols-3 gap-2 pt-5 border-t border-border/50">
-                {[
-                  { icon: ShieldCheck, label: 'Secure Payment' },
-                  { icon: Truck, label: 'Fast Shipping' },
-                  { icon: RotateCcw, label: 'Easy Returns' },
-                ].map(({ icon: Icon, label }) => (
-                  <div key={label} className="flex flex-col items-center text-center gap-1.5">
-                    <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center">
-                      <Icon className="h-4 w-4 text-mono-charcoal" />
-                    </div>
-                    <span className="text-[10px] leading-tight text-muted-foreground">{label}</span>
-                  </div>
-                ))}
+            {/* Order Summary Card */}
+            <div className="rounded-3xl border border-border/60 bg-card shadow-sm overflow-hidden backdrop-blur-sm">
+              <div className="px-6 pt-6 pb-5 border-b border-border/50">
+                <span className="label-caps mb-1.5 block text-xs tracking-wider" style={{ color: TERRA }}>
+                  Order Summary
+                </span>
+                <h2 className="font-playfair text-2xl text-mono-charcoal">Subtotal</h2>
               </div>
+              <div className="p-6 space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">{totalQuantity} {totalQuantity === 1 ? 'item' : 'items'}</span>
+                  <span className="font-semibold text-lg text-mono-charcoal tabular-nums">{formatCurrency(subtotal)}</span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed border-t border-border/50 pt-4">
+                  Shipping and taxes will be calculated when you sign in at checkout.
+                </p>
+              </div>
+            </div>
+
+            {/* Trust Badges - Refined */}
+            <div className="grid grid-cols-3 gap-3 pt-2">
+              {[
+                { icon: ShieldCheck, label: 'Secure' },
+                { icon: Truck, label: 'Fast Shipping' },
+                { icon: RotateCcw, label: 'Easy Returns' },
+              ].map(({ icon: Icon, label }) => (
+                <div
+                  key={label}
+                  className="rounded-2xl border border-border/40 bg-card/50 p-4 flex flex-col items-center text-center gap-2.5 backdrop-blur-sm"
+                >
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: `${TERRA}15` }}
+                  >
+                    <Icon className="h-4 w-4" style={{ color: TERRA }} />
+                  </div>
+                  <span className="text-[10px] leading-tight text-muted-foreground font-medium">{label}</span>
+                </div>
+              ))}
             </div>
           </div>
         </motion.div>
       </div>
+
+      <MobileCheckoutBar
+        label={`Subtotal · ${totalQuantity} ${totalQuantity === 1 ? 'item' : 'items'}`}
+        amount={subtotal}
+        cta="Sign in to checkout"
+        href={`/login?redirect=${encodeURIComponent('/cart')}`}
+      />
     </div>
   );
 }
@@ -305,6 +318,122 @@ function GuestCartView({
 const SAGE = '#4A7C59'; // success / savings / free shipping
 const TERRA = '#C8703A'; // accent / progress
 const ROSE = '#B54A4A'; // warnings / destructive
+
+/**
+ * Clearing the whole bag is destructive — require an inline two-step confirm
+ * instead of acting on the first click. Auto-dismisses if the user walks away.
+ */
+function ClearBagButton({ onClear }: { onClear: () => unknown }) {
+  const [confirming, setConfirming] = useState(false);
+  const [clearing, setClearing] = useState(false);
+
+  useEffect(() => {
+    if (!confirming) return;
+    const t = setTimeout(() => setConfirming(false), 5000);
+    return () => clearTimeout(t);
+  }, [confirming]);
+
+  if (confirming) {
+    return (
+      <div
+        className="flex items-center gap-2.5 self-start sm:self-auto"
+        role="alertdialog"
+        aria-label="Confirm clearing your bag"
+      >
+        <span className="text-xs text-muted-foreground">Remove all items?</span>
+        <button
+          onClick={async () => {
+            setClearing(true);
+            try {
+              await onClear();
+            } finally {
+              setClearing(false);
+              setConfirming(false);
+            }
+          }}
+          disabled={clearing}
+          className="inline-flex items-center gap-1.5 h-8 rounded-full px-3.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+          style={{ backgroundColor: ROSE }}
+        >
+          {clearing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+          Yes, clear
+        </button>
+        <button
+          onClick={() => setConfirming(false)}
+          className="h-8 rounded-full px-3 text-xs font-medium text-muted-foreground hover:text-mono-charcoal hover:bg-muted transition-colors"
+        >
+          Cancel
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => setConfirming(true)}
+      className="group inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-mono-rose transition-colors self-start sm:self-auto uppercase tracking-wider"
+    >
+      <Trash2 className="h-4 w-4" />
+      Clear bag
+    </motion.button>
+  );
+}
+
+/**
+ * On small screens the order summary lives below the item list, so the primary
+ * CTA can be a full page-scroll away. Surface the total + CTA in a fixed bar.
+ */
+function MobileCheckoutBar({
+  label,
+  amount,
+  cta,
+  href,
+  disabled,
+  disabledHint,
+}: {
+  label: string;
+  amount: number;
+  cta: string;
+  href: string;
+  disabled?: boolean;
+  disabledHint?: string;
+}) {
+  return (
+    <motion.div
+      initial={{ y: 96 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+      className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-md"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
+      <div className="container-mono flex items-center justify-between gap-4 py-3">
+        <div className="leading-tight min-w-0">
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</p>
+          <p className="text-lg font-bold text-mono-charcoal tabular-nums">{formatCurrency(amount)}</p>
+          {disabled && disabledHint && (
+            <p className="text-[11px] font-medium truncate" style={{ color: ROSE }}>
+              {disabledHint}
+            </p>
+          )}
+        </div>
+        {disabled ? (
+          <Button disabled className="h-11 shrink-0 px-6 rounded-2xl bg-mono-charcoal text-sm font-medium">
+            {cta}
+          </Button>
+        ) : (
+          <Link href={href} className="shrink-0">
+            <Button className="group h-11 px-6 rounded-2xl bg-mono-charcoal hover:bg-mono-charcoal/90 text-sm font-medium">
+              {cta}
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Button>
+          </Link>
+        )}
+      </div>
+    </motion.div>
+  );
+}
 
 interface CartProduct {
   id: number;
@@ -341,6 +470,7 @@ export default function CartPage() {
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
+  const [couponRemoving, setCouponRemoving] = useState(false);
   const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());
   const [removingIds, setRemovingIds] = useState<Set<number>>(new Set());
   const [savingIds, setSavingIds] = useState<Set<number>>(new Set());
@@ -350,16 +480,7 @@ export default function CartPage() {
 
   if (!isAuthenticated) {
     if (guestItems.length === 0) {
-      return (
-        <div className="container-mono py-16">
-          <EmptyState
-            icon={ShoppingBag}
-            title="Your bag is empty"
-            description="Discover our curated collection and find pieces that speak to your style"
-            action={{ label: 'Browse Collection', href: '/products' }}
-          />
-        </div>
-      );
+      return <EmptyCart />;
     }
     return <GuestCartView items={guestItems} dispatch={dispatch} />;
   }
@@ -388,16 +509,7 @@ export default function CartPage() {
 
   // ---------- Empty ----------
   if (cartItems.length === 0) {
-    return (
-      <div className="container-mono py-16">
-        <EmptyState
-          icon={ShoppingBag}
-          title="Your bag is empty"
-          description="Discover our curated collection and find pieces that speak to your style"
-          action={{ label: 'Browse Collection', href: '/products' }}
-        />
-      </div>
-    );
+    return <EmptyCart />;
   }
 
   // ---------- Authoritative pricing from backend ----------
@@ -436,9 +548,10 @@ export default function CartPage() {
     setBusy(setUpdatingIds, itemId, false);
   };
 
+  // No artificial delays here — AnimatePresence plays the exit animation when
+  // the item leaves the cart data; waiting first made removal feel laggy.
   const handleRemove = async (itemId: number) => {
     setBusy(setRemovingIds, itemId, true);
-    await new Promise((resolve) => setTimeout(resolve, 250)); // let exit animation play
     try {
       await removeFromCart(itemId).unwrap();
     } catch {
@@ -451,7 +564,6 @@ export default function CartPage() {
     try {
       await addToWishlist(item.product.id).unwrap();
       setBusy(setRemovingIds, item.id, true);
-      await new Promise((resolve) => setTimeout(resolve, 250));
       await removeFromCart(item.id).unwrap();
     } catch {
       setBusy(setRemovingIds, item.id, false);
@@ -475,80 +587,96 @@ export default function CartPage() {
 
   const handleRemoveCoupon = async () => {
     setCouponError('');
+    setCouponRemoving(true);
     await removeCoupon(undefined).unwrap().catch(() => {});
+    setCouponRemoving(false);
   };
 
+  const hasStockIssues = cartItems.some((i) => i.variant.stock < i.quantity);
+
   return (
-    <div className="container-mono py-10">
+    <div className="container-mono pt-12 md:pt-16 pb-32 lg:pb-16">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-10"
+        className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12 sm:mb-14"
       >
         <div>
-          <span className="label-caps mb-2 block" style={{ color: TERRA }}>
-            Shopping Bag
+          <span className="label-caps mb-2 block text-xs tracking-wider" style={{ color: TERRA }}>
+            Shopping Experience
           </span>
-          <h1 className="font-playfair text-4xl md:text-5xl text-mono-charcoal leading-none">Your Bag</h1>
-          <p className="text-muted-foreground mt-2">
-            {totalQuantity} {totalQuantity === 1 ? 'piece' : 'pieces'} ready for checkout
+          <h1 className="font-playfair text-4xl md:text-5xl lg:text-6xl text-mono-charcoal leading-none">Your Bag</h1>
+          <p className="text-sm text-muted-foreground mt-3 font-light">
+            {totalQuantity} {totalQuantity === 1 ? 'exquisite piece' : 'carefully selected pieces'} ready to check out
           </p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => clearCart(undefined).catch(() => {})}
-          className="group inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-mono-rose transition-colors self-start sm:self-auto"
-        >
-          <Trash2 className="h-4 w-4" />
-          Clear bag
-        </motion.button>
+        <ClearBagButton onClear={() => clearCart(undefined).unwrap().catch(() => {})} />
       </motion.div>
 
-      {/* Free shipping progress */}
+      {/* Free shipping progress - Luxury style */}
       {freeShipping && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 rounded-2xl border border-border/60 bg-card p-4 sm:p-5 shadow-sm"
+          className="mb-10 rounded-3xl overflow-hidden border border-border/40"
+          style={{
+            background: freeShipping.eligible
+              ? `linear-gradient(135deg, ${SAGE}08 0%, ${SAGE}04 100%)`
+              : `linear-gradient(135deg, ${TERRA}08 0%, ${TERRA}04 100%)`,
+          }}
         >
-          <div className="flex items-center gap-3 mb-3">
-            <div
-              className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-              style={{
-                backgroundColor: freeShipping.eligible ? `${SAGE}1a` : `${TERRA}1a`,
-                color: freeShipping.eligible ? SAGE : TERRA,
-              }}
-            >
-              {freeShipping.eligible ? <Check className="h-5 w-5" /> : <Truck className="h-5 w-5" />}
+          <div className="p-5 sm:p-6 space-y-4">
+            <div className="flex items-start gap-3.5">
+              <div
+                className="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
+                style={{
+                  backgroundColor: freeShipping.eligible ? `${SAGE}15` : `${TERRA}15`,
+                  color: freeShipping.eligible ? SAGE : TERRA,
+                }}
+              >
+                {freeShipping.eligible ? <Check className="h-5 w-5" /> : <Truck className="h-5 w-5" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm leading-relaxed">
+                  {freeShipping.eligible ? (
+                    <span className="block space-y-1">
+                      <span className="font-semibold block" style={{ color: SAGE }}>
+                        You&apos;ve unlocked complimentary shipping
+                      </span>
+                      <span className="text-xs text-muted-foreground">Free delivery on this order</span>
+                    </span>
+                  ) : (
+                    <span className="block space-y-1">
+                      <span className="font-medium text-mono-charcoal block">Almost there!</span>
+                      <span className="text-xs text-muted-foreground">
+                        Add <span className="font-semibold text-mono-charcoal">{formatCurrency(freeShipping.remaining)}</span> more to earn free shipping
+                      </span>
+                    </span>
+                  )}
+                </p>
+              </div>
             </div>
-            <p className="text-sm leading-snug">
-              {freeShipping.eligible ? (
-                <span className="font-semibold" style={{ color: SAGE }}>
-                  Nice — you&apos;ve unlocked free shipping.
-                </span>
-              ) : (
-                <>
-                  You&apos;re almost there. Add{' '}
-                  <span className="font-semibold text-mono-charcoal">{formatCurrency(freeShipping.remaining)}</span> more
-                  to enjoy <span className="font-medium">free shipping</span>.
-                </>
-              )}
-            </p>
-          </div>
-          <div className="h-2 rounded-full bg-muted overflow-hidden">
-            <motion.div
-              className="h-full rounded-full"
-              style={{
-                background: freeShipping.eligible
-                  ? `linear-gradient(90deg, ${SAGE}, ${SAGE})`
-                  : `linear-gradient(90deg, ${TERRA}, #E0996B)`,
-              }}
-              initial={{ width: 0 }}
-              animate={{ width: `${freeShippingProgress}%` }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            />
+            {!freeShipping.eligible && (
+              <div
+                role="progressbar"
+                aria-label="Progress toward free shipping"
+                aria-valuenow={Math.round(freeShippingProgress)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                className="h-1.5 rounded-full bg-border/50 overflow-hidden"
+              >
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{
+                    background: `linear-gradient(90deg, ${TERRA}, ${TERRA}dd)`,
+                  }}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${freeShippingProgress}%` }}
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                />
+              </div>
+            )}
           </div>
         </motion.div>
       )}
@@ -578,25 +706,24 @@ export default function CartPage() {
               return (
                 <motion.div
                   key={item.id}
-                  layout
-                  variants={cartItem}
+                  layout="position"
+                  variants={itemRow}
                   initial="hidden"
-                  animate={isRemoving ? 'exit' : 'visible'}
+                  animate="visible"
                   exit="exit"
-                  whileHover={{ y: -2 }}
-                  transition={{ duration: 0.2 }}
-                  className="group rounded-3xl border border-border/60 bg-card p-4 sm:p-5 shadow-sm hover:shadow-lg hover:border-border transition-all duration-300"
+                  className="group rounded-3xl border border-border/40 bg-card/80 backdrop-blur-sm p-5 sm:p-6 shadow-sm hover:shadow-md hover:border-border/80 transition-[box-shadow,border-color,background-color] duration-300 hover:bg-card"
                 >
-                  <div className="flex gap-4 sm:gap-5">
+                  <div className={`flex gap-4 sm:gap-6 transition-opacity duration-200 ${isRemoving ? 'opacity-40 pointer-events-none' : ''}`}>
                     {/* Product Image */}
                     <Link href={`/products/${product.slug}`} className="shrink-0">
-                      <div className="relative w-28 h-28 sm:w-32 sm:h-32 bg-muted rounded-2xl overflow-hidden ring-1 ring-black/[0.04]">
+                      <div className="relative w-28 h-28 sm:w-36 sm:h-36 bg-muted rounded-2xl overflow-hidden ring-1 ring-black/[0.05]">
                         {product.primaryImage ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
+                          <Image
                             src={product.primaryImage}
                             alt={product.name}
-                            className="object-cover w-full h-full transition-transform duration-700 ease-out group-hover:scale-105"
+                            fill
+                            sizes="(max-width: 640px) 112px, 144px"
+                            className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.04]"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
@@ -605,102 +732,114 @@ export default function CartPage() {
                         )}
                         {onSale && (
                           <span
-                            className="absolute top-2 left-2 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
+                            className="absolute top-3 left-3 rounded-full px-2.5 py-1 text-[10px] font-semibold text-white uppercase tracking-wider"
                             style={{ backgroundColor: ROSE }}
                           >
-                            Sale
+                            On Sale
                           </span>
                         )}
                       </div>
                     </Link>
 
                     {/* Details */}
-                    <div className="flex-1 min-w-0 flex flex-col">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          {product.category?.name && (
-                            <p className="label-caps text-[11px] text-muted-foreground mb-1">{product.category.name}</p>
-                          )}
-                          <Link href={`/products/${product.slug}`}>
-                            <h3 className="font-medium text-base text-foreground hover:text-mono-terracotta transition-colors line-clamp-2 leading-snug">
-                              {product.name}
-                            </h3>
-                          </Link>
-                          <div className="flex flex-wrap items-center gap-2 mt-2.5">
-                            <span className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-0.5 text-xs font-medium text-mono-charcoal">
-                              Size {item.size}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                      <div className="space-y-3">
+                        {product.category?.name && (
+                          <p className="label-caps text-[10px] text-muted-foreground uppercase tracking-wider">{product.category.name}</p>
+                        )}
+                        <Link href={`/products/${product.slug}`}>
+                          <h3 className="font-playfair text-lg text-foreground hover:text-mono-terracotta transition-colors line-clamp-2 leading-snug">
+                            {product.name}
+                          </h3>
+                        </Link>
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <span className="inline-flex items-center rounded-full border border-border/60 bg-background/70 px-3 py-1 text-xs font-medium text-mono-charcoal">
+                            Size {item.size}
+                          </span>
+                          {variant.isLowStock && variant.stock > 0 && !outOfStockForQty && (
+                            <span
+                              className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wide"
+                              style={{ backgroundColor: `${TERRA}15`, color: TERRA }}
+                            >
+                              Only {variant.stock} left
                             </span>
-                            {variant.isLowStock && variant.stock > 0 && !outOfStockForQty && (
+                          )}
+                          {outOfStockForQty && (
+                            <>
                               <span
-                                className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                                style={{ backgroundColor: `${TERRA}14`, color: TERRA }}
+                                className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wide"
+                                style={{ backgroundColor: `${ROSE}15`, color: ROSE }}
                               >
-                                Only {variant.stock} left
+                                {variant.stock > 0 ? `Only ${variant.stock} available` : 'Out of stock'}
                               </span>
-                            )}
-                            {outOfStockForQty && (
-                              <span
-                                className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                                style={{ backgroundColor: `${ROSE}14`, color: ROSE }}
+                              <button
+                                onClick={() =>
+                                  variant.stock > 0
+                                    ? handleUpdateQuantity(item.id, variant.stock, variant.stock)
+                                    : handleRemove(item.id)
+                                }
+                                disabled={isUpdating || isRemoving}
+                                className="text-xs font-medium underline underline-offset-2 text-muted-foreground hover:text-mono-charcoal transition-colors disabled:opacity-50"
                               >
-                                Only {variant.stock} in stock
-                              </span>
-                            )}
-                          </div>
+                                {variant.stock > 0 ? `Adjust to ${variant.stock}` : 'Remove item'}
+                              </button>
+                            </>
+                          )}
                         </div>
+                      </div>
 
-                        {/* Line total */}
-                        <div className="text-right shrink-0">
-                          <p className="font-semibold text-mono-charcoal tabular-nums">{formatCurrency(lineTotal)}</p>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 pt-4 border-t border-border/30">
+                        {/* Pricing */}
+                        <div className="space-y-1">
+                          <p className="font-semibold text-base text-mono-charcoal tabular-nums">{formatCurrency(lineTotal)}</p>
                           {onSale && (
                             <p className="text-xs text-muted-foreground line-through tabular-nums">
                               {formatCurrency(comparePrice! * item.quantity)}
                             </p>
                           )}
                           {item.quantity > 1 && (
-                            <p className="text-[11px] text-muted-foreground mt-0.5">{formatCurrency(unitPrice)} each</p>
+                            <p className="text-[11px] text-muted-foreground">{formatCurrency(unitPrice)} per item</p>
                           )}
                         </div>
-                      </div>
 
-                      {/* Bottom row: stepper + actions */}
-                      <div className="flex items-center justify-between gap-3 mt-auto pt-4">
-                        <div className="inline-flex items-center rounded-full border border-border bg-background">
-                          <button
-                            aria-label="Decrease quantity"
-                            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-90"
-                            onClick={() => handleUpdateQuantity(item.id, item.quantity - 1, variant.stock)}
-                            disabled={item.quantity <= 1 || isUpdating}
-                          >
-                            <Minus className="h-3.5 w-3.5" />
-                          </button>
-                          <span className="w-9 text-center text-sm font-semibold tabular-nums text-mono-charcoal">
-                            {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : item.quantity}
-                          </span>
-                          <button
-                            aria-label="Increase quantity"
-                            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-90"
-                            onClick={() => handleUpdateQuantity(item.id, item.quantity + 1, variant.stock)}
-                            disabled={item.quantity >= variant.stock || isUpdating}
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
+                        {/* Controls */}
+                        <div className="flex items-center gap-2.5">
+                          <div className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/60">
+                            <button
+                              aria-label="Decrease quantity"
+                              className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+                              onClick={() => handleUpdateQuantity(item.id, item.quantity - 1, variant.stock)}
+                              disabled={item.quantity <= 1 || isUpdating}
+                            >
+                              <Minus className="h-3.5 w-3.5" />
+                            </button>
+                            <span aria-live="polite" className="w-6 text-center text-xs font-semibold tabular-nums text-mono-charcoal">
+                              {isUpdating ? <Loader2 className="h-3 w-3 animate-spin mx-auto" /> : item.quantity}
+                            </span>
+                            <button
+                              aria-label="Increase quantity"
+                              className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+                              onClick={() => handleUpdateQuantity(item.id, item.quantity + 1, variant.stock)}
+                              disabled={item.quantity >= variant.stock || isUpdating}
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
 
-                        <div className="flex items-center gap-1">
                           <button
+                            aria-label="Save for later"
                             onClick={() => handleSaveForLater(item)}
                             disabled={isSaving || isRemoving}
-                            className="inline-flex items-center gap-1.5 px-3 h-9 text-xs font-medium text-muted-foreground hover:text-mono-terracotta transition-colors rounded-full hover:bg-muted disabled:opacity-50"
+                            className="inline-flex items-center gap-1 px-2.5 h-9 text-xs font-medium text-muted-foreground hover:text-mono-terracotta transition-colors rounded-full hover:bg-muted/80 disabled:opacity-50"
                           >
                             {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Heart className="h-3.5 w-3.5" />}
-                            <span className="hidden sm:inline">Save for later</span>
+                            <span className="hidden sm:inline text-xs">Save</span>
                           </button>
                           <button
                             aria-label="Remove item"
                             onClick={() => handleRemove(item.id)}
                             disabled={isRemoving}
-                            className="h-9 w-9 flex items-center justify-center text-muted-foreground hover:text-mono-rose hover:bg-muted transition-colors rounded-full disabled:opacity-50"
+                            className="h-9 w-9 flex items-center justify-center text-muted-foreground hover:text-mono-rose hover:bg-muted/80 transition-colors rounded-full disabled:opacity-50"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -729,151 +868,209 @@ export default function CartPage() {
           transition={{ duration: 0.5, delay: 0.15 }}
           className="lg:col-span-1"
         >
-          <div className="sticky top-24 rounded-3xl border border-border/60 bg-card shadow-sm overflow-hidden">
-            {/* Summary header */}
-            <div className="px-6 pt-6 pb-5 border-b border-border/50">
-              <span className="label-caps mb-1.5 block" style={{ color: TERRA }}>
-                Summary
-              </span>
-              <h2 className="font-playfair text-2xl text-mono-charcoal">Order Details</h2>
-            </div>
+          <div className="sticky top-24 space-y-6">
+            {/* Pricing Summary */}
+            <div className="rounded-3xl border border-border/40 bg-card/80 backdrop-blur-sm overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300">
+              {/* Header */}
+              <div className="px-6 pt-6 pb-5 border-b border-border/30 bg-gradient-to-br from-card to-transparent">
+                <span className="label-caps mb-1.5 block text-xs tracking-wider" style={{ color: TERRA }}>
+                  Order Summary
+                </span>
+                <h2 className="font-playfair text-2xl text-mono-charcoal">Pricing Details</h2>
+              </div>
 
-            <div className="p-6 space-y-6">
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Subtotal ({totalQuantity} items)</span>
-                  <span className="font-medium tabular-nums">{formatCurrency(subtotal)}</span>
+              {/* Content */}
+              <div className="p-6 space-y-4">
+                {/* Subtotal */}
+                <div className="flex justify-between items-center pb-4">
+                  <span className="text-sm text-muted-foreground">{totalQuantity} {totalQuantity === 1 ? 'item' : 'items'}</span>
+                  <span className="font-semibold text-mono-charcoal tabular-nums">{formatCurrency(subtotal)}</span>
                 </div>
+
+                {/* Discount */}
                 {discount > 0 && (
-                  <div className="flex justify-between" style={{ color: SAGE }}>
-                    <span className="flex items-center gap-1.5">
-                      <Tag className="h-3.5 w-3.5" />
-                      Discount {appliedCoupon?.code ? `(${appliedCoupon.code})` : ''}
+                  <div className="flex justify-between items-center pb-3" style={{ color: SAGE }}>
+                    <span className="flex items-center gap-2 text-sm">
+                      <Tag className="h-4 w-4 flex-shrink-0" />
+                      <span className="font-medium">Discount</span>
+                      {appliedCoupon?.code && <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded ml-1">{appliedCoupon.code}</span>}
                     </span>
-                    <span className="font-medium tabular-nums">-{formatCurrency(discount)}</span>
+                    <span className="font-semibold tabular-nums">−{formatCurrency(discount)}</span>
                   </div>
                 )}
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Shipping</span>
-                  <span className="font-medium tabular-nums" style={shipping === 0 ? { color: SAGE } : undefined}>
-                    {shipping === 0 ? 'Free' : formatCurrency(shipping)}
-                  </span>
+
+                {/* Shipping & Tax */}
+                <div className="space-y-2.5 py-3 border-t border-border/30">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Shipping</span>
+                    <span className="font-medium tabular-nums" style={shipping === 0 ? { color: SAGE, fontWeight: 600 } : undefined}>
+                      {shipping === 0 ? (
+                        <span className="flex items-center gap-1.5">
+                          <Check className="h-3.5 w-3.5" />
+                          Free
+                        </span>
+                      ) : (
+                        formatCurrency(shipping)
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Tax</span>
+                    <span className="font-medium text-mono-charcoal tabular-nums">{formatCurrency(tax)}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tax (10%)</span>
-                  <span className="font-medium tabular-nums">{formatCurrency(tax)}</span>
+
+                {/* Total */}
+                <div
+                  className="rounded-2xl px-4 py-4 flex justify-between items-baseline"
+                  style={{ backgroundColor: `${TERRA}08`, borderLeft: `3px solid ${TERRA}` }}
+                >
+                  <span className="font-semibold text-sm text-mono-charcoal uppercase tracking-wide">Total</span>
+                  <span className="text-2xl font-bold text-mono-charcoal tabular-nums">{formatCurrency(total)}</span>
                 </div>
-                <div className="border-t border-border/50 pt-4 flex justify-between items-baseline">
-                  <span className="font-semibold text-base text-mono-charcoal">Total</span>
-                  <span className="font-playfair text-3xl text-mono-charcoal tabular-nums">{formatCurrency(total)}</span>
-                </div>
+
+                {/* Savings Badge */}
                 {totalSavings > 0 && (
                   <div
-                    className="flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-semibold"
-                    style={{ backgroundColor: `${SAGE}14`, color: SAGE }}
+                    className="flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-semibold text-center"
+                    style={{ backgroundColor: `${SAGE}12`, color: SAGE }}
                   >
-                    <Tag className="h-3.5 w-3.5" />
-                    You&apos;re saving {formatCurrency(totalSavings)} on this order
+                    <Tag className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span>You&apos;re saving <span className="font-bold">{formatCurrency(totalSavings)}</span> on this order</span>
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* Coupon */}
-              <div className="space-y-2">
-                {appliedCoupon ? (
-                  <div
-                    className="flex items-center justify-between rounded-2xl px-4 py-3 border"
-                    style={{ backgroundColor: `${SAGE}0d`, borderColor: `${SAGE}33` }}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: `${SAGE}1f`, color: SAGE }}
-                      >
-                        <Check className="h-4 w-4" />
-                      </div>
-                      <div className="leading-tight">
-                        <p className="font-mono font-bold text-sm" style={{ color: SAGE }}>
-                          {appliedCoupon.code}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground">Coupon applied</p>
-                      </div>
-                    </div>
-                    <button
-                      aria-label="Remove coupon"
-                      onClick={handleRemoveCoupon}
-                      className="p-1.5 text-muted-foreground hover:text-mono-rose hover:bg-muted rounded-lg transition-colors"
+            {/* Coupon Section */}
+            <div className="space-y-3">
+              {appliedCoupon ? (
+                <div
+                  className="rounded-2xl px-4 py-3 border flex items-center justify-between"
+                  style={{ backgroundColor: `${SAGE}0d`, borderColor: `${SAGE}33` }}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${SAGE}15`, color: SAGE }}
                     >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Promo code"
-                          value={couponCode}
-                          onChange={(e) => setCouponCode(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
-                          className="pl-10 uppercase rounded-xl h-11"
-                        />
-                      </div>
-                      <Button
-                        variant="outline"
-                        onClick={handleApplyCoupon}
-                        disabled={couponLoading || !couponCode.trim()}
-                        className="px-5 h-11 rounded-xl"
-                      >
-                        {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
-                      </Button>
+                      <Check className="h-3.5 w-3.5" />
                     </div>
-                    {couponError && (
-                      <p className="text-xs" style={{ color: ROSE }}>
-                        {couponError}
+                    <div className="leading-tight">
+                      <p className="font-mono font-semibold text-xs" style={{ color: SAGE }}>
+                        {appliedCoupon.code}
                       </p>
-                    )}
+                      <p className="text-[10px] text-muted-foreground">Applied</p>
+                    </div>
                   </div>
-                )}
-              </div>
+                  <button
+                    aria-label="Remove coupon"
+                    onClick={handleRemoveCoupon}
+                    disabled={couponRemoving}
+                    className="h-8 w-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-mono-rose hover:bg-muted/60 transition-colors disabled:opacity-50"
+                  >
+                    {couponRemoving ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide">Promo Code</label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Enter code"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                        className="pl-10 uppercase rounded-xl h-10 text-sm bg-background/70"
+                      />
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={handleApplyCoupon}
+                      disabled={couponLoading || !couponCode.trim()}
+                      className="px-4 h-10 rounded-xl text-sm"
+                    >
+                      {couponLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Apply'}
+                    </Button>
+                  </div>
+                  {couponError && (
+                    <p role="alert" className="text-xs font-medium" style={{ color: ROSE }}>
+                      {couponError}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
 
-              {/* CTA */}
-              <div className="space-y-3">
-                <Link href="/checkout">
+            {/* Checkout CTA */}
+            <div className="space-y-3 pt-2">
+              {hasStockIssues && (
+                <p
+                  role="alert"
+                  className="rounded-xl px-4 py-3 text-xs font-medium leading-relaxed"
+                  style={{ backgroundColor: `${ROSE}0d`, color: ROSE }}
+                >
+                  Some items exceed available stock. Adjust the highlighted quantities to continue.
+                </p>
+              )}
+              {hasStockIssues ? (
+                <Button
+                  disabled
+                  className="w-full h-12 text-sm font-medium rounded-2xl bg-mono-charcoal"
+                >
+                  Proceed to Checkout
+                </Button>
+              ) : (
+                <Link href="/checkout" className="block">
                   <Button
-                    className="group w-full h-14 text-base rounded-2xl bg-mono-charcoal hover:bg-mono-charcoal/90"
-                    size="lg"
+                    className="group w-full h-12 text-sm font-medium rounded-2xl bg-mono-charcoal hover:bg-mono-charcoal/90 transition-all duration-300"
                   >
                     Proceed to Checkout
                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
-                <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-                  <Lock className="h-3 w-3" />
-                  Secure, encrypted checkout
-                </p>
-              </div>
+              )}
+              <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <Lock className="h-3 w-3 flex-shrink-0" />
+                <span>Secure, encrypted checkout</span>
+              </p>
+            </div>
 
-              {/* Trust badges */}
-              <div className="grid grid-cols-3 gap-2 pt-5 border-t border-border/50">
-                {[
-                  { icon: ShieldCheck, label: 'Secure Payment' },
-                  { icon: Truck, label: 'Fast Shipping' },
-                  { icon: RotateCcw, label: 'Easy Returns' },
-                ].map(({ icon: Icon, label }) => (
-                  <div key={label} className="flex flex-col items-center text-center gap-1.5">
-                    <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center">
-                      <Icon className="h-4 w-4 text-mono-charcoal" />
-                    </div>
-                    <span className="text-[10px] leading-tight text-muted-foreground">{label}</span>
+            {/* Trust Badges */}
+            <div className="grid grid-cols-3 gap-3 pt-2">
+              {[
+                { icon: ShieldCheck, label: 'Secure' },
+                { icon: Truck, label: 'Fast Shipping' },
+                { icon: RotateCcw, label: 'Easy Returns' },
+              ].map(({ icon: Icon, label }) => (
+                <div
+                  key={label}
+                  className="rounded-2xl border border-border/40 bg-card/50 p-4 flex flex-col items-center text-center gap-2.5 backdrop-blur-sm"
+                >
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: `${TERRA}15` }}
+                  >
+                    <Icon className="h-4 w-4" style={{ color: TERRA }} />
                   </div>
-                ))}
-              </div>
+                  <span className="text-[10px] leading-tight text-muted-foreground font-medium">{label}</span>
+                </div>
+              ))}
             </div>
           </div>
         </motion.div>
       </div>
+
+      <MobileCheckoutBar
+        label={`Total · ${totalQuantity} ${totalQuantity === 1 ? 'item' : 'items'}`}
+        amount={total}
+        cta="Checkout"
+        href="/checkout"
+        disabled={hasStockIssues}
+        disabledHint="Adjust quantities to continue"
+      />
     </div>
   );
 }

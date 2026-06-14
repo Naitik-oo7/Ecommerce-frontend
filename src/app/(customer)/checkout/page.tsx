@@ -126,7 +126,7 @@ export default function CheckoutPage() {
     );
   }
 
-  if (cartItems.length === 0) {
+  if (cartItems.length === 0 && !isProcessingOrder) {
     return (
       <GuardCard
         title="Your cart is empty"
@@ -220,10 +220,15 @@ export default function CheckoutPage() {
                     <span className="text-[#6B6B6B]">Tax</span>
                     <span className="text-[#111111]">{formatCurrency(tax)}</span>
                   </div>
-                  <div className="border-t border-[#E5E2DD] pt-3 mt-1 flex justify-between items-baseline">
-                    <span className="font-semibold text-[#111111]">Total</span>
-                    <span className="text-xl font-bold text-[#111111]">{formatCurrency(total)}</span>
-                  </div>
+                </div>
+
+                {/* Total */}
+                <div
+                  className="mt-3 rounded-2xl px-4 py-4 flex justify-between items-baseline"
+                  style={{ backgroundColor: '#C8703A08', borderLeft: '3px solid #C8703A' }}
+                >
+                  <span className="font-semibold text-sm text-[#111111] uppercase tracking-wide">Total</span>
+                  <span className="text-2xl font-bold text-[#111111] tabular-nums">{formatCurrency(total)}</span>
                 </div>
 
                 <button

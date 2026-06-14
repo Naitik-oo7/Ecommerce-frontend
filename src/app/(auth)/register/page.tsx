@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, Mail, Lock, User, ShoppingBag, ArrowRight, Star, Gift, Percent, Heart, CheckCircle } from 'lucide-react';
 import { useRegisterMutation } from '@/services/api/authApi';
@@ -14,7 +13,6 @@ import { Label } from '@/components/ui/label';
 import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [registerMutation, { isLoading }] = useRegisterMutation();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -36,7 +34,6 @@ export default function RegisterPage() {
       // screen, then send the user to the email-verification page.
       await registerMutation(data).unwrap();
       setSuccess(true);
-      setTimeout(() => router.push('/verify-email'), 2500);
     } catch (err: unknown) {
       const error = err as { data?: { message?: string } };
       setError(error.data?.message || 'Registration failed. Please try again.');
@@ -67,21 +64,30 @@ export default function RegisterPage() {
         <div className="w-16 h-16 rounded-full bg-[#C7A27C]/15 flex items-center justify-center">
           <CheckCircle className="w-8 h-8 text-accent" />
         </div>
-        <h2 className="text-2xl font-bold text-foreground">Account Created!</h2>
-        <p className="text-sm text-muted-foreground">
-          We&rsquo;ve sent a verification link to your email. Please verify your
-          address to activate your account. Redirecting you now…
+        <h2 className="text-2xl font-bold text-foreground">Check your email</h2>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          We&rsquo;ve sent a verification link to your email address. Click the
+          link in that email to activate your account.
         </p>
-        <div className="w-8 h-8 border-2 border-[#E5E2DD] border-t-[#C7A27C] rounded-full animate-spin mt-2" />
+        <p className="text-xs text-muted-foreground">
+          Didn&rsquo;t receive it? Check your spam folder.
+        </p>
+        <Link
+          href="/login"
+          className="mt-2 w-full h-11 bg-primary hover:bg-accent text-primary-foreground font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 text-sm"
+        >
+          Go to login
+          <ArrowRight className="w-4 h-4" />
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-5xl bg-card rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
+    <div className="w-full max-w-5xl bg-card rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row md:min-h-150">
 
       {/* ── Left panel — Form ── */}
-      <div className="flex flex-col justify-center px-8 md:px-12 py-10 md:w-[52%]">
+      <div className="flex flex-col justify-center px-6 sm:px-8 md:px-12 py-8 sm:py-10 md:w-[52%]">
         <div className="max-w-sm w-full mx-auto">
           {/* Brand mark */}
           <div className="flex items-center gap-2.5 mb-8">
@@ -227,8 +233,8 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      {/* ── Right panel — Branding ── */}
-      <div className="relative flex flex-col justify-between p-8 md:p-10 bg-background md:w-[48%] overflow-hidden">
+      {/* ── Right panel — Branding (hidden on mobile) ── */}
+      <div className="relative hidden md:flex flex-col justify-between p-8 md:p-10 bg-background md:w-[48%] overflow-hidden">
         {/* Headline */}
         <div className="mt-8 md:mt-12">
           <h1 className="text-3xl font-bold text-foreground leading-tight">

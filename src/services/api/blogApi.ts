@@ -28,6 +28,18 @@ export const blogApi = createApi({
       query: (slug) => ({ url: `/api/v1/blog/${slug}`, method: 'GET' }),
       providesTags: (result, error, slug) => [{ type: 'BlogPosts', id: slug }],
     }),
+    uploadBlogImage: builder.mutation<{ url: string }, File>({
+      query: (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return {
+          url: '/api/v1/upload',
+          method: 'POST',
+          data: formData,
+          headers: { 'Content-Type': 'multipart/form-data' },
+        };
+      },
+    }),
     createBlogPost: builder.mutation<BlogPost, Partial<BlogPost>>({
       query: (data) => ({ url: '/api/v1/blog', method: 'POST', data }),
       invalidatesTags: ['BlogPosts'],
@@ -46,6 +58,7 @@ export const blogApi = createApi({
 export const {
   useGetBlogPostsQuery,
   useGetBlogPostBySlugQuery,
+  useUploadBlogImageMutation,
   useCreateBlogPostMutation,
   useUpdateBlogPostMutation,
   useDeleteBlogPostMutation,

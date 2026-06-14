@@ -5,6 +5,7 @@ import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { AuthLoading } from '@/components/auth/RequireAuth';
 import { Heart, Trash2, ShoppingBag, Star, Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { extractWishlist } from '@/lib/api-utils';
@@ -188,10 +189,12 @@ export default function WishlistPage() {
                   <div className="relative aspect-3/4 overflow-hidden" style={{ background: '#E8E4DE' }}>
                     <Link href={`/products/${product.slug}`} className="block w-full h-full">
                       {primaryImage ? (
-                        <img
+                        <Image
                           src={primaryImage}
                           alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-600"
+                          fill
+                          sizes="(max-width: 768px) 50vw, 25vw"
+                          className="object-cover group-hover:scale-[1.04] transition-transform duration-600"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">

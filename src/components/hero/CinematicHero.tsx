@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useGetSettingQuery } from '@/services/api/settingsApi';
 import { useGetProductsQuery } from '@/services/api/productsApi';
 
@@ -88,7 +89,7 @@ export const CinematicHero = () => {
 
         {/* ── LEFT: text panel ── */}
         <motion.div
-          className="flex-1 flex flex-col justify-center px-8 sm:px-12 lg:px-16 xl:px-24 py-12 md:py-16 lg:py-0 lg:pr-8"
+          className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-16 xl:px-24 py-12 md:py-16 lg:py-0 lg:pr-8"
           style={{ y: textY }}
         >
           <motion.div
@@ -111,20 +112,20 @@ export const CinematicHero = () => {
             <motion.h1 variants={textVariants} className="mb-8" style={{ fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)' }}>
               <span
                 className="block leading-[1.05]"
-                style={{ fontSize: 'clamp(2.8rem, 5vw, 4.8rem)', fontWeight: 700, color: '#1A1A18' }}
+                style={{ fontSize: 'clamp(2.4rem, 8vw, 4.8rem)', fontWeight: 700, color: '#1A1A18' }}
               >
                 {hero?.headline?.[0] || 'Designed for'}
               </span>
               <span
                 className="block leading-[1.05]"
-                style={{ fontSize: 'clamp(2.8rem, 5vw, 4.8rem)', fontWeight: 700, color: '#1A1A18' }}
+                style={{ fontSize: 'clamp(2.4rem, 8vw, 4.8rem)', fontWeight: 700, color: '#1A1A18' }}
               >
                 {hero?.headline?.[1] || 'modern living.'}
               </span>
               <em
                 className="block leading-[1.05]"
                 style={{
-                  fontSize: 'clamp(2.8rem, 5vw, 4.8rem)',
+                  fontSize: 'clamp(2.4rem, 8vw, 4.8rem)',
                   fontWeight: 400,
                   fontStyle: 'italic',
                   color: '#1A1A18',
@@ -182,24 +183,27 @@ export const CinematicHero = () => {
           </motion.div>
         </motion.div>
 
-        {/* ── RIGHT: image panel ── */}
-        <div className="flex-1 relative h-[45vh] lg:h-auto overflow-hidden">
+        {/* ── RIGHT: image panel (hidden on mobile) ── */}
+        <div className="hidden lg:block flex-1 relative h-[45vh] lg:h-auto overflow-hidden">
           <motion.div className="absolute inset-0">
             <motion.div
               initial={{ scale: 1.2, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] as const, delay: 0.2 }}
-              className="w-full h-full"
+              className="relative w-full h-full"
               style={{
                 transform: `translate(${mousePosition.x * -0.3}px, ${mousePosition.y * -0.3}px)`,
                 transition: 'transform 0.5s ease-out',
               }}
             >
               {heroImage && (
-                <img
+                <Image
                   src={heroImage}
                   alt="Editorial lifestyle"
-                  className="w-full h-full object-cover object-top"
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  className="object-cover object-top"
                 />
               )}
               {/* left-edge fade to match hero bg */}
@@ -230,14 +234,16 @@ export const CinematicHero = () => {
             >
               <div className="flex items-center gap-3 mb-3">
                 <div
-                  className="w-14 h-16 flex-shrink-0 overflow-hidden flex items-center justify-center"
+                  className="relative w-14 h-16 flex-shrink-0 overflow-hidden flex items-center justify-center"
                   style={{ background: '#E8E0D4' }}
                 >
                   {newestProduct?.images?.[0] ? (
-                    <img
+                    <Image
                       src={newestProduct.images[0]}
                       alt={newestProduct.name}
-                      className="w-full h-full object-cover"
+                      fill
+                      sizes="56px"
+                      className="object-cover"
                     />
                   ) : (
                     <ShoppingBag className="w-6 h-6 opacity-30" style={{ color: '#8A7E60' }} />

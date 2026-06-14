@@ -10,7 +10,7 @@ import { clearAuthTokens } from '@/lib/authTokens';
 import {
   LayoutDashboard, Package, ShoppingCart, Users, Tag,
   MessageSquare, Settings, LogOut, Menu, FolderTree, BarChart3,
-  FileText, Mail, Sun, Moon,
+  FileText, Mail, Sun, Moon, DatabaseZap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDarkMode } from '@/hooks';
@@ -26,6 +26,7 @@ const menuItems = [
   { href: '/admin/blog',        icon: FileText,        label: 'Journal/Blog' },
   { href: '/admin/contacts',    icon: Mail,            label: 'Contact Inbox' },
   { href: '/admin/settings',    icon: Settings,        label: 'CMS Settings' },
+  { href: '/admin/cache',       icon: DatabaseZap,     label: 'Cache' },
 ];
 
 // SidebarContent component defined outside of AdminLayout to prevent recreation on every render
@@ -98,7 +99,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, isLoading } = useAppSelector((state) => state.auth);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [logoutMutation] = useLogoutMutation();
-  const { theme, toggleTheme, isMounted } = useDarkMode();
+  const [isMounted, setIsMounted] = useState(false);
+  const { theme, toggleTheme } = useDarkMode();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!isLoading && (!user || user.role !== 'admin')) {
@@ -106,7 +112,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [isLoading, user, router]);
 
-  if (isLoading || !user || user.role !== 'admin') {
+  if (!isMounted || isLoading || !user || user.role !== 'admin') {
     return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
   }
 

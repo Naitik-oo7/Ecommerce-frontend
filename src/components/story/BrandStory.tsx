@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useGetSettingQuery } from '@/services/api/settingsApi';
 
 const defaultStory = {
@@ -88,13 +89,19 @@ export const BrandStory = () => {
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }}
               className="absolute top-0 right-0 w-[85%] h-[75%] rounded-2xl overflow-hidden shadow-2xl"
             >
-              <motion.img
-                src={s.image1}
-                alt="Craftsmanship"
-                className="w-full h-full object-cover"
+              <motion.div
+                className="relative w-full h-full"
                 whileHover={{ scale: 1.05 }}
                 transition={{ duration: 0.6 }}
-              />
+              >
+                <Image
+                  src={s.image1}
+                  alt="Craftsmanship"
+                  fill
+                  sizes="(max-width: 1024px) 50vw, 33vw"
+                  className="object-cover"
+                />
+              </motion.div>
             </motion.div>
 
             {/* Secondary Floating Image */}
@@ -105,10 +112,12 @@ export const BrandStory = () => {
               transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] as const }}
               className="absolute bottom-0 left-0 w-[55%] h-[45%] rounded-2xl overflow-hidden shadow-xl z-10"
             >
-              <img
+              <Image
                 src={s.image2}
                 alt="Fabric detail"
-                className="w-full h-full object-fill"
+                fill
+                sizes="(max-width: 1024px) 30vw, 20vw"
+                className="object-fill"
               />
             </motion.div>
 

@@ -161,7 +161,6 @@ export function useCheckout() {
       theme: { color: '#C7A27C' },
       modal: {
         ondismiss: () => {
-          setIsProcessing(false);
           router.push(`/profile/orders/${orderId}?payment=pending`);
         },
       },

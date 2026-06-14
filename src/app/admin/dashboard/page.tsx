@@ -362,13 +362,13 @@ function KpiCard({
   const sparkData = (sparkline || []).map((v, i) => ({ i, v }));
 
   return (
-    <motion.div whileHover={{ y: -3 }} transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}>
-      <Card className="relative overflow-hidden border-border/60 shadow-sm hover:shadow-md transition-shadow duration-300">
+    <motion.div whileHover={{ y: -3 }} transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }} className="h-full">
+      <Card className="relative h-full overflow-hidden border-border/60 shadow-sm hover:shadow-md transition-shadow duration-300">
         <div
           className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full opacity-[0.12] blur-2xl"
           style={{ background: gradient }}
         />
-        <CardContent className="relative p-5">
+        <CardContent className="relative flex h-full flex-col p-5">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{title}</p>
@@ -382,7 +382,7 @@ function KpiCard({
             </div>
           </div>
 
-          <div className="mt-4 flex items-end justify-between gap-3">
+          <div className="mt-4 flex min-h-9 items-end justify-between gap-3">
             <div className="flex items-center gap-1.5">
               {change !== undefined && (
                 <span
@@ -542,7 +542,7 @@ export default function AdminDashboardPage() {
   const rangeLabel = RANGE_LABELS[range.preset];
   const rangeShort = range.preset === 'custom' ? 'range' : range.preset.toUpperCase();
 
-  interface LowStockProduct { id?: number; variantId?: number; name?: string; sku?: string; size?: string; stock?: number; }
+  interface LowStockProduct { id?: number; variantId?: number; slug?: string; name?: string; sku?: string; size?: string; stock?: number; }
   interface RecentOrder { id?: number; user?: { name?: string; email?: string }; total?: string; status?: string; }
   interface Overview { totalRevenue?: string | number; totalOrders?: number; totalUsers?: number; totalProducts?: number }
   interface DashStats {
@@ -1068,18 +1068,23 @@ export default function AdminDashboardPage() {
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <GlassSectionCard title="Low Stock Products" icon={AlertTriangle} iconColor="#B54A4A">
+          <GlassSectionCard
+            title="Low / Out of Stock Variants"
+            icon={AlertTriangle}
+            iconColor="#B54A4A"
+            action={<Link href="/admin/products?status=low_stock" className="text-sm text-primary font-medium hover:underline">View all</Link>}
+          >
             {lowStockProducts.length === 0 ? (
               <div className="h-[200px] flex flex-col items-center justify-center text-muted-foreground">
                 <Package className="h-12 w-12 mb-2 opacity-50" />
-                <p>All products well stocked</p>
+                <p>All variants well stocked</p>
               </div>
             ) : (
-              <div className="space-y-2.5 max-h-[220px] overflow-y-auto">
-                {lowStockProducts.map((p: LowStockProduct) => (
-                  <Link key={`${p.id}-${p.variantId}`} href={`/admin/products/${p.id}`}>
-                    <div className="flex items-center justify-between py-2 px-2 -mx-2 rounded-lg hover:bg-muted/40 transition-colors cursor-pointer">
-                      <div className="min-w-0">
+              <div className="space-y-2.5">
+                {lowStockProducts.slice(0, 5).map((p: LowStockProduct) => (
+                  <Link key={`${p.id}-${p.variantId}`} href={`/admin/products/${p.slug}/edit?variant=${p.variantId}`} className="block">
+                    <div className="flex items-center justify-between gap-2 py-2 px-2 rounded-lg hover:bg-muted/40 transition-colors cursor-pointer">
+                      <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium truncate">{p.name}</p>
                         <p className="text-xs text-muted-foreground">{p.sku} · Size: {p.size}</p>
                       </div>

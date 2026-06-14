@@ -11,6 +11,7 @@ import {
   RotateCcw, ArrowLeftCircle, Star,
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -498,9 +499,9 @@ export default function ProfileOrderDetailPage() {
                 return (
                   <li key={item.id} className="flex flex-col">
                     <div className="flex items-center gap-4 px-5 py-4 md:px-6">
-                      <div className="w-16 h-16 rounded-xl bg-muted overflow-hidden shrink-0 border border-border/80 flex items-center justify-center">
+                      <div className="relative w-16 h-16 rounded-xl bg-muted overflow-hidden shrink-0 border border-border/80 flex items-center justify-center">
                         {item.productImage
-                          ? <img src={item.productImage} alt={itemName} className="w-full h-full object-cover" />
+                          ? <Image src={item.productImage} alt={itemName} fill sizes="64px" className="object-cover" />
                           : <ImageOff className="h-6 w-6 text-muted-foreground/40" />}
                       </div>
                       <div className="flex-1 min-w-0">

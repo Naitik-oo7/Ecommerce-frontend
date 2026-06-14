@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -16,6 +16,13 @@ export default function EditProductPage() {
   const { data: productResponse, isLoading: loadingProduct } = useGetProductBySlugQuery(slug);
   const [updateProduct, { isLoading }] = useUpdateProductMutation();
   const [submitError, setSubmitError] = useState('');
+
+  // Variant to scroll to/highlight, deep-linked from the dashboard low-stock list (?variant=).
+  const [highlightVariantId, setHighlightVariantId] = useState<number | undefined>(undefined);
+  useEffect(() => {
+    const v = new URLSearchParams(window.location.search).get('variant');
+    if (v) setHighlightVariantId(Number(v));
+  }, []);
 
   const product = useMemo(() => {
     const raw = productResponse as { data?: Record<string, unknown> } | Record<string, unknown> | undefined;
@@ -157,6 +164,7 @@ export default function EditProductPage() {
       isSubmitting={isLoading}
       submitError={submitError}
       onSubmit={handleSubmit}
+      highlightVariantId={highlightVariantId}
     />
   );
 }

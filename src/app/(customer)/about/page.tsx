@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, Leaf, Gem, Heart, Globe } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useGetSettingQuery } from '@/services/api/settingsApi';
 
 const defaultStory = {
@@ -199,10 +200,10 @@ export default function AboutPage() {
               className="relative h-[480px]"
             >
               <div className="absolute top-0 right-0 w-[80%] h-[70%] rounded-2xl overflow-hidden shadow-2xl">
-                <img src={s.image1} alt="Craftsmanship" className="w-full h-full object-cover" />
+                <Image src={s.image1} alt="Craftsmanship" fill sizes="(max-width: 1024px) 50vw, 33vw" className="object-cover" />
               </div>
               <div className="absolute bottom-0 left-0 w-[55%] h-[50%] rounded-2xl overflow-hidden shadow-xl">
-                <img src={s.image2} alt="Materials" className="w-full h-full object-cover" />
+                <Image src={s.image2} alt="Materials" fill sizes="(max-width: 1024px) 35vw, 22vw" className="object-cover" />
               </div>
               <div className="absolute top-1/2 left-[12%] -translate-y-1/2 text-white p-5 shadow-2xl z-10" style={{ background: '#1A1A18' }}>
                 <p
@@ -419,10 +420,12 @@ export default function AboutPage() {
                 className="text-center group"
               >
                 <div className="relative w-48 h-48 mx-auto mb-6 rounded-2xl overflow-hidden">
-                  <img
+                  <Image
                     src={member.image}
                     alt={member.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    fill
+                    sizes="192px"
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-[#1A1A18]/0 group-hover:bg-[#1A1A18]/15 transition-colors duration-300" />
                 </div>

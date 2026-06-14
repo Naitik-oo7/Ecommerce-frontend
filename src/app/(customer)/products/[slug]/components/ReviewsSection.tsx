@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import { Star, ThumbsUp, User, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -79,6 +80,8 @@ function ImageLightbox({ images, startIndex, onClose }: { images: string[]; star
         </>
       )}
 
+      {/* Full-screen lightbox: intrinsic-size, viewport-capped — not a next/image fill case. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={images[idx]}
         alt={`Review photo ${idx + 1}`}
@@ -180,9 +183,9 @@ export function ReviewsSection({ reviews, stats, inline = false }: ReviewsSectio
                       key={url}
                       type="button"
                       onClick={() => setLightbox({ images: review.images!, idx: i })}
-                      className="w-16 h-16 rounded-lg overflow-hidden border border-border/60 hover:border-mono-terracotta/50 transition-colors shrink-0 focus:outline-none focus:ring-2 focus:ring-mono-terracotta/40"
+                      className="relative w-16 h-16 rounded-lg overflow-hidden border border-border/60 hover:border-mono-terracotta/50 transition-colors shrink-0 focus:outline-none focus:ring-2 focus:ring-mono-terracotta/40"
                     >
-                      <img src={url} alt={`Review photo ${i + 1}`} className="w-full h-full object-cover" />
+                      <Image src={url} alt={`Review photo ${i + 1}`} fill sizes="64px" className="object-cover" />
                     </button>
                   ))}
                 </div>

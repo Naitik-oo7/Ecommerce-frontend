@@ -4,6 +4,7 @@ import { memo, useMemo } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Heart, ShoppingBag, Star } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 import type { Product, ProductVariant } from '@/types';
 
@@ -173,24 +174,24 @@ export const ProductCard = memo(function ProductCard({
     <>
       {product.images?.[0] ? (
         <>
-          <img
+          <Image
             src={product.images[0]}
             alt={product.name}
-            loading="lazy"
-            decoding="async"
-            className={`absolute inset-0 h-full w-full object-cover transition-transform duration-700 ${
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className={`object-cover transition-transform duration-700 ${
               prefersReducedMotion ? '' : 'group-hover:scale-[1.07]'
             }`}
             style={{ transitionTimingFunction: CUBIC }}
           />
           {hasSecondaryImage && !prefersReducedMotion && (
-            <img
+            <Image
               src={product.images[1]}
               alt=""
               aria-hidden
-              loading="lazy"
-              decoding="async"
-              className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
             />
           )}
         </>
@@ -273,9 +274,9 @@ export const ProductCard = memo(function ProductCard({
             {WishlistButton}
           </div>
 
-          {/* Quick Add button — slides up on hover (desktop), always visible (mobile) */}
+          {/* Quick Add — full-width bar slides up on hover (desktop ≥md). */}
           {onQuickView && (
-            <div className="absolute inset-x-0 bottom-0 z-20 p-3 opacity-100 md:translate-y-3 md:opacity-0 md:transition-all md:duration-300 md:group-hover:translate-y-0 md:group-hover:opacity-100">
+            <div className="absolute inset-x-0 bottom-0 z-20 hidden p-3 md:block md:translate-y-3 md:opacity-0 md:transition-all md:duration-300 md:group-hover:translate-y-0 md:group-hover:opacity-100">
               <button
                 type="button"
                 onClick={handleQuickView}
@@ -289,6 +290,25 @@ export const ProductCard = memo(function ProductCard({
                     <ShoppingBag className="h-4 w-4" />
                     {isSoldOut ? 'Sold Out' : 'Quick Add'}
                   </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Quick Add — compact icon button on mobile/touch (<md), matches wishlist size. */}
+          {onQuickView && !isSoldOut && (
+            <div className="absolute bottom-3 right-3 z-20 md:hidden">
+              <button
+                type="button"
+                onClick={handleQuickView}
+                disabled={isAddingToCart}
+                aria-label={`Quick add ${product.name} to bag`}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-mono-charcoal text-white shadow-md transition-colors duration-200 active:bg-[#2A2A26] disabled:opacity-60"
+              >
+                {isAddingToCart ? (
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                ) : (
+                  <ShoppingBag className="h-[15px] w-[15px]" />
                 )}
               </button>
             </div>

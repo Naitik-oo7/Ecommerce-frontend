@@ -428,11 +428,11 @@ function ShopPageInner() {
 
       {/* ── Sticky Toolbar ──────────────────────────────────────────────── */}
       <div
-        className="sticky top-16 z-40 backdrop-blur-sm border-b border-[#E5E2DD]"
+        className="sticky top-14 md:top-16 z-40 backdrop-blur-sm border-b border-[#E5E2DD]"
         style={{ background: "rgba(246,243,238,0.96)" }}
       >
         <div className="container-plp py-2.5">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             {/* Mobile filter trigger */}
             <button
               onClick={() => setMobileDrawerOpen(true)}
@@ -458,9 +458,10 @@ function ShopPageInner() {
             {/* Divider */}
             <div className="hidden lg:block h-4 w-px bg-[#E5E2DD]" />
 
-            {/* Active chips row */}
-            <div className="with-sidebar flex-1 min-w-0 overflow-hidden">
-              {" "}
+            {/* Active chips row — wraps to its own full-width line below the
+                controls on mobile; shares the row inline from lg up. On small
+                screens it scrolls horizontally instead of being clipped. */}
+            <div className="order-last w-full overflow-x-auto scrollbar-hide lg:order-none lg:w-auto lg:flex-1 lg:min-w-0 lg:overflow-x-visible">
               <ActiveFilterChips
                 filters={activeFilters}
                 onClearAll={() => {
@@ -472,7 +473,7 @@ function ShopPageInner() {
             </div>
 
             {/* Search */}
-            <div className="relative shrink-0 w-36 md:w-48">
+            <div className="relative flex-1 min-w-0 sm:flex-none sm:w-48">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-mono-stone pointer-events-none" />
               <input
                 type="text"

@@ -21,12 +21,13 @@ import { settingsApi } from '../../services/api/settingsApi';
 import { blogApi } from '../../services/api/blogApi';
 import { newsletterApi } from '../../services/api/newsletterApi';
 import { contactApi } from '../../services/api/contactApi';
+import { cacheApi } from '../../services/api/cacheApi';
 
 const apis = [
   authApi, productsApi, cartApi, ordersApi, usersApi, adminApi,
   wishlistApi, reviewsApi, addressesApi, categoriesApi, couponsApi,
   paymentsApi, notificationsApi, tagsApi, uploadApi, settingsApi,
-  blogApi, newsletterApi, contactApi,
+  blogApi, newsletterApi, contactApi, cacheApi,
 ];
 
 export const store = configureStore({

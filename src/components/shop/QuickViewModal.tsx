@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { X, Heart, ShoppingBag, Star, Check, ArrowRight, Minus, Plus } from 'lucide-react';
 
 import { useGetProductBySlugQuery } from '@/services/api/productsApi';
@@ -177,16 +178,22 @@ export function QuickViewModal({
                 <div className="relative aspect-square w-full overflow-hidden md:aspect-auto md:h-full md:min-h-[520px]">
                   {images[activeImage] ? (
                     <AnimatePresence mode="wait">
-                      <motion.img
+                      <motion.div
                         key={images[activeImage]}
-                        src={images[activeImage]}
-                        alt={seed.name}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.25 }}
-                        className="absolute inset-0 h-full w-full object-cover"
-                      />
+                        className="absolute inset-0"
+                      >
+                        <Image
+                          src={images[activeImage]}
+                          alt={seed.name}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 50vw"
+                          className="object-cover"
+                        />
+                      </motion.div>
                     </AnimatePresence>
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-[#A8A199]">
@@ -209,11 +216,11 @@ export function QuickViewModal({
                         type="button"
                         onClick={() => setActiveImage(i)}
                         aria-label={`View image ${i + 1}`}
-                        className={`h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 bg-white transition-all ${
+                        className={`relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 bg-white transition-all ${
                           i === activeImage ? 'border-mono-charcoal' : 'border-transparent opacity-70 hover:opacity-100'
                         }`}
                       >
-                        <img src={img} alt={`${product?.name ?? seed.name} — view ${i + 1}`} className="h-full w-full object-cover" />
+                        <Image src={img} alt={`${product?.name ?? seed.name} — view ${i + 1}`} fill sizes="56px" className="object-cover" />
                       </button>
                     ))}
                   </div>

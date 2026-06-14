@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, Mail, Lock, ShieldCheck, Tag, Truck, ShoppingBag, ArrowRight, Star } from 'lucide-react';
-import { useLoginMutation } from '@/services/api/authApi';
+import { useLoginMutation, useResendVerificationMutation } from '@/services/api/authApi';
 import { loginSchema, type LoginFormData } from '@/lib/validators/auth';
 import { setUser } from '@/lib/redux/authSlice';
 import { useAppDispatch } from '@/lib/redux/hooks';
@@ -21,8 +21,11 @@ export default function LoginPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [loginMutation, { isLoading }] = useLoginMutation();
+  const [resendVerificationMutation, { isLoading: isResending }] = useResendVerificationMutation();
   const mergeGuestCart = useMergeGuestCart();
   const [error, setError] = useState<string | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sent' | 'error'>('idle');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
@@ -34,9 +37,22 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
+  const handleResendVerification = async () => {
+    if (!unverifiedEmail) return;
+    setResendStatus('idle');
+    try {
+      await resendVerificationMutation({ email: unverifiedEmail }).unwrap();
+      setResendStatus('sent');
+    } catch {
+      setResendStatus('error');
+    }
+  };
+
   const onSubmit = async (data: LoginFormData) => {
     try {
       setError(null);
+      setUnverifiedEmail(null);
+      setResendStatus('idle');
       const response = await loginMutation(data).unwrap();
       setAuthTokens(response.accessToken, response.refreshToken, rememberMe);
       dispatch(setUser(response.user));
@@ -54,8 +70,12 @@ export default function LoginPage() {
       const destination = safeRedirect ?? (response.user.role === 'admin' ? '/admin/dashboard' : '/');
       router.push(destination);
     } catch (err: unknown) {
-      const error = err as { data?: { message?: string } };
-      setError(error.data?.message || 'Login failed. Please try again.');
+      const error = err as { data?: { message?: string }; status?: number };
+      const message = error.data?.message || 'Login failed. Please try again.';
+      setError(message);
+      if (error.status === 403 && message.toLowerCase().includes('verify')) {
+        setUnverifiedEmail(data.email);
+      }
     }
   };
 
@@ -78,9 +98,9 @@ export default function LoginPage() {
   ];
 
   return (
-    <div className="w-full max-w-5xl bg-card rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[580px]">
-      {/* ── Left panel ── */}
-      <div className="relative flex flex-col justify-between p-8 md:p-10 bg-background md:w-[48%] overflow-hidden">
+    <div className="w-full max-w-5xl bg-card rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row md:min-h-145">
+      {/* ── Left panel — hidden on mobile so the form is shown first ── */}
+      <div className="relative hidden md:flex flex-col justify-between p-8 md:p-10 bg-background md:w-[48%] overflow-hidden">
         {/* Brand */}
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-[#111111] dark:bg-[#C7A27C] flex items-center justify-center">
@@ -176,8 +196,18 @@ export default function LoginPage() {
       </div>
 
       {/* ── Right panel ── */}
-      <div className="flex flex-col justify-center px-8 md:px-12 py-10 md:w-[52%]">
+      <div className="flex flex-col justify-center px-6 sm:px-8 md:px-12 py-8 sm:py-10 md:w-[52%]">
         <div className="max-w-sm w-full mx-auto">
+          {/* Brand mark — shown on mobile since the left panel is hidden there */}
+          <div className="flex md:hidden items-center gap-2.5 mb-6">
+            <div className="w-8 h-8 rounded-lg bg-[#111111] dark:bg-[#C7A27C] flex items-center justify-center">
+              <ShoppingBag className="w-4 h-4 text-white dark:text-[#111111]" />
+            </div>
+            <span className="font-bold text-sm tracking-widest uppercase text-foreground">
+              Mono
+            </span>
+          </div>
+
           <h2 className="text-2xl font-bold text-foreground">Login</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Enter your credentials to access your account
@@ -185,8 +215,27 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
             {error && (
-              <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg border border-destructive/20">
-                {error}
+              <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg border border-destructive/20 space-y-2">
+                <p>{error}</p>
+                {unverifiedEmail && (
+                  resendStatus === 'sent' ? (
+                    <p className="text-xs text-green-600 dark:text-green-400 font-medium">
+                      Verification email sent — check your inbox.
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleResendVerification}
+                      disabled={isResending}
+                      className="text-xs font-semibold underline underline-offset-2 text-destructive hover:text-foreground transition-colors disabled:opacity-50"
+                    >
+                      {isResending ? 'Sending…' : 'Resend verification email'}
+                    </button>
+                  )
+                )}
+                {resendStatus === 'error' && (
+                  <p className="text-xs">Failed to send — please try again.</p>
+                )}
               </div>
             )}
 

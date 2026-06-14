@@ -26,6 +26,14 @@ export function useProductFilters() {
 
   useEffect(() => { setPage(1); }, [search]);
 
+  // Honor a `?status=` deep-link (e.g. from the dashboard "Low Stock" View all button).
+  useEffect(() => {
+    const status = new URLSearchParams(window.location.search).get('status');
+    if (status && ['active', 'inactive', 'low_stock', 'out_of_stock'].includes(status)) {
+      setStatusFilter(status as StatusFilter);
+    }
+  }, []);
+
   const clearFilters = () => {
     setSearchTerm('');
     setCategoryId('');

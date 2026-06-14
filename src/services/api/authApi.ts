@@ -83,9 +83,16 @@ export const authApi = createApi({
         data,
       }),
     }),
-    verifyEmail: builder.mutation<void, { token: string }>({
+    verifyEmail: builder.mutation<AuthResponse, { token: string }>({
       query: (data) => ({
         url: '/api/v1/auth/verify-email',
+        method: 'POST',
+        data,
+      }),
+    }),
+    resendVerification: builder.mutation<MessageResponse, { email: string }>({
+      query: (data) => ({
+        url: '/api/v1/auth/resend-verification',
         method: 'POST',
         data,
       }),
@@ -102,4 +109,5 @@ export const {
   useResetPasswordMutation,
   useGoogleAuthMutation,
   useVerifyEmailMutation,
+  useResendVerificationMutation,
 } = authApi;

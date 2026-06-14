@@ -1,14 +1,17 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import { Provider } from 'react-redux';
-import { store } from '@/lib/redux/store';
-import { setUser, clearUser, setLoading } from '@/lib/redux/authSlice';
-import axiosInstance from '@/lib/axiosBaseQuery';
-import { getAccessToken } from '@/lib/authTokens';
-import Lenis from 'lenis';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useEffect, useRef } from "react";
+import { Provider } from "react-redux";
+import { store } from "@/lib/redux/store";
+import { setUser, clearUser, setLoading } from "@/lib/redux/authSlice";
+import axiosInstance from "@/lib/axiosBaseQuery";
+import { getAccessToken } from "@/lib/authTokens";
+import Lenis from "lenis";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { HealthPing } from "@/components/HealthPing";
+import { ConnectionProvider } from "@/context/ConnectionContext";
+import { ConnectionIndicator } from "@/components/ConnectionIndicator";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -20,8 +23,8 @@ function SmoothScrollProvider({ children }: { children: React.ReactNode }) {
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      orientation: 'vertical',
-      gestureOrientation: 'vertical',
+      orientation: "vertical",
+      gestureOrientation: "vertical",
       smoothWheel: true,
       wheelMultiplier: 1,
       touchMultiplier: 2,
@@ -29,14 +32,14 @@ function SmoothScrollProvider({ children }: { children: React.ReactNode }) {
 
     lenisRef.current = lenis;
 
-    lenis.on('scroll', ScrollTrigger.update);
+    lenis.on("scroll", ScrollTrigger.update);
 
     // Hoist to a stable reference so gsap.ticker.remove() matches the same function
     const ticker = (time: number) => lenis.raf(time * 1000);
     gsap.ticker.add(ticker);
     gsap.ticker.lagSmoothing(0);
 
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       (window as typeof window & { lenis: Lenis }).lenis = lenis;
     }
 
@@ -67,7 +70,7 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
     // so isAuthenticated is already true. This just confirms the token
     // is still valid and refreshes user data.
     axiosInstance
-      .get('/api/v1/users/me')
+      .get("/api/v1/users/me")
       .then((res) => {
         const user = res.data?.data || res.data;
         if (user?.id) {
@@ -92,9 +95,15 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
-      <SmoothScrollProvider>
-        <AuthInitializer>{children}</AuthInitializer>
-      </SmoothScrollProvider>
+      <ConnectionProvider>
+        <SmoothScrollProvider>
+          <AuthInitializer>
+            <HealthPing />
+            <ConnectionIndicator />
+            {children}
+          </AuthInitializer>
+        </SmoothScrollProvider>
+      </ConnectionProvider>
     </Provider>
   );
 }

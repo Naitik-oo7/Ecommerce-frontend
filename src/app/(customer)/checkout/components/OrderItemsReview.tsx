@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { formatCurrency } from '@/lib/currency';
 
 interface CartItem {
@@ -32,8 +33,7 @@ export function OrderItemsReview({ cartItems }: OrderItemsReviewProps) {
           <li key={item.id} className="py-3 flex gap-3 first:pt-0 last:pb-0">
             <div className="relative w-16 h-16 rounded-xl bg-[#F6F3EE] overflow-hidden shrink-0 border border-[#E5E2DD]">
               {image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={image} alt={item.product?.name || ''} className="w-full h-full object-cover" />
+                <Image src={image} alt={item.product?.name || ''} fill sizes="64px" className="object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-[10px] text-[#9B9B9B]">
                   No Image

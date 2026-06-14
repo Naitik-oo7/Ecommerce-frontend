@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useGetOrdersQuery } from '@/services/api/ordersApi';
 import { Package, ChevronRight, CreditCard, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -120,9 +121,9 @@ function OrderCard({ order, index }: { order: Order; index: number }) {
               {/* Thumbnail */}
               <div className="flex items-center gap-3 shrink-0">
                 <div className="relative">
-                  <div className="w-16 h-16 rounded-xl bg-muted overflow-hidden border border-border/80">
+                  <div className="relative w-16 h-16 rounded-xl bg-muted overflow-hidden border border-border/80">
                     {primaryImage
-                      ? <img src={primaryImage} alt="" className="w-full h-full object-cover" />
+                      ? <Image src={primaryImage} alt="" fill sizes="64px" className="object-cover" />
                       : <div className="w-full h-full flex items-center justify-center"><Package className="h-6 w-6 text-muted-foreground/40" /></div>}
                   </div>
                   {itemCount > 1 && (
@@ -164,8 +165,8 @@ function OrderCard({ order, index }: { order: Order; index: number }) {
                     {items.slice(0, 5).map((item, i) => {
                       const image = item.productImage || item.variant?.product?.media?.[0]?.url;
                       return (
-                        <div key={i} className="w-9 h-9 rounded-lg bg-muted overflow-hidden border border-border/80 shrink-0">
-                          {image ? <img src={image} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Package className="h-3 w-3 text-muted-foreground/40" /></div>}
+                        <div key={i} className="relative w-9 h-9 rounded-lg bg-muted overflow-hidden border border-border/80 shrink-0">
+                          {image ? <Image src={image} alt="" fill sizes="36px" className="object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Package className="h-3 w-3 text-muted-foreground/40" /></div>}
                         </div>
                       );
                     })}

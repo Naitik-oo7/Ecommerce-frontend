@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export interface GalleryImage {
@@ -96,7 +97,7 @@ export function ProductGallery({
         {/* Thumbnails — horizontal on mobile, vertical on desktop */}
         {hasMultiple && (
           <div
-            className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory lg:flex-col lg:overflow-x-visible lg:overflow-y-auto lg:pb-0 lg:w-[76px] lg:shrink-0 lg:max-h-[min(calc(100vh-10rem),480px)] lg:order-1"
+            className="order-2 flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory lg:flex-col lg:overflow-x-visible lg:overflow-y-auto lg:pb-0 lg:w-[76px] lg:shrink-0 lg:max-h-[min(calc(100vh-10rem),480px)] lg:order-1"
             role="tablist"
             aria-label="Product images"
           >
@@ -113,10 +114,12 @@ export function ProductGallery({
                     : 'opacity-55 hover:opacity-90 ring-1 ring-border/40'
                 }`}
               >
-                <img
+                <Image
                   src={image.url}
                   alt={image.alt || `${productName} — view ${idx + 1}`}
-                  className="h-full w-full object-cover"
+                  fill
+                  sizes="76px"
+                  className="object-cover"
                 />
               </button>
             ))}
@@ -124,24 +127,31 @@ export function ProductGallery({
         )}
 
         {/* Main image — constrained to viewport */}
-        <div className="relative flex-1 min-w-0 lg:order-2">
+        <div className="relative flex-1 min-w-0 order-1 lg:order-2">
           <div
             className="relative flex h-[calc(100vh-8rem)] w-full items-center justify-center overflow-hidden rounded-xl bg-mono-cream ring-1 ring-border/30"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
             <AnimatePresence mode="wait">
-              <motion.img
+              <motion.div
                 key={currentImage.url + safeIndex}
-                src={currentImage.url}
-                alt={currentImage.alt || productName}
-                className="max-h-full max-w-full object-contain"
+                className="absolute inset-0"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                draggable={false}
-              />
+              >
+                <Image
+                  src={currentImage.url}
+                  alt={currentImage.alt || productName}
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  className="object-contain"
+                  draggable={false}
+                />
+              </motion.div>
             </AnimatePresence>
 
             {salePercent && (

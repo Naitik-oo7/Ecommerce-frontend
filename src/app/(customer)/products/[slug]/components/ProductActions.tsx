@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag, Check, Minus, Plus } from 'lucide-react';
@@ -53,6 +54,9 @@ export function ProductActions({
   const maxQuantity = selectedVariant?.stock || 0;
   const actionsRef = useRef<HTMLDivElement>(null);
   const [showStickyBar, setShowStickyBar] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -125,7 +129,8 @@ export function ProductActions({
         </div>
       </div>
 
-      <AnimatePresence>
+      {mounted && createPortal(
+        <AnimatePresence>
         {showStickyBar && (
           <motion.div
             initial={{ y: '100%' }}
@@ -158,7 +163,9 @@ export function ProductActions({
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
     </>
   );
 }
