@@ -267,7 +267,7 @@ export const CinematicHero = () => {
                           currency: 'INR',
                           maximumFractionDigits: 0,
                         }).format(Number(newestProduct.price))
-                      : '$129.00'}
+                      : '₹129'}
                   </p>
                 </div>
               </div>

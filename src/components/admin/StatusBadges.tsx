@@ -21,14 +21,14 @@ export function StockBadge({ stock, variants }: StockBadgeProps) {
   
   if (isLow) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
+      <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-mono-terracotta/10 text-mono-terracotta">
         <AlertTriangle className="h-3 w-3" /> Low ({stock})
       </span>
     );
   }
-  
+
   return (
-    <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+    <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-mono-sage/10 text-mono-sage">
       <CheckCircle2 className="h-3 w-3" /> {stock}
     </span>
   );
@@ -50,7 +50,7 @@ export function StatusToggle({ isActive, onToggle, isLoading }: StatusToggleProp
       onClick={onToggle}
       title={isActive ? 'Click to deactivate' : 'Click to activate'}
       className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-        isActive ? 'bg-green-500' : 'bg-muted-foreground/30'
+        isActive ? 'bg-mono-sage' : 'bg-muted-foreground/30'
       }`}
     >
       <span
@@ -68,7 +68,7 @@ interface StatusLabelProps {
 
 export function StatusLabel({ isActive }: StatusLabelProps) {
   return (
-    <span className={`text-xs font-medium ${isActive ? 'text-green-700' : 'text-muted-foreground'}`}>
+    <span className={`text-xs font-medium ${isActive ? 'text-mono-sage' : 'text-muted-foreground'}`}>
       {isActive ? 'Active' : 'Inactive'}
     </span>
   );

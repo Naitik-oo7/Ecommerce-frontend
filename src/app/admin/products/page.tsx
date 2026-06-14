@@ -298,7 +298,7 @@ export default function AdminProductsPage() {
                         <span className="font-semibold text-sm">₹{parseFloat(product.price).toLocaleString()}</span>
                         <span className="text-xs text-muted-foreground">{stock} in stock</span>
                       </div>
-                      <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-1 mt-2">
                         <Link href={`/admin/products/${product.slug}/edit`} className="flex-1">
                           <Button variant="outline" size="sm" className="w-full h-7 text-xs">Edit</Button>
                         </Link>

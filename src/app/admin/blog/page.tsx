@@ -300,7 +300,7 @@ export default function AdminBlogPage() {
                         <p className="font-medium truncate">{post.title}</p>
                         <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{post.excerpt}</p>
                       </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <div className="flex items-center gap-1 shrink-0">
                         <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => handleOpenEdit(post)}>
                           <Edit2 className="h-3 w-3" /> Edit
                         </Button>

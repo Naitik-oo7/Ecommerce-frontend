@@ -15,7 +15,7 @@ import {
 // RECOMMENDED: Switch to HttpOnly cookies set by backend on login. The backend already supports
 // withCredentials: true. Remove localStorage interceptors below and use cookie-based auth only.
 const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5555',
+  baseURL: (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5555').replace(/\/+$/, ''),
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -94,7 +94,7 @@ axiosInstance.interceptors.response.use(
         throw new Error('No valid refresh token available');
       }
 
-      const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5555';
+      const baseURL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5555').replace(/\/+$/, '');
       const response = await axios.post(`${baseURL}/api/v1/auth/refresh`, { refreshToken });
 
       const responseData = response.data?.data ?? response.data;

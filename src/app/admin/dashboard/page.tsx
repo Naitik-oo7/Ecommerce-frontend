@@ -17,7 +17,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  DollarSign,
+  IndianRupee,
   ShoppingCart,
   Users,
   Package,
@@ -103,10 +103,10 @@ function useChartTheme(): ChartTheme {
 }
 
 const formatCurrency = (v: number, max = 0) =>
-  `$${Number(v).toLocaleString(undefined, { maximumFractionDigits: max })}`;
+  `₹${Number(v).toLocaleString('en-IN', { maximumFractionDigits: max })}`;
 
 const compactCurrency = (v: number) =>
-  v >= 1000 ? `$${(v / 1000).toFixed(1)}k` : `$${v}`;
+  v >= 1000 ? `₹${(v / 1000).toFixed(1)}k` : `₹${v}`;
 
 function relativeLabel(timestamp: number, now: number): string {
   const seconds = Math.floor((now - timestamp) / 1000);
@@ -719,8 +719,8 @@ export default function AdminDashboardPage() {
       <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           title="Revenue"
-          value={`$${Number(revenueMetric.value ?? monthly.revenue ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-          icon={DollarSign}
+          value={`₹${Number(revenueMetric.value ?? monthly.revenue ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
+          icon={IndianRupee}
           change={revenueMetric.change}
           changeLabel="vs prev period"
           sparkline={revenueMetric.sparkline}
@@ -765,7 +765,7 @@ export default function AdminDashboardPage() {
             </div>
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Avg. Order Value</p>
-              <p className="text-xl font-bold tabular-nums">${(orderAnalytics?.averageOrderValue || 0).toFixed(2)}</p>
+              <p className="text-xl font-bold tabular-nums">₹{(orderAnalytics?.averageOrderValue || 0).toFixed(2)}</p>
             </div>
           </CardContent>
         </Card>
@@ -928,7 +928,7 @@ export default function AdminDashboardPage() {
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <GlassSectionCard title="Category Performance" icon={DollarSign} iconColor={BRAND.sage}>
+          <GlassSectionCard title="Category Performance" icon={IndianRupee} iconColor={BRAND.sage}>
             {categoryChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={categoryChartData} layout="vertical" margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -1002,7 +1002,7 @@ export default function AdminDashboardPage() {
                           <p className="font-medium">{order.user?.name || 'Unknown'}</p>
                           <p className="text-xs text-muted-foreground">{order.user?.email}</p>
                         </td>
-                        <td className="py-2.5 px-2 font-semibold tabular-nums">${parseFloat(order.total || '0').toFixed(2)}</td>
+                        <td className="py-2.5 px-2 font-semibold tabular-nums">₹{parseFloat(order.total || '0').toFixed(2)}</td>
                         <td className="py-2.5 px-2">
                           <Badge variant="outline" className={`border-0 ${STATUS_BG_COLORS[order.status || 'pending']}`}>
                             {order.status}
@@ -1036,7 +1036,7 @@ export default function AdminDashboardPage() {
                       <p className="text-xs text-muted-foreground">{customer.orderCount || 0} orders</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-semibold tabular-nums">${parseFloat(customer.totalSpent || '0').toFixed(2)}</p>
+                      <p className="text-sm font-semibold tabular-nums">₹{parseFloat(customer.totalSpent || '0').toFixed(2)}</p>
                       <p className="text-xs text-muted-foreground">{rangeShort}</p>
                     </div>
                   </div>
@@ -1112,20 +1112,20 @@ export default function AdminDashboardPage() {
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="font-mono">{coupon.code}</Badge>
                         <span className="text-xs text-muted-foreground">
-                          {coupon.type === 'percentage' ? `${coupon.value}% off` : `$${coupon.value} off`}
+                          {coupon.type === 'percentage' ? `${coupon.value}% off` : `₹${coupon.value} off`}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">Used {coupon.usageCount} times</p>
                     </div>
                     <span className="text-sm font-semibold text-emerald-600 tabular-nums">
-                      -${parseFloat(coupon.totalDiscount || '0').toFixed(2)}
+                      -₹{parseFloat(coupon.totalDiscount || '0').toFixed(2)}
                     </span>
                   </div>
                 ))}
                 <div className="pt-3 border-t mt-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Total Discount Given</span>
-                    <span className="font-semibold tabular-nums">${(couponAnalytics?.totalDiscountGiven || 0).toFixed(2)}</span>
+                    <span className="font-semibold tabular-nums">₹{(couponAnalytics?.totalDiscountGiven || 0).toFixed(2)}</span>
                   </div>
                 </div>
               </div>

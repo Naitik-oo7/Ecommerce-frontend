@@ -25,6 +25,10 @@ export const usersApi = createApi({
       query: (params = {}) => ({ url: '/api/v1/users', method: 'GET', params }),
       providesTags: ['Users'],
     }),
+    getCustomerStats: builder.query({
+      query: () => ({ url: '/api/v1/users/stats', method: 'GET' }),
+      providesTags: ['Users'],
+    }),
     updateUserRole: builder.mutation({
       query: ({ id, role }) => ({ url: `/api/v1/users/${id}/role`, method: 'PATCH', data: { role } }),
       invalidatesTags: ['Users'],
@@ -36,4 +40,4 @@ export const usersApi = createApi({
   }),
 });
 
-export const { useGetProfileQuery, useUpdateProfileMutation, useChangePasswordMutation, useGetUserByIdQuery, useGetAllUsersQuery, useUpdateUserRoleMutation, useDeleteUserMutation } = usersApi;
+export const { useGetProfileQuery, useUpdateProfileMutation, useChangePasswordMutation, useGetUserByIdQuery, useGetAllUsersQuery, useGetCustomerStatsQuery, useUpdateUserRoleMutation, useDeleteUserMutation } = usersApi;

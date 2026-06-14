@@ -123,18 +123,18 @@ export function ProductTable({
                     ) : (
                       <StatusToggle isActive={product.isActive} onToggle={() => onToggleActive(product)} />
                     )}
-                    <span className={`text-xs font-medium ${product.isActive ? 'text-green-700' : 'text-muted-foreground'}`}>
+                    <span className={`text-xs font-medium ${product.isActive ? 'text-mono-sage' : 'text-muted-foreground'}`}>
                       {product.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center justify-end gap-1">
                     {stock > 0 && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 gap-1.5 text-xs text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-950/40"
+                        className="h-7 gap-1.5 text-xs text-mono-terracotta hover:text-mono-terracotta hover:bg-mono-terracotta/8"
                         onClick={() => onMarkOutOfStock(product)}
                         disabled={updatingStockIds.has(product.id)}
                       >

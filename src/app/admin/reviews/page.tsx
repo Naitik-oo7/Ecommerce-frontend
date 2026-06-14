@@ -265,7 +265,7 @@ export default function AdminReviewsPage() {
                       {review.comment && <p className="text-sm text-muted-foreground">{review.comment}</p>}
                     </div>
 
-                    <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-1 shrink-0">
                       {!review.isVerified && (
                         <Button
                           variant="outline"

@@ -30,8 +30,8 @@ export function ProductStats({ stats, activeFilter, onFilterChange }: ProductSta
       label: 'Active',
       value: stats.active,
       icon: CheckCircle2,
-      color: 'text-green-700 dark:text-green-400',
-      bg: 'bg-green-50 dark:bg-green-950/40',
+      color: 'text-mono-sage',
+      bg: 'bg-mono-sage/8',
       key: 'active' as const
     },
     {
@@ -46,15 +46,15 @@ export function ProductStats({ stats, activeFilter, onFilterChange }: ProductSta
       label: 'Low Stock',
       value: stats.lowStock,
       icon: TrendingDown,
-      color: 'text-orange-700 dark:text-orange-400',
-      bg: 'bg-orange-50 dark:bg-orange-950/40',
+      color: 'text-mono-terracotta',
+      bg: 'bg-mono-terracotta/8',
       key: 'low_stock' as const
     },
-    { 
-      label: 'Out of Stock', 
-      value: stats.outOfStock, 
-      icon: XCircle, 
-      color: 'text-destructive', 
+    {
+      label: 'Out of Stock',
+      value: stats.outOfStock,
+      icon: XCircle,
+      color: 'text-destructive',
       bg: 'bg-destructive/5',
       key: 'out_of_stock' as const
     },
