@@ -75,6 +75,24 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    const id = 'storesense-widget';
+    if (document.getElementById(id)) return;
+
+    const accentColor =
+      getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#c7a27c';
+
+    const script = document.createElement('script');
+    script.id = id;
+    script.src = 'https://storesense-t97k.onrender.com/widget.js';
+    script.setAttribute('data-store', '4ea26c6f5411f7e9e131b7b9821b5997');
+    script.setAttribute('data-api-url', 'https://storesense-t97k.onrender.com');
+    script.setAttribute('data-title', 'Chat with us');
+    script.setAttribute('data-color', accentColor);
+    script.defer = true;
+    document.body.appendChild(script);
+  }, []);
+
   interface CartResponse {
     data?: {
       cart?: { items?: unknown[] };
