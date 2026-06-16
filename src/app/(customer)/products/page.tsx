@@ -98,7 +98,12 @@ function ShopPageInner() {
   const [page, setPage] = useState(1);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState<number | undefined>(undefined);
-  const prevFiltersRef = useRef<string>("");
+  // Initialise to the current URL-derived state so the first accumulation effect
+  // run (including on back-navigation with an already-cached RTK response) doesn't
+  // bail early and leave allProducts empty until the next dependency change.
+  const prevFiltersRef = useRef<string>(
+    JSON.stringify({ filters: paramsToFilters(searchParams), searchQuery: searchParams.get("search") || "" }),
+  );
   const sortRef = useRef<HTMLDivElement>(null);
 
   const { wishlistIds, toggleWishlist } = useWishlist();
@@ -152,9 +157,10 @@ function ShopPageInner() {
 
   useEffect(() => {
     const filtersKey = JSON.stringify({ filters, searchQuery });
-    // updateFilters/handleSearch already stamp the ref and clear state synchronously.
-    // If there's still a mismatch (e.g. on first mount), stamp and bail — the next
-    // render with fresh productsResponse will fall through to the accumulation below.
+    // updateFilters/handleSearch stamp the ref before clearing state so the
+    // next effect run sees a match and doesn't bail. If there's still a mismatch
+    // (e.g. the URL-sync effect changed filters without stamping), stamp and bail
+    // — the next render with a settled productsResponse will fall through below.
     if (filtersKey !== prevFiltersRef.current) {
       prevFiltersRef.current = filtersKey;
       return;

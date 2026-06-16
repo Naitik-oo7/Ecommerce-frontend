@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useGetProductBySlugQuery } from '@/services/api/productsApi';
 import { useGetProductReviewsQuery, useGetUserReviewsQuery } from '@/services/api/reviewsApi';
 import { useGetOrdersQuery } from '@/services/api/ordersApi';
@@ -18,7 +18,7 @@ import {
   Share2,
   CheckCircle2,
 } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 
 import { ProductGallery } from './components/ProductGallery';
@@ -62,7 +62,22 @@ function ProductDetailSkeleton() {
 
 export default function ProductDetailPage() {
   const { slug } = useParams();
+  const router = useRouter();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
+
+  // Navigate back to the products listing, restoring all filters via browser history.
+  // Falls back to the category URL if there's no history to go back to (e.g. direct link).
+  const handleBackToShop = useCallback(
+    (fallbackHref: string) => (e: React.MouseEvent) => {
+      e.preventDefault();
+      if (window.history.length > 1) {
+        router.back();
+      } else {
+        router.push(fallbackHref);
+      }
+    },
+    [router],
+  );
   const [descExpanded, setDescExpanded] = useState(false);
   const [reviewsOpen, setReviewsOpen] = useState(false);
   const reviewsRef = useRef<HTMLDivElement>(null);
@@ -244,18 +259,24 @@ export default function ProductDetailPage() {
             Home
           </Link>
           <ChevronRight className="h-3 w-3 opacity-40" />
-          <Link href="/products" className="hover:text-mono-charcoal transition-colors">
+          {/* Use router.back() so filters set on the listing page are restored */}
+          <a
+            href="/products"
+            onClick={handleBackToShop("/products")}
+            className="hover:text-mono-charcoal transition-colors cursor-pointer"
+          >
             Shop
-          </Link>
+          </a>
           {product.category && (
             <>
               <ChevronRight className="h-3 w-3 opacity-40" />
-              <Link
+              <a
                 href={`/products?categoryId=${product.category.id}`}
-                className="hover:text-mono-charcoal capitalize"
+                onClick={handleBackToShop(`/products?categoryId=${product.category.id}`)}
+                className="hover:text-mono-charcoal capitalize cursor-pointer"
               >
                 {product.category.name}
-              </Link>
+              </a>
             </>
           )}
           <ChevronRight className="h-3 w-3 opacity-40" />
