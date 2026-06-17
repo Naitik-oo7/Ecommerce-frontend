@@ -19,7 +19,6 @@ import {
   Plus,
   Minus,
   Tag,
-  X,
   ArrowRight,
   ArrowLeft,
   Heart,
@@ -29,6 +28,7 @@ import {
   RotateCcw,
   Lock,
   Check,
+  BadgeCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -69,21 +69,21 @@ function GuestCartView({
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12 sm:mb-14"
+        className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-10"
       >
         <div>
           <span className="label-caps mb-2 block text-xs tracking-wider" style={{ color: TERRA }}>
-            Shopping Experience
+            Shopping Bag
           </span>
           <h1 className="font-playfair text-4xl md:text-5xl lg:text-6xl text-mono-charcoal leading-none">Your Bag</h1>
           <p className="text-sm text-muted-foreground mt-3 font-light">
-            {totalQuantity} {totalQuantity === 1 ? 'exquisite piece' : 'carefully selected pieces'}
+            {totalQuantity} {totalQuantity === 1 ? 'item' : 'items'} ready to checkout
           </p>
         </div>
         <ClearBagButton onClear={() => dispatch(clearGuestCart())} />
       </motion.div>
 
-      <div className="grid lg:grid-cols-3 gap-8 lg:gap-14">
+      <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
         <motion.div
           variants={staggerContainer}
           initial="hidden"
@@ -105,17 +105,17 @@ function GuestCartView({
                   initial="hidden"
                   animate="visible"
                   exit="exit"
-                  className="group rounded-3xl border border-border/40 bg-card/80 backdrop-blur-sm p-5 sm:p-6 shadow-sm hover:shadow-md hover:border-border/80 transition-[box-shadow,border-color,background-color] duration-300 hover:bg-card"
+                  className="group rounded-2xl border border-border/50 bg-card p-3 sm:p-4 shadow-sm hover:shadow-md hover:border-border transition-[box-shadow,border-color] duration-300"
                 >
-                  <div className="flex gap-4 sm:gap-6">
+                  <div className="flex gap-4">
                     <Link href={`/products/${item.productSlug}`} className="shrink-0">
-                      <div className="relative w-28 h-28 sm:w-36 sm:h-36 bg-muted rounded-2xl overflow-hidden ring-1 ring-black/[0.05]">
+                      <div className="relative w-24 h-28 sm:w-28 sm:h-32 bg-muted rounded-xl overflow-hidden ring-1 ring-black/[0.05]">
                         {item.imageUrl ? (
                           <Image
                             src={item.imageUrl}
                             alt={item.productName}
                             fill
-                            sizes="(max-width: 640px) 112px, 144px"
+                            sizes="(max-width: 640px) 96px, 112px"
                             className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.04]"
                           />
                         ) : (
@@ -123,37 +123,29 @@ function GuestCartView({
                             No image
                           </div>
                         )}
-                        {onSale && (
-                          <span
-                            className="absolute top-3 left-3 rounded-full px-2.5 py-1 text-[10px] font-semibold text-white uppercase tracking-wider"
-                            style={{ backgroundColor: ROSE }}
-                          >
-                            On Sale
-                          </span>
-                        )}
                       </div>
                     </Link>
 
-                    <div className="flex-1 min-w-0 flex flex-col justify-between">
-                      <div className="space-y-3">
+                    <div className="flex-1 min-w-0 flex flex-col">
+                      <div className="space-y-1.5">
                         {item.category && (
                           <p className="label-caps text-[10px] text-muted-foreground uppercase tracking-wider">{item.category}</p>
                         )}
                         <Link href={`/products/${item.productSlug}`}>
-                          <h3 className="font-playfair text-lg text-foreground hover:text-mono-terracotta transition-colors line-clamp-2 leading-snug">
+                          <h3 className="font-playfair text-base sm:text-lg text-foreground hover:text-mono-terracotta transition-colors line-clamp-1 leading-snug">
                             {item.productName}
                           </h3>
                         </Link>
-                        <div className="flex flex-wrap items-center gap-2.5">
-                          <span className="inline-flex items-center rounded-full border border-border/60 bg-background/70 px-3 py-1 text-xs font-medium text-mono-charcoal">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center rounded-full border border-border/60 bg-background/70 px-2.5 py-0.5 text-[11px] font-medium text-mono-charcoal">
                             Size {item.size}
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 pt-4 border-t border-border/30">
+                      <div className="mt-auto pt-3 flex items-end justify-between gap-3">
                         {/* Pricing */}
-                        <div className="space-y-1">
+                        <div className="leading-tight">
                           <p className="font-semibold text-base text-mono-charcoal tabular-nums">{formatCurrency(lineTotal)}</p>
                           {onSale && (
                             <p className="text-xs text-muted-foreground line-through tabular-nums">
@@ -161,16 +153,16 @@ function GuestCartView({
                             </p>
                           )}
                           {item.quantity > 1 && (
-                            <p className="text-[11px] text-muted-foreground">{formatCurrency(unitPrice)} per item</p>
+                            <p className="text-[11px] text-muted-foreground">{formatCurrency(unitPrice)} each</p>
                           )}
                         </div>
 
                         {/* Controls */}
-                        <div className="flex items-center gap-2.5">
-                          <div className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/60">
+                        <div className="flex items-center gap-1.5">
+                          <div className="inline-flex items-center rounded-full border border-border/60 bg-background/60">
                             <button
                               aria-label="Decrease quantity"
-                              className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+                              className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
                               onClick={() =>
                                 dispatch(updateGuestItem({ variantId: item.variantId, size: item.size, quantity: item.quantity - 1 }))
                               }
@@ -178,12 +170,12 @@ function GuestCartView({
                             >
                               <Minus className="h-3.5 w-3.5" />
                             </button>
-                            <span aria-live="polite" className="w-6 text-center text-xs font-semibold tabular-nums text-mono-charcoal">
+                            <span aria-live="polite" className="w-7 text-center text-xs font-semibold tabular-nums text-mono-charcoal">
                               {item.quantity}
                             </span>
                             <button
                               aria-label="Increase quantity"
-                              className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+                              className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
                               onClick={() =>
                                 dispatch(updateGuestItem({ variantId: item.variantId, size: item.size, quantity: item.quantity + 1 }))
                               }
@@ -197,7 +189,7 @@ function GuestCartView({
                             onClick={() =>
                               dispatch(removeGuestItem({ variantId: item.variantId, size: item.size }))
                             }
-                            className="h-9 w-9 flex items-center justify-center text-muted-foreground hover:text-mono-rose hover:bg-muted/80 transition-colors rounded-full"
+                            className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-mono-rose hover:bg-muted/80 transition-colors rounded-full"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -215,7 +207,7 @@ function GuestCartView({
             className="group inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-mono-charcoal transition-colors pt-2"
           >
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-            Continue shopping
+            Continue Shopping
           </Link>
         </motion.div>
 
@@ -226,83 +218,46 @@ function GuestCartView({
           transition={{ duration: 0.5, delay: 0.15 }}
           className="lg:col-span-1"
         >
-          <div className="sticky top-24 space-y-6">
-            {/* Sign-in CTA Card - Premium Style */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="rounded-3xl overflow-hidden"
-              style={{
-                background: `linear-gradient(135deg, ${TERRA}08 0%, ${TERRA}04 100%)`,
-                border: `2px solid ${TERRA}1a`,
-              }}
-            >
-              <div className="p-8 space-y-6">
-                <div className="space-y-2">
-                  <h3 className="font-playfair text-xl text-mono-charcoal">Ready to checkout?</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Sign in to your account to complete your purchase, track your order, and access exclusive benefits.
-                  </p>
-                </div>
-                <Link href={`/login?redirect=${encodeURIComponent('/cart')}`} className="block">
-                  <Button
-                    className="group w-full h-12 text-sm font-medium rounded-2xl bg-mono-charcoal hover:bg-mono-charcoal/90 transition-all duration-300"
-                  >
-                    Sign in to checkout
-                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Button>
-                </Link>
-                <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                  <Lock className="h-3.5 w-3.5" />
-                  <span>Secure, encrypted checkout</span>
-                </p>
-              </div>
-            </motion.div>
+          <div className="sticky top-24">
+            <div className="rounded-3xl border border-border/50 bg-card shadow-xl shadow-black/[0.05] p-6 sm:p-7 space-y-5">
+              <h2 className="font-playfair text-2xl text-mono-charcoal">Order Summary</h2>
 
-            {/* Order Summary Card */}
-            <div className="rounded-3xl border border-border/60 bg-card shadow-sm overflow-hidden backdrop-blur-sm">
-              <div className="px-6 pt-6 pb-5 border-b border-border/50">
-                <span className="label-caps mb-1.5 block text-xs tracking-wider" style={{ color: TERRA }}>
-                  Order Summary
-                </span>
-                <h2 className="font-playfair text-2xl text-mono-charcoal">Subtotal</h2>
-              </div>
-              <div className="p-6 space-y-4">
+              <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">{totalQuantity} {totalQuantity === 1 ? 'item' : 'items'}</span>
-                  <span className="font-semibold text-lg text-mono-charcoal tabular-nums">{formatCurrency(subtotal)}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {totalQuantity} {totalQuantity === 1 ? 'Item' : 'Items'}
+                  </span>
+                  <span className="font-medium text-mono-charcoal tabular-nums">{formatCurrency(subtotal)}</span>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed border-t border-border/50 pt-4">
-                  Shipping and taxes will be calculated when you sign in at checkout.
-                </p>
-              </div>
-            </div>
 
-            {/* Trust Badges - Refined */}
-            <div className="grid grid-cols-3 gap-3 pt-2">
-              {[
-                { icon: ShieldCheck, label: 'Secure' },
-                { icon: Truck, label: 'Fast Shipping' },
-                { icon: RotateCcw, label: 'Easy Returns' },
-              ].map(({ icon: Icon, label }) => (
-                <div
-                  key={label}
-                  className="rounded-2xl border border-border/40 bg-card/50 p-4 flex flex-col items-center text-center gap-2.5 backdrop-blur-sm"
-                >
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: `${TERRA}15` }}
-                  >
-                    <Icon className="h-4 w-4" style={{ color: TERRA }} />
-                  </div>
-                  <span className="text-[10px] leading-tight text-muted-foreground font-medium">{label}</span>
+                <div className="border-t border-border/40" />
+
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Shipping and taxes are calculated at checkout. Sign in to apply coupons and complete your order.
+                </p>
+
+                <div className="border-t border-border/40" />
+
+                <div className="flex justify-between items-baseline">
+                  <span className="text-lg font-semibold text-mono-charcoal">Subtotal</span>
+                  <span className="text-3xl font-bold text-mono-charcoal tabular-nums">{formatCurrency(subtotal)}</span>
                 </div>
-              ))}
+              </div>
+
+              <Link href={`/login?redirect=${encodeURIComponent('/cart')}`} className="block">
+                <Button className="group w-full h-14 text-sm font-semibold rounded-2xl bg-mono-charcoal hover:bg-mono-charcoal/90 transition-all duration-300">
+                  <Lock className="mr-2 h-4 w-4" />
+                  Sign in to Checkout
+                </Button>
+              </Link>
+
+              <SummaryTrustRow />
             </div>
           </div>
         </motion.div>
       </div>
+
+      <FeatureBar />
 
       <MobileCheckoutBar
         label={`Subtotal · ${totalQuantity} ${totalQuantity === 1 ? 'item' : 'items'}`}
@@ -318,6 +273,126 @@ function GuestCartView({
 const SAGE = '#4A7C59'; // success / savings / free shipping
 const TERRA = '#C8703A'; // accent / progress
 const ROSE = '#B54A4A'; // warnings / destructive
+
+/**
+ * Compact free-shipping notice. Replaces the old full-width banner row with a
+ * slim pill that sits above the items — present but not space-hungry.
+ */
+function FreeShippingNotice({
+  eligible,
+  remaining,
+  progress,
+}: {
+  eligible: boolean;
+  remaining: number;
+  progress: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-2xl border border-border/40 px-4 py-3"
+      style={{
+        background: eligible
+          ? `linear-gradient(135deg, ${SAGE}0f 0%, ${SAGE}05 100%)`
+          : `linear-gradient(135deg, ${TERRA}0f 0%, ${TERRA}05 100%)`,
+      }}
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+          style={{
+            backgroundColor: eligible ? `${SAGE}15` : `${TERRA}15`,
+            color: eligible ? SAGE : TERRA,
+          }}
+        >
+          {eligible ? <Check className="h-4 w-4" /> : <Truck className="h-4 w-4" />}
+        </div>
+        <div className="flex-1 min-w-0 leading-tight">
+          {eligible ? (
+            <>
+              <p className="text-sm font-semibold" style={{ color: SAGE }}>
+                You&apos;ve unlocked free shipping!
+              </p>
+              <p className="text-xs text-muted-foreground">Free delivery on this order</p>
+            </>
+          ) : (
+            <p className="text-sm text-mono-charcoal">
+              Add <span className="font-semibold">{formatCurrency(remaining)}</span> more for free shipping
+            </p>
+          )}
+        </div>
+      </div>
+      {!eligible && (
+        <div
+          role="progressbar"
+          aria-label="Progress toward free shipping"
+          aria-valuenow={Math.round(progress)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          className="mt-2.5 h-1.5 rounded-full bg-border/50 overflow-hidden"
+        >
+          <motion.div
+            className="h-full rounded-full"
+            style={{ background: `linear-gradient(90deg, ${TERRA}, ${TERRA}dd)` }}
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          />
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+/** Inline trust line under the checkout CTA, mirroring the summary card layout. */
+function SummaryTrustRow() {
+  const items = [
+    { icon: ShieldCheck, label: 'Secure payment' },
+    { icon: RotateCcw, label: 'Easy returns' },
+    { icon: BadgeCheck, label: '100% authentic' },
+  ];
+  return (
+    <div className="flex items-center justify-center gap-x-4 gap-y-2 flex-wrap pt-1 text-[11px] text-muted-foreground">
+      {items.map(({ icon: Icon, label }) => (
+        <span key={label} className="inline-flex items-center gap-1.5">
+          <Icon className="h-3.5 w-3.5" style={{ color: SAGE }} />
+          {label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Full-width reassurance strip that fills the space below the cart. */
+function FeatureBar() {
+  const items = [
+    { icon: Truck, title: 'Free Shipping', sub: 'On all orders above ₹999' },
+    { icon: RotateCcw, title: 'Easy Returns', sub: 'Within 7 days of delivery' },
+    { icon: ShieldCheck, title: 'Secure Payments', sub: '100% protected checkout' },
+    { icon: BadgeCheck, title: 'Quality Assured', sub: 'Original products only' },
+  ];
+  return (
+    <div className="mt-12 sm:mt-16 rounded-3xl border border-border/40 bg-card/50 backdrop-blur-sm overflow-hidden">
+      <div className="grid grid-cols-2 lg:grid-cols-4 divide-y divide-border/40 sm:divide-y-0 sm:[&>*:nth-child(odd)]:border-r [&>*]:border-border/40 lg:[&>*]:border-r lg:[&>*:last-child]:border-r-0">
+        {items.map(({ icon: Icon, title, sub }) => (
+          <div key={title} className="flex items-center gap-3.5 p-5 sm:p-6">
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+              style={{ backgroundColor: `${TERRA}12`, color: TERRA }}
+            >
+              <Icon className="h-5 w-5" />
+            </div>
+            <div className="leading-tight min-w-0">
+              <p className="text-sm font-semibold text-mono-charcoal">{title}</p>
+              <p className="text-xs text-muted-foreground">{sub}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 /**
  * Clearing the whole bag is destructive — require an inline two-step confirm
@@ -600,88 +675,21 @@ export default function CartPage() {
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12 sm:mb-14"
+        className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-10"
       >
         <div>
           <span className="label-caps mb-2 block text-xs tracking-wider" style={{ color: TERRA }}>
-            Shopping Experience
+            Shopping Bag
           </span>
           <h1 className="font-playfair text-4xl md:text-5xl lg:text-6xl text-mono-charcoal leading-none">Your Bag</h1>
           <p className="text-sm text-muted-foreground mt-3 font-light">
-            {totalQuantity} {totalQuantity === 1 ? 'exquisite piece' : 'carefully selected pieces'} ready to check out
+            {totalQuantity} {totalQuantity === 1 ? 'item' : 'items'} ready to checkout
           </p>
         </div>
         <ClearBagButton onClear={() => clearCart(undefined).unwrap().catch(() => {})} />
       </motion.div>
 
-      {/* Free shipping progress - Luxury style */}
-      {freeShipping && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-10 rounded-3xl overflow-hidden border border-border/40"
-          style={{
-            background: freeShipping.eligible
-              ? `linear-gradient(135deg, ${SAGE}08 0%, ${SAGE}04 100%)`
-              : `linear-gradient(135deg, ${TERRA}08 0%, ${TERRA}04 100%)`,
-          }}
-        >
-          <div className="p-5 sm:p-6 space-y-4">
-            <div className="flex items-start gap-3.5">
-              <div
-                className="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
-                style={{
-                  backgroundColor: freeShipping.eligible ? `${SAGE}15` : `${TERRA}15`,
-                  color: freeShipping.eligible ? SAGE : TERRA,
-                }}
-              >
-                {freeShipping.eligible ? <Check className="h-5 w-5" /> : <Truck className="h-5 w-5" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm leading-relaxed">
-                  {freeShipping.eligible ? (
-                    <span className="block space-y-1">
-                      <span className="font-semibold block" style={{ color: SAGE }}>
-                        You&apos;ve unlocked complimentary shipping
-                      </span>
-                      <span className="text-xs text-muted-foreground">Free delivery on this order</span>
-                    </span>
-                  ) : (
-                    <span className="block space-y-1">
-                      <span className="font-medium text-mono-charcoal block">Almost there!</span>
-                      <span className="text-xs text-muted-foreground">
-                        Add <span className="font-semibold text-mono-charcoal">{formatCurrency(freeShipping.remaining)}</span> more to earn free shipping
-                      </span>
-                    </span>
-                  )}
-                </p>
-              </div>
-            </div>
-            {!freeShipping.eligible && (
-              <div
-                role="progressbar"
-                aria-label="Progress toward free shipping"
-                aria-valuenow={Math.round(freeShippingProgress)}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                className="h-1.5 rounded-full bg-border/50 overflow-hidden"
-              >
-                <motion.div
-                  className="h-full rounded-full"
-                  style={{
-                    background: `linear-gradient(90deg, ${TERRA}, ${TERRA}dd)`,
-                  }}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${freeShippingProgress}%` }}
-                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                />
-              </div>
-            )}
-          </div>
-        </motion.div>
-      )}
-
-      <div className="grid lg:grid-cols-3 gap-8 lg:gap-14">
+      <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
         {/* Cart Items */}
         <motion.div
           variants={staggerContainer}
@@ -689,6 +697,15 @@ export default function CartPage() {
           animate="visible"
           className="lg:col-span-2 space-y-4"
         >
+          {/* Free shipping notice — compact, above the items */}
+          {freeShipping && (
+            <FreeShippingNotice
+              eligible={!!freeShipping.eligible}
+              remaining={freeShipping.remaining}
+              progress={freeShippingProgress}
+            />
+          )}
+
           <AnimatePresence mode="popLayout">
             {cartItems.map((item) => {
               const { product, variant } = item;
@@ -711,18 +728,18 @@ export default function CartPage() {
                   initial="hidden"
                   animate="visible"
                   exit="exit"
-                  className="group rounded-3xl border border-border/40 bg-card/80 backdrop-blur-sm p-5 sm:p-6 shadow-sm hover:shadow-md hover:border-border/80 transition-[box-shadow,border-color,background-color] duration-300 hover:bg-card"
+                  className="group rounded-2xl border border-border/50 bg-card p-3 sm:p-4 shadow-sm hover:shadow-md hover:border-border transition-[box-shadow,border-color] duration-300"
                 >
-                  <div className={`flex gap-4 sm:gap-6 transition-opacity duration-200 ${isRemoving ? 'opacity-40 pointer-events-none' : ''}`}>
+                  <div className={`flex gap-4 transition-opacity duration-200 ${isRemoving ? 'opacity-40 pointer-events-none' : ''}`}>
                     {/* Product Image */}
                     <Link href={`/products/${product.slug}`} className="shrink-0">
-                      <div className="relative w-28 h-28 sm:w-36 sm:h-36 bg-muted rounded-2xl overflow-hidden ring-1 ring-black/[0.05]">
+                      <div className="relative w-24 h-28 sm:w-28 sm:h-32 bg-muted rounded-xl overflow-hidden ring-1 ring-black/[0.05]">
                         {product.primaryImage ? (
                           <Image
                             src={product.primaryImage}
                             alt={product.name}
                             fill
-                            sizes="(max-width: 640px) 112px, 144px"
+                            sizes="(max-width: 640px) 96px, 112px"
                             className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.04]"
                           />
                         ) : (
@@ -730,35 +747,27 @@ export default function CartPage() {
                             No image
                           </div>
                         )}
-                        {onSale && (
-                          <span
-                            className="absolute top-3 left-3 rounded-full px-2.5 py-1 text-[10px] font-semibold text-white uppercase tracking-wider"
-                            style={{ backgroundColor: ROSE }}
-                          >
-                            On Sale
-                          </span>
-                        )}
                       </div>
                     </Link>
 
                     {/* Details */}
-                    <div className="flex-1 min-w-0 flex flex-col justify-between">
-                      <div className="space-y-3">
+                    <div className="flex-1 min-w-0 flex flex-col">
+                      <div className="space-y-1.5">
                         {product.category?.name && (
                           <p className="label-caps text-[10px] text-muted-foreground uppercase tracking-wider">{product.category.name}</p>
                         )}
                         <Link href={`/products/${product.slug}`}>
-                          <h3 className="font-playfair text-lg text-foreground hover:text-mono-terracotta transition-colors line-clamp-2 leading-snug">
+                          <h3 className="font-playfair text-base sm:text-lg text-foreground hover:text-mono-terracotta transition-colors line-clamp-1 leading-snug">
                             {product.name}
                           </h3>
                         </Link>
-                        <div className="flex flex-wrap items-center gap-2.5">
-                          <span className="inline-flex items-center rounded-full border border-border/60 bg-background/70 px-3 py-1 text-xs font-medium text-mono-charcoal">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center rounded-full border border-border/60 bg-background/70 px-2.5 py-0.5 text-[11px] font-medium text-mono-charcoal">
                             Size {item.size}
                           </span>
                           {variant.isLowStock && variant.stock > 0 && !outOfStockForQty && (
                             <span
-                              className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wide"
+                              className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide"
                               style={{ backgroundColor: `${TERRA}15`, color: TERRA }}
                             >
                               Only {variant.stock} left
@@ -767,7 +776,7 @@ export default function CartPage() {
                           {outOfStockForQty && (
                             <>
                               <span
-                                className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wide"
+                                className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide"
                                 style={{ backgroundColor: `${ROSE}15`, color: ROSE }}
                               >
                                 {variant.stock > 0 ? `Only ${variant.stock} available` : 'Out of stock'}
@@ -779,7 +788,7 @@ export default function CartPage() {
                                     : handleRemove(item.id)
                                 }
                                 disabled={isUpdating || isRemoving}
-                                className="text-xs font-medium underline underline-offset-2 text-muted-foreground hover:text-mono-charcoal transition-colors disabled:opacity-50"
+                                className="text-[11px] font-medium underline underline-offset-2 text-muted-foreground hover:text-mono-charcoal transition-colors disabled:opacity-50"
                               >
                                 {variant.stock > 0 ? `Adjust to ${variant.stock}` : 'Remove item'}
                               </button>
@@ -788,9 +797,9 @@ export default function CartPage() {
                         </div>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 pt-4 border-t border-border/30">
-                        {/* Pricing */}
-                        <div className="space-y-1">
+                      {/* Price + controls on one row, pinned to the bottom of the card */}
+                      <div className="mt-auto pt-3 flex items-end justify-between gap-3">
+                        <div className="leading-tight">
                           <p className="font-semibold text-base text-mono-charcoal tabular-nums">{formatCurrency(lineTotal)}</p>
                           {onSale && (
                             <p className="text-xs text-muted-foreground line-through tabular-nums">
@@ -798,27 +807,26 @@ export default function CartPage() {
                             </p>
                           )}
                           {item.quantity > 1 && (
-                            <p className="text-[11px] text-muted-foreground">{formatCurrency(unitPrice)} per item</p>
+                            <p className="text-[11px] text-muted-foreground">{formatCurrency(unitPrice)} each</p>
                           )}
                         </div>
 
-                        {/* Controls */}
-                        <div className="flex items-center gap-2.5">
-                          <div className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/60">
+                        <div className="flex items-center gap-1.5">
+                          <div className="inline-flex items-center rounded-full border border-border/60 bg-background/60">
                             <button
                               aria-label="Decrease quantity"
-                              className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+                              className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
                               onClick={() => handleUpdateQuantity(item.id, item.quantity - 1, variant.stock)}
                               disabled={item.quantity <= 1 || isUpdating}
                             >
                               <Minus className="h-3.5 w-3.5" />
                             </button>
-                            <span aria-live="polite" className="w-6 text-center text-xs font-semibold tabular-nums text-mono-charcoal">
+                            <span aria-live="polite" className="w-7 text-center text-xs font-semibold tabular-nums text-mono-charcoal">
                               {isUpdating ? <Loader2 className="h-3 w-3 animate-spin mx-auto" /> : item.quantity}
                             </span>
                             <button
                               aria-label="Increase quantity"
-                              className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+                              className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
                               onClick={() => handleUpdateQuantity(item.id, item.quantity + 1, variant.stock)}
                               disabled={item.quantity >= variant.stock || isUpdating}
                             >
@@ -830,16 +838,15 @@ export default function CartPage() {
                             aria-label="Save for later"
                             onClick={() => handleSaveForLater(item)}
                             disabled={isSaving || isRemoving}
-                            className="inline-flex items-center gap-1 px-2.5 h-9 text-xs font-medium text-muted-foreground hover:text-mono-terracotta transition-colors rounded-full hover:bg-muted/80 disabled:opacity-50"
+                            className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-mono-terracotta transition-colors rounded-full hover:bg-muted/80 disabled:opacity-50"
                           >
-                            {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Heart className="h-3.5 w-3.5" />}
-                            <span className="hidden sm:inline text-xs">Save</span>
+                            {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Heart className="h-4 w-4" />}
                           </button>
                           <button
                             aria-label="Remove item"
                             onClick={() => handleRemove(item.id)}
                             disabled={isRemoving}
-                            className="h-9 w-9 flex items-center justify-center text-muted-foreground hover:text-mono-rose hover:bg-muted/80 transition-colors rounded-full disabled:opacity-50"
+                            className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-mono-rose hover:bg-muted/80 transition-colors rounded-full disabled:opacity-50"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -857,7 +864,7 @@ export default function CartPage() {
             className="group inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-mono-charcoal transition-colors pt-2"
           >
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-            Continue shopping
+            Continue Shopping
           </Link>
         </motion.div>
 
@@ -868,144 +875,117 @@ export default function CartPage() {
           transition={{ duration: 0.5, delay: 0.15 }}
           className="lg:col-span-1"
         >
-          <div className="sticky top-24 space-y-6">
-            {/* Pricing Summary */}
-            <div className="rounded-3xl border border-border/40 bg-card/80 backdrop-blur-sm overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300">
-              {/* Header */}
-              <div className="px-6 pt-6 pb-5 border-b border-border/30 bg-gradient-to-br from-card to-transparent">
-                <span className="label-caps mb-1.5 block text-xs tracking-wider" style={{ color: TERRA }}>
-                  Order Summary
-                </span>
-                <h2 className="font-playfair text-2xl text-mono-charcoal">Pricing Details</h2>
-              </div>
+          <div className="sticky top-24">
+            <div className="rounded-3xl border border-border/50 bg-card shadow-xl shadow-black/[0.05] p-6 sm:p-7 space-y-5">
+              <h2 className="font-playfair text-2xl text-mono-charcoal">Order Summary</h2>
 
-              {/* Content */}
-              <div className="p-6 space-y-4">
-                {/* Subtotal */}
-                <div className="flex justify-between items-center pb-4">
-                  <span className="text-sm text-muted-foreground">{totalQuantity} {totalQuantity === 1 ? 'item' : 'items'}</span>
-                  <span className="font-semibold text-mono-charcoal tabular-nums">{formatCurrency(subtotal)}</span>
+              <div className="space-y-4">
+                {/* Items / subtotal */}
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">
+                    {totalQuantity} {totalQuantity === 1 ? 'Item' : 'Items'}
+                  </span>
+                  <span className="font-medium text-mono-charcoal tabular-nums">{formatCurrency(subtotal)}</span>
                 </div>
 
-                {/* Discount */}
-                {discount > 0 && (
-                  <div className="flex justify-between items-center pb-3" style={{ color: SAGE }}>
-                    <span className="flex items-center gap-2 text-sm">
+                {/* Coupon */}
+                {appliedCoupon ? (
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="flex items-center gap-2 text-sm" style={{ color: SAGE }}>
                       <Tag className="h-4 w-4 flex-shrink-0" />
-                      <span className="font-medium">Discount</span>
-                      {appliedCoupon?.code && <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded ml-1">{appliedCoupon.code}</span>}
+                      <span
+                        className="font-mono text-xs font-semibold rounded-md px-2 py-0.5"
+                        style={{ backgroundColor: `${SAGE}14` }}
+                      >
+                        {appliedCoupon.code}
+                      </span>
                     </span>
-                    <span className="font-semibold tabular-nums">−{formatCurrency(discount)}</span>
+                    <span className="text-right leading-tight">
+                      <span className="block font-semibold tabular-nums" style={{ color: SAGE }}>
+                        −{formatCurrency(discount)}
+                      </span>
+                      <button
+                        onClick={handleRemoveCoupon}
+                        disabled={couponRemoving}
+                        className="text-[11px] text-muted-foreground hover:text-mono-rose underline underline-offset-2 disabled:opacity-50"
+                      >
+                        {couponRemoving ? 'Removing…' : 'Remove'}
+                      </button>
+                    </span>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Promo code"
+                          value={couponCode}
+                          onChange={(e) => setCouponCode(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                          className="pl-10 uppercase rounded-xl h-10 text-sm bg-background/70"
+                        />
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={handleApplyCoupon}
+                        disabled={couponLoading || !couponCode.trim()}
+                        className="px-4 h-10 rounded-xl text-sm"
+                      >
+                        {couponLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Apply'}
+                      </Button>
+                    </div>
+                    {couponError && (
+                      <p role="alert" className="text-xs font-medium" style={{ color: ROSE }}>
+                        {couponError}
+                      </p>
+                    )}
                   </div>
                 )}
 
-                {/* Shipping & Tax */}
-                <div className="space-y-2.5 py-3 border-t border-border/30">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Shipping</span>
-                    <span className="font-medium tabular-nums" style={shipping === 0 ? { color: SAGE, fontWeight: 600 } : undefined}>
-                      {shipping === 0 ? (
-                        <span className="flex items-center gap-1.5">
-                          <Check className="h-3.5 w-3.5" />
-                          Free
-                        </span>
-                      ) : (
-                        formatCurrency(shipping)
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Tax</span>
-                    <span className="font-medium text-mono-charcoal tabular-nums">{formatCurrency(tax)}</span>
-                  </div>
+                <div className="border-t border-border/40" />
+
+                {/* Shipping */}
+                <div className="flex justify-between items-start gap-3">
+                  <span className="leading-tight">
+                    <span className="block text-sm text-mono-charcoal">Shipping</span>
+                    <span className="block text-[11px] text-muted-foreground">Delivered in 3–5 business days</span>
+                  </span>
+                  <span
+                    className="font-medium tabular-nums"
+                    style={shipping === 0 ? { color: SAGE, fontWeight: 600 } : undefined}
+                  >
+                    {shipping === 0 ? 'Free' : formatCurrency(shipping)}
+                  </span>
                 </div>
 
-                {/* Total */}
-                <div
-                  className="rounded-2xl px-4 py-4 flex justify-between items-baseline"
-                  style={{ backgroundColor: `${TERRA}08`, borderLeft: `3px solid ${TERRA}` }}
-                >
-                  <span className="font-semibold text-sm text-mono-charcoal uppercase tracking-wide">Total</span>
-                  <span className="text-2xl font-bold text-mono-charcoal tabular-nums">{formatCurrency(total)}</span>
+                {/* Tax */}
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Tax</span>
+                  <span className="font-medium text-mono-charcoal tabular-nums">{formatCurrency(tax)}</span>
                 </div>
 
-                {/* Savings Badge */}
+                {/* Savings */}
                 {totalSavings > 0 && (
                   <div
-                    className="flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-semibold text-center"
+                    className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold"
                     style={{ backgroundColor: `${SAGE}12`, color: SAGE }}
                   >
                     <Tag className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span>You&apos;re saving <span className="font-bold">{formatCurrency(totalSavings)}</span> on this order</span>
+                    <span>You&apos;re saving {formatCurrency(totalSavings)} on this order</span>
                   </div>
                 )}
+
+                <div className="border-t border-border/40" />
+
+                {/* Total — the dominant figure, kept in a plain readable font */}
+                <div className="flex justify-between items-baseline">
+                  <span className="text-lg font-semibold text-mono-charcoal">Total</span>
+                  <span className="text-3xl font-bold text-mono-charcoal tabular-nums">{formatCurrency(total)}</span>
+                </div>
               </div>
-            </div>
 
-            {/* Coupon Section */}
-            <div className="space-y-3">
-              {appliedCoupon ? (
-                <div
-                  className="rounded-2xl px-4 py-3 border flex items-center justify-between"
-                  style={{ backgroundColor: `${SAGE}0d`, borderColor: `${SAGE}33` }}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: `${SAGE}15`, color: SAGE }}
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                    </div>
-                    <div className="leading-tight">
-                      <p className="font-mono font-semibold text-xs" style={{ color: SAGE }}>
-                        {appliedCoupon.code}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">Applied</p>
-                    </div>
-                  </div>
-                  <button
-                    aria-label="Remove coupon"
-                    onClick={handleRemoveCoupon}
-                    disabled={couponRemoving}
-                    className="h-8 w-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-mono-rose hover:bg-muted/60 transition-colors disabled:opacity-50"
-                  >
-                    {couponRemoving ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide">Promo Code</label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Enter code"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
-                        className="pl-10 uppercase rounded-xl h-10 text-sm bg-background/70"
-                      />
-                    </div>
-                    <Button
-                      variant="outline"
-                      onClick={handleApplyCoupon}
-                      disabled={couponLoading || !couponCode.trim()}
-                      className="px-4 h-10 rounded-xl text-sm"
-                    >
-                      {couponLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Apply'}
-                    </Button>
-                  </div>
-                  {couponError && (
-                    <p role="alert" className="text-xs font-medium" style={{ color: ROSE }}>
-                      {couponError}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Checkout CTA */}
-            <div className="space-y-3 pt-2">
+              {/* Checkout CTA */}
               {hasStockIssues && (
                 <p
                   role="alert"
@@ -1016,52 +996,27 @@ export default function CartPage() {
                 </p>
               )}
               {hasStockIssues ? (
-                <Button
-                  disabled
-                  className="w-full h-12 text-sm font-medium rounded-2xl bg-mono-charcoal"
-                >
+                <Button disabled className="w-full h-14 text-sm font-semibold rounded-2xl bg-mono-charcoal">
+                  <Lock className="mr-2 h-4 w-4" />
                   Proceed to Checkout
                 </Button>
               ) : (
                 <Link href="/checkout" className="block">
-                  <Button
-                    className="group w-full h-12 text-sm font-medium rounded-2xl bg-mono-charcoal hover:bg-mono-charcoal/90 transition-all duration-300"
-                  >
+                  <Button className="group w-full h-14 text-sm font-semibold rounded-2xl bg-mono-charcoal hover:bg-mono-charcoal/90 transition-all duration-300">
+                    <Lock className="mr-2 h-4 w-4" />
                     Proceed to Checkout
-                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
               )}
-              <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                <Lock className="h-3 w-3 flex-shrink-0" />
-                <span>Secure, encrypted checkout</span>
-              </p>
-            </div>
 
-            {/* Trust Badges */}
-            <div className="grid grid-cols-3 gap-3 pt-2">
-              {[
-                { icon: ShieldCheck, label: 'Secure' },
-                { icon: Truck, label: 'Fast Shipping' },
-                { icon: RotateCcw, label: 'Easy Returns' },
-              ].map(({ icon: Icon, label }) => (
-                <div
-                  key={label}
-                  className="rounded-2xl border border-border/40 bg-card/50 p-4 flex flex-col items-center text-center gap-2.5 backdrop-blur-sm"
-                >
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: `${TERRA}15` }}
-                  >
-                    <Icon className="h-4 w-4" style={{ color: TERRA }} />
-                  </div>
-                  <span className="text-[10px] leading-tight text-muted-foreground font-medium">{label}</span>
-                </div>
-              ))}
+              <SummaryTrustRow />
             </div>
           </div>
         </motion.div>
       </div>
+
+      {/* Reassurance strip — fills the space below the cart */}
+      <FeatureBar />
 
       <MobileCheckoutBar
         label={`Total · ${totalQuantity} ${totalQuantity === 1 ? 'item' : 'items'}`}
