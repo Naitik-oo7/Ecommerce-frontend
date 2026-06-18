@@ -85,7 +85,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
     const script = document.createElement('script');
     script.id = id;
     script.src = 'https://storesense-t97k.onrender.com/widget.js';
-    script.setAttribute('data-store', '4ea26c6f5411f7e9e131b7b9821b5997');
+    script.setAttribute('data-store', '814adf7e1c45b641e7758d4c43436e3e');
     script.setAttribute('data-api-url', 'https://storesense-t97k.onrender.com');
     script.setAttribute('data-title', 'Chat with us');
     script.setAttribute('data-color', accentColor);
